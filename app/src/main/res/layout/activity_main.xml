@@ -13,5 +13,16 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Who knows ?" />
+        android:text="Who knows ?"
+        android:id="@+id/textView" />
+
+    <Button
+        android:id="@+id/logout_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="144dp"
+        android:text="@string/logout"
+        android:onClick="onLogOutClickListener"/>
 </RelativeLayout>

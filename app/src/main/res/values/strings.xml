@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PicAround</string>
+    <string name="facebook_app_id">1895338284044111</string>
+    <string name="logout">Logout</string>
 </resources>
