@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">PicAround</string>
     <string name="title_activity_maps">Map</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
+         AIzaSyDlw4SqqMWqXS5kOjqhy1i351H2BnxW4tg
+    </string>
 </resources>
