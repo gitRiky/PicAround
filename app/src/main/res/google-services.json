@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "585048519897",
+    "project_id": "firebase-picaround"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:585048519897:android:e8c871491428f589",
+        "android_client_info": {
+          "package_name": "com.project.pervsys.picaround"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "585048519897-gllo5q6b8c38nd3ilq6v95mvdjlpf7pq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.project.pervsys.picaround",
+            "certificate_hash": "bfdd93bc56eb33f8284485e3cead1af93337beb8"
+          }
+        },
+        {
+          "client_id": "585048519897-8goar2f0rnb9bdh3g8odto1b5bn3nmup.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHWw5wnG295GzfQVLfbagRUVqDZ590d-s"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
