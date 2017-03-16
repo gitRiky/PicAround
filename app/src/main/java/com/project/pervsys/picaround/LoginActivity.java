@@ -1,6 +1,7 @@
 package com.project.pervsys.picaround;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -37,7 +38,7 @@ public class LoginActivity extends AppCompatActivity {
     private CallbackManager callbackManager;
     private TextView textView;
     private GoogleApiClient mGoogleApiClient;
-
+    private LoginButton loginButton;
 
 
     @Override
@@ -47,7 +48,7 @@ public class LoginActivity extends AppCompatActivity {
 
         /* FACEBOOK LOGIN */
 
-        LoginButton loginButton = (LoginButton) findViewById(R.id.fb_login_button);
+        loginButton = (LoginButton) findViewById(R.id.fb_login_button);
         //email requires explicit permission
         loginButton.setReadPermissions("email");
         textView = (TextView) findViewById(R.id.textView2);
@@ -67,6 +68,8 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     };
                 }
+
+                //TODO: connection with the db, if it is not already a user, save basic info into db
 
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
@@ -101,6 +104,7 @@ public class LoginActivity extends AppCompatActivity {
 
         /* GOOGLE LOGIN */
 
+        //require the access to the email and the basic profile info
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .build();
@@ -117,6 +121,7 @@ public class LoginActivity extends AppCompatActivity {
         SignInButton signInButton = (SignInButton) findViewById(R.id.sign_in_button);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
+            //start the authentication intent
             public void onClick(View v) {
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
                 print("Starting activity");
@@ -126,6 +131,20 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    public void onClick(View view){
+        int id = view.getId();
+        switch (id){
+            case R.id.fb_fake:
+                loginButton.performClick();
+                break;
+            case R.id.no_login:
+                SharedPreferences settings = getSharedPreferences("Log",0);
+                SharedPreferences.Editor editor = settings.edit();
+                editor.putBoolean("Logged", false);
+                editor.commit();
+                finish();
+        }
+    }
 
 
     @Override
@@ -141,6 +160,7 @@ public class LoginActivity extends AppCompatActivity {
             callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
+    //maybe it could be integrated to onActivityResult
     private void handleSignInResult(GoogleSignInResult result) {
         print(result.getStatus().toString());
         if (result.isSuccess()) {
@@ -148,6 +168,8 @@ public class LoginActivity extends AppCompatActivity {
             GoogleSignInAccount acct = result.getSignInAccount();
             System.out.println("YESSS");
             textView.setText(acct.getEmail() + " " + acct.getGivenName() + "" + acct.getFamilyName());
+            //TODO: connection with the db, if it is not already a user, save basic info into db
+            finish();
         } else {
             // Signed out, show unauthenticated UI.
             System.out.println("Not authenticated");
