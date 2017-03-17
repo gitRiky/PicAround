@@ -9,7 +9,6 @@ import android.telecom.Call;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -28,6 +27,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.OptionalPendingResult;
+import com.project.pervsys.picaround.utility.Config;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -68,12 +69,12 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     };
                 }
-
+                setLogged(Config.FB_LOGGED);
                 //TODO: connection with the db, if it is not already a user, save basic info into db
 
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
-                /*GraphRequest request = GraphRequest.newMeRequest(
+                GraphRequest request = GraphRequest.newMeRequest(
                         loginResult.getAccessToken(), new GraphRequest.GraphJSONObjectCallback() {
                             @Override
                             public void onCompleted(JSONObject me, GraphResponse response) {
@@ -85,10 +86,11 @@ public class LoginActivity extends AppCompatActivity {
                             }
                         });
                 Bundle parameters = new Bundle();
-                parameters.putString("fields", "id,name,email,gender");
+                parameters.putString("fields", "id,name,email,gender,birthday");
                 request.setParameters(parameters);
-                request.executeAsync();*/
-                finish();
+                request.executeAsync();
+                Intent i = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(i);
             }
 
             @Override
@@ -131,6 +133,19 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
+        if (opr.isDone()) {
+            print("Got cached sign-in");
+            GoogleSignInResult result = opr.get();
+            handleSignInResult(result);
+        }
+    }
+
+
     public void onClick(View view){
         int id = view.getId();
         switch (id){
@@ -138,11 +153,8 @@ public class LoginActivity extends AppCompatActivity {
                 loginButton.performClick();
                 break;
             case R.id.no_login:
-                SharedPreferences settings = getSharedPreferences("Log",0);
-                SharedPreferences.Editor editor = settings.edit();
-                editor.putBoolean("Logged", false);
-                editor.commit();
-                finish();
+                Intent i = new Intent(this, MainActivity.class);
+                startActivity(i);
         }
     }
 
@@ -167,13 +179,21 @@ public class LoginActivity extends AppCompatActivity {
             // Signed in successfully, show authenticated UI.
             GoogleSignInAccount acct = result.getSignInAccount();
             System.out.println("YESSS");
+            setLogged(Config.GOOGLE_LOGGED);
             textView.setText(acct.getEmail() + " " + acct.getGivenName() + "" + acct.getFamilyName());
-            //TODO: connection with the db, if it is not already a user, save basic info into db
             finish();
+            //TODO: connection with the db, if it is not already a user, save basic info into db
         } else {
             // Signed out, show unauthenticated UI.
             System.out.println("Not authenticated");
         }
+    }
+
+    private void setLogged(String type){
+        SharedPreferences settings = getSharedPreferences("Logging",0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("Logged", type);
+        editor.commit();
     }
 
     private void print(String s){

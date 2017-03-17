@@ -17,8 +17,8 @@
 
     <Button
         android:id="@+id/fb_fake"
-        android:layout_width="123dp"
-        android:layout_height="77dp"
+        android:layout_width="112dp"
+        android:layout_height="66dp"
         android:background="@drawable/fb_signin_btn"
         android:onClick="onClick"
         app:layout_constraintRight_toRightOf="parent"

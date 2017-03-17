@@ -28,7 +28,9 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity"></activity>
+        <activity android:name=".LoginActivity"
+            android:noHistory="true" android:excludeFromRecents="true">
+        </activity>
     </application>
 
 </manifest>
