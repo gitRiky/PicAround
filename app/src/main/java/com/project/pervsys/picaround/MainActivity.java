@@ -12,11 +12,16 @@ import com.facebook.login.LoginManager;
 import com.project.pervsys.picaround.utility.Config;
 
 public class MainActivity extends AppCompatActivity {
-
+    //this boolean will be removed, info passed by putExtra intent
+    private final static boolean firstTime = true;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if (firstTime){
+            BasicInfoDialog dialog = new BasicInfoDialog();
+            dialog.show(getFragmentManager(),"");
+        }
         System.out.println("AAAAACCCCCTIVITY MAIN!!!");
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0).getString(Config.LOG_PREF_INFO, null);
         //TODO: add an or: facebook or google account

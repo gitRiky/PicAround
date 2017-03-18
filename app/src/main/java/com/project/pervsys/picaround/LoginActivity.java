@@ -1,12 +1,16 @@
 package com.project.pervsys.picaround;
 
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telecom.Call;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
 import com.facebook.CallbackManager;
@@ -39,12 +43,14 @@ public class LoginActivity extends AppCompatActivity {
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
-
+    private AlertDialog.Builder builder;
+    private AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).getString(Config.LOG_PREF_INFO,null);
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
@@ -83,6 +89,7 @@ public class LoginActivity extends AppCompatActivity {
                 break;
             case R.id.no_login:
                 setLogged(Config.NOT_LOGGED);
+
                 startMain();
         }
     }
@@ -113,7 +120,6 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onSuccess(LoginResult loginResult) {
-
                 //It is needed for the profile update
                 if (Profile.getCurrentProfile() == null){
                     mProfileTracker = new ProfileTracker() {
@@ -126,7 +132,6 @@ public class LoginActivity extends AppCompatActivity {
                 print("I'm in ONSUCCESS");
                 setLogged(Config.FB_LOGGED);
                 //TODO: connection with the db, if it is not already a user, save basic info into db
-
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
                 GraphRequest request = GraphRequest.newMeRequest(
@@ -224,4 +229,6 @@ public class LoginActivity extends AppCompatActivity {
     private void print(String s){
         System.out.println(s);
     }
+
+
 }
