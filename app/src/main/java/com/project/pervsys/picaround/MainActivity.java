@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
@@ -16,30 +17,22 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        String logged = getSharedPreferences("Logging", 0).getString("Logged", null);
-        System.out.println("LOGGGGGGGGGGGGGGG " + logged);
+        System.out.println("AAAAACCCCCTIVITY MAIN!!!");
+        String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0).getString(Config.LOG_PREF_INFO, null);
         //TODO: add an or: facebook or google account
         //if the user is not logged with facebook
-        if (logged == null) {
-            if (Profile.getCurrentProfile() == null) {
-                Intent i = new Intent(this, LoginActivity.class);
-                startActivity(i);
-            }
-            else
-                getSharedPreferences("Logging",0).edit().putString("Logged", Config.FB_LOGGED).commit();
-        }
+        TextView t = (TextView) findViewById(R.id.textView);
+        t.setText(logged);
 
     }
 
 
-
-
-
     public void onLogOutClickListener(View w) {
-        if (Profile.getCurrentProfile() != null) {
+        System.out.println("LOGGGGG "+ getSharedPreferences(Config.LOG_PREFERENCES, 0).getString(Config.LOG_PREF_INFO, null));
+        if (Profile.getCurrentProfile() != null){
             LoginManager.getInstance().logOut();
             Intent i = new Intent(this, LoginActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(i);
         }
     }
@@ -49,11 +42,10 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
     }
 
+
     @Override
     protected void onDestroy(){
         super.onDestroy();
-
-        getSharedPreferences("Logging", 0).edit().putString("Logged", null).commit();
-        System.out.println("LOGGGGGGGGG " + getSharedPreferences("Logging",0).getString("Logged",null));
+        getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().putString(Config.LOG_PREF_INFO, null).apply();
     }
 }

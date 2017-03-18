@@ -5,4 +5,5 @@
     <string name="fb_login_protocol_scheme">fb1895338284044111</string>
     <string name="logout_text">Operation complete! If you want to sign in again, go to settings --> login</string>
     <string name="no_login_text"><u>NO, THANKS</u></string>
+
 </resources>
