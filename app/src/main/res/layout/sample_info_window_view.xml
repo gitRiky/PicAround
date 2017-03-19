@@ -4,14 +4,14 @@
     android:layout_height="match_parent">
 
     <com.project.pervsys.picaround.InfoWindowView
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
         android:background="#ccc"
         android:paddingBottom="40dp"
         android:paddingLeft="20dp"
-        app:exampleColor="#33b5e5"
-        app:exampleDimension="24sp"
-        app:exampleDrawable="@android:drawable/ic_menu_add"
-        app:exampleString="Hello, InfoWindowView" />
+        app:exampleColor="@color/colorPrimary"
+        app:exampleDimension="@dimen/activity_horizontal_margin"
+
+        app:exampleString="@string/app_name" />
 
 </FrameLayout>

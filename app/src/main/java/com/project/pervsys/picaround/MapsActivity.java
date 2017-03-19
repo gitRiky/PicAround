@@ -1,7 +1,14 @@
 package com.project.pervsys.picaround;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -14,6 +21,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.xmlpull.v1.XmlPullParser;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
 
@@ -56,13 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mPerth = mMap.addMarker(new MarkerOptions()
                 .position(PERTH)
                 .title("Perth")
-                .snippet("This is how we show the snippet!:" +
-                        "\n" +
-                        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n" +
-                        "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n" +
-                        "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n" +
-                        "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\n" +
-                        "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+                .snippet("This is how we show the snippet!")
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher)));
         mPerth.setTag(0);
 
@@ -86,6 +89,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Set InfoWindowAdapter
         mMap.setInfoWindowAdapter(this);
+
+        // Change map camera
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(-33.852, 151.211)));
     }
 
     /** Called when the user clicks a marker. */
@@ -119,7 +125,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public View getInfoWindow(Marker marker) {
-        return new InfoWindowView(this);
+        View v = getLayoutInflater().inflate(R.layout.sample_info_window_view, null);
+
+        return v;
     }
 
     @Override

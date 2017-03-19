@@ -1,8 +1,38 @@
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
-    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.project.pervsys.picaround.MapsActivity" />
+    android:layout_width="match_parent">
+
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="false"
+        android:visibility="visible">
+
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context="com.project.pervsys.picaround.MapsActivity" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/floatingActionButton2"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_gravity="top|left"
+            android:clickable="true"
+            map:backgroundTint="@android:color/holo_orange_dark"
+            map:elevation="10dp"
+            map:fabSize="mini"
+            map:layout_anchor="@+id/map"
+            map:layout_anchorGravity="bottom|right"
+            map:srcCompat="@android:drawable/ic_menu_camera"
+            map:useCompatPadding="true" />
+
+    </android.support.design.widget.CoordinatorLayout>
+
+</RelativeLayout>
