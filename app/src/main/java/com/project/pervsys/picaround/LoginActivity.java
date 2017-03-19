@@ -13,6 +13,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -40,6 +42,10 @@ import org.json.JSONObject;
 public class LoginActivity extends AppCompatActivity {
 
     private static final int RC_SIGN_IN = 1;
+    private static final String EMAIL = "email";
+    private static final String FIELDS = "fields";
+    private static final String NEEDED_FB_INFO = "name,email";
+    private static final String TAG = "LoginActivity";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
@@ -60,6 +66,7 @@ public class LoginActivity extends AppCompatActivity {
         }
         else {
             setLogged(Config.FB_LOGGED);
+            Log.i(TAG, "Logged with Facebook");
             startMain();
         }
     }
@@ -72,11 +79,9 @@ public class LoginActivity extends AppCompatActivity {
         if(logged == null){
             OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
             if (opr.isDone()) {
-                print("Got cached sign-in");
                 GoogleSignInResult result = opr.get();
                 handleSignInResult(result);
             }
-            print("OPERATION NOT COMPLETE");
         }
     }
 
@@ -89,7 +94,7 @@ public class LoginActivity extends AppCompatActivity {
                 break;
             case R.id.no_login:
                 setLogged(Config.NOT_LOGGED);
-
+                Log.i(TAG, "Not Logged");
                 startMain();
         }
     }
@@ -100,9 +105,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            print("Passing the result to handleSignIn");
             handleSignInResult(result);
-
         }
         else
             callbackManager.onActivityResult(requestCode, resultCode, data);
@@ -113,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
 
         loginButton = (LoginButton) findViewById(R.id.fb_login_button);
         //email requires explicit permission
-        loginButton.setReadPermissions("email");
+        loginButton.setReadPermissions(EMAIL);
         callbackManager = CallbackManager.Factory.create();
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             private ProfileTracker mProfileTracker;
@@ -129,7 +132,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     };
                 }
-                print("I'm in ONSUCCESS");
+                Log.i(TAG, "Logged with Facebook");
                 setLogged(Config.FB_LOGGED);
                 //TODO: connection with the db, if it is not already a user, save basic info into db
                 //Here we have access to the public profile and the email
@@ -139,15 +142,14 @@ public class LoginActivity extends AppCompatActivity {
                             @Override
                             public void onCompleted(JSONObject me, GraphResponse response) {
                                 if (response.getError() != null) {
-                                    // handle error
-                                    print("ERROR " + response.getError().toString());
+                                    Log.e(TAG, "Error during the graph request");
                                 } else {
-                                    print(me.toString());
+                                    //TODO: get the data and pass them to db
                                 }
                             }
                         });
                 Bundle parameters = new Bundle();
-                parameters.putString("fields", "id,name,email,gender,birthday");
+                parameters.putString(FIELDS, NEEDED_FB_INFO);
                 request.setParameters(parameters);
                 request.executeAsync();
                 startMain();
@@ -155,12 +157,11 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onCancel() {
-                System.out.println("Cancelled!!");
             }
 
             @Override
             public void onError(FacebookException exception) {
-                System.out.println("Error!!");
+                Log.i(TAG, "Error during the Facebook Login");
             }
         });
     }
@@ -175,7 +176,7 @@ public class LoginActivity extends AppCompatActivity {
                 .enableAutoManage(this, new GoogleApiClient.OnConnectionFailedListener() {
                     @Override
                     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-                        print("ERROR");
+                        Log.i(TAG, "Error during the Google Login");
                     }
                 })
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
@@ -187,26 +188,22 @@ public class LoginActivity extends AppCompatActivity {
             //start the authentication intent
             public void onClick(View v) {
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-                print("Starting activity");
                 startActivityForResult(signInIntent, RC_SIGN_IN);
-                print("Returning from the onClick");
             }
         });
     }
 
     //maybe it could be integrated to onActivityResult
     private void handleSignInResult(GoogleSignInResult result) {
-        print(result.getStatus().toString());
         if (result.isSuccess()) {
             // Signed in successfully, show authenticated UI.
             GoogleSignInAccount acct = result.getSignInAccount();
-            System.out.println("YESSS");
+            Log.i(TAG, "Logged with Google");
             setLogged(Config.GOOGLE_LOGGED);
             startMain();
             //TODO: connection with the db, if it is not already a user, save basic info into db
         } else {
-            // Signed out, show unauthenticated UI.
-            System.out.println("Not authenticated");
+            Toast.makeText(this, R.string.auth_error, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -224,11 +221,5 @@ public class LoginActivity extends AppCompatActivity {
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
     }
-
-
-    private void print(String s){
-        System.out.println(s);
-    }
-
 
 }

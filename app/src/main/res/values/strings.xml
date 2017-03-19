@@ -3,7 +3,8 @@
     <string name="facebook_app_id">1895338284044111</string>
     <string name="logout">Logout</string>
     <string name="fb_login_protocol_scheme">fb1895338284044111</string>
-    <string name="logout_text">Operation complete! If you want to sign in again, go to settings --> login</string>
     <string name="no_login_text"><u>NO, THANKS</u></string>
     <string name="continue_mex">CONTINUE</string>
+    <string name="dialog_profile_info_title">Registration</string>
+    <string name="auth_error">Authentication Error! Please try again verifying your credentials</string>
 </resources>
