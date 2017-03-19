@@ -49,15 +49,15 @@ public class LoginActivity extends AppCompatActivity {
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
-    private AlertDialog.Builder builder;
-    private AlertDialog dialog;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).getString(Config.LOG_PREF_INFO,null);
+        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
+                .getString(Config.LOG_PREF_INFO,null);
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();
@@ -75,9 +75,11 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     public void onStart(){
         super.onStart();
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).getString(Config.LOG_PREF_INFO,null);
+        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
+                .getString(Config.LOG_PREF_INFO,null);
         if(logged == null){
-            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi.silentSignIn(mGoogleApiClient);
+            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
+                    .silentSignIn(mGoogleApiClient);
             if (opr.isDone()) {
                 GoogleSignInResult result = opr.get();
                 handleSignInResult(result);
@@ -142,9 +144,9 @@ public class LoginActivity extends AppCompatActivity {
                             @Override
                             public void onCompleted(JSONObject me, GraphResponse response) {
                                 if (response.getError() != null) {
+                                    // handle error
                                     Log.e(TAG, "Error during the graph request");
                                 } else {
-                                    //TODO: get the data and pass them to db
                                 }
                             }
                         });
@@ -181,7 +183,6 @@ public class LoginActivity extends AppCompatActivity {
                 })
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
-
         SignInButton signInButton = (SignInButton) findViewById(R.id.sign_in_button);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -197,6 +198,7 @@ public class LoginActivity extends AppCompatActivity {
     private void handleSignInResult(GoogleSignInResult result) {
         if (result.isSuccess()) {
             // Signed in successfully, show authenticated UI.
+            ApplicationClass.setGoogleApiClient(mGoogleApiClient);
             GoogleSignInAccount acct = result.getSignInAccount();
             Log.i(TAG, "Logged with Google");
             setLogged(Config.GOOGLE_LOGGED);

@@ -7,4 +7,7 @@
     <string name="continue_mex">CONTINUE</string>
     <string name="dialog_profile_info_title">Registration</string>
     <string name="auth_error">Authentication Error! Please try again verifying your credentials</string>
+    <string name="logout_message">Do you really want to log out?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>
