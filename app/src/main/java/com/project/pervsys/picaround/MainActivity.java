@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
             BasicInfoDialog dialog = new BasicInfoDialog();
             dialog.show(getFragmentManager(),"");
         }
-        mGoogleApiClient = ApplicationClass.getGoogleApiClient();
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
         TextView t = (TextView) findViewById(R.id.textView);
@@ -49,12 +48,14 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void prepareLogOut(){
-        mGoogleApiClient.connect();
+        mGoogleApiClient = ApplicationClass.getGoogleApiClient();
+        if (mGoogleApiClient != null)
+            mGoogleApiClient.connect();
         AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this)
                 .setTitle(R.string.logout)
                 .setMessage(R.string.logout_message)
                 .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which){
+                    public void onClick(DialogInterface dialog, int which) {
                         logOut();
                     }
                 }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -63,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
         dialog.show();
-
     }
 
     private void logOut(){
@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i(TAG, "Logout from Google");
                                 getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
                                         .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                                ApplicationClass.setGoogleApiClient(null);
                                 startLogin();
                             } else
                                 Log.e(TAG, "Error during the Google logout");
@@ -105,5 +106,6 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
                 putString(Config.LOG_PREF_INFO, null).apply();
+        ApplicationClass.setGoogleApiClient(null);
     }
 }
