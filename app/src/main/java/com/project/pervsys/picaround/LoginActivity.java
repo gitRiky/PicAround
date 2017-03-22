@@ -44,7 +44,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.project.pervsys.picaround.utility.Config;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
