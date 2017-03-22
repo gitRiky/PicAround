@@ -140,52 +140,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 
-    private void credentialGoogle(GoogleSignInAccount acct) {
-        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        firebaseAuth(credential);
-    }
-
-
-    private void credentialFacebook(AccessToken token) {
-        Log.d(TAG, "handleFacebookAccessToken:" + token);
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        firebaseAuth(credential);
-    }
-
-
-    private void firebaseAuth(AuthCredential credential){
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        Log.i(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
-
-                        // If sign in fails, display a message to the user. If sign in succeeds
-                        // the auth state listener will be notified and logic to handle the
-                        // signed in user can be handled in the listener.
-                        if (!task.isSuccessful()) {
-                            Log.w(TAG, "signInWithCredential", task.getException());
-                            Toast.makeText(LoginActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                        // ...
-                    }
-                });
-    }
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            handleSignInResult(result);
-        }
-        else
-            callbackManager.onActivityResult(requestCode, resultCode, data);
-    }
-
 
     private void setUpFbLogin(){
 
@@ -243,6 +197,8 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+
+
     private void setUpGoogleLogin(){
 
         //require the access to the email and the basic profile info
@@ -270,6 +226,19 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
+        }
+        else
+            callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+
     //maybe it could be integrated to onActivityResult
     private void handleSignInResult(GoogleSignInResult result) {
         if (result.isSuccess()) {
@@ -284,6 +253,39 @@ public class LoginActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, R.string.auth_error, Toast.LENGTH_LONG).show();
         }
+    }
+
+
+    private void credentialGoogle(GoogleSignInAccount acct) {
+        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        firebaseAuthentication(credential);
+    }
+
+
+    private void credentialFacebook(AccessToken token) {
+        Log.d(TAG, "handleFacebookAccessToken:" + token);
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        firebaseAuthentication(credential);
+    }
+
+
+    private void firebaseAuthentication(AuthCredential credential){
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        Log.i(TAG, "signInWithCredential:onComplete");
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "signInWithCredential", task.getException());
+                            Toast.makeText(LoginActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
 
