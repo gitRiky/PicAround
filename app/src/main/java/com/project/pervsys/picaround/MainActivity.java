@@ -20,6 +20,7 @@ import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.firebase.auth.FirebaseAuth;
 import com.project.pervsys.picaround.utility.Config;
 
 import static android.webkit.ConsoleMessage.MessageLevel.LOG;
@@ -134,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
         if (Profile.getCurrentProfile() != null){
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
+            FirebaseAuth.getInstance().signOut();
             getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
                     .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
             startLogin();
@@ -151,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
                                     getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
                                             .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
                                     ApplicationClass.setGoogleApiClient(null);
+                                    FirebaseAuth.getInstance().signOut();
                                     startLogin();
                                 } else
                                     Log.e(TAG, "Error during the Google logout");

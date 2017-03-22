@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -38,6 +39,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -51,7 +53,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final int RC_SIGN_IN = 1;
     private static final String EMAIL = "email";
     private static final String FIELDS = "fields";
-    private static final String NEEDED_FB_INFO = "name,email";
+    private static final String NEEDED_FB_INFO = "id,name,email";
     private static final String TAG = "LoginActivity";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
@@ -94,6 +96,7 @@ public class LoginActivity extends AppCompatActivity {
         else {
             setLogged(Config.FB_LOGGED);
             Log.i(TAG, "Logged with Facebook");
+            credentialFacebook(AccessToken.getCurrentAccessToken());
             startMain();
         }
     }
@@ -137,15 +140,26 @@ public class LoginActivity extends AppCompatActivity {
     }
 
 
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+    private void credentialGoogle(GoogleSignInAccount acct) {
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        firebaseAuth(credential);
+    }
+
+
+    private void credentialFacebook(AccessToken token) {
+        Log.d(TAG, "handleFacebookAccessToken:" + token);
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        firebaseAuth(credential);
+    }
+
+
+    private void firebaseAuth(AuthCredential credential){
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
+                        Log.i(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
 
                         // If sign in fails, display a message to the user. If sign in succeeds
                         // the auth state listener will be notified and logic to handle the
@@ -159,6 +173,7 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -194,6 +209,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 Log.i(TAG, "Logged with Facebook");
                 setLogged(Config.FB_LOGGED);
+                credentialFacebook(loginResult.getAccessToken());
                 //TODO: connection with the db, if it is not already a user, save basic info into db
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
@@ -222,6 +238,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onError(FacebookException exception) {
                 Log.i(TAG, "Error during the Facebook Login");
+                Log.e(TAG, "exception " + exception.toString());
             }
         });
     }
@@ -259,7 +276,7 @@ public class LoginActivity extends AppCompatActivity {
             // Signed in successfully, show authenticated UI.
             ApplicationClass.setGoogleApiClient(mGoogleApiClient);
             GoogleSignInAccount acct = result.getSignInAccount();
-            firebaseAuthWithGoogle(acct);
+            credentialGoogle(acct);
             Log.i(TAG, "Logged with Google");
             setLogged(Config.GOOGLE_LOGGED);
             startMain();
