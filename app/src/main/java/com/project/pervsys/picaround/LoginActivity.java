@@ -96,6 +96,10 @@ public class LoginActivity extends AppCompatActivity {
             setLogged(Config.FB_LOGGED);
             Log.i(TAG, "Logged with Facebook");
             credentialFacebook(AccessToken.getCurrentAccessToken());
+            if (mAuth.getCurrentUser() != null)
+                Log.d(TAG, "Correctly logged with facebook, email = " + mAuth.getCurrentUser().getEmail());
+            else
+                Log.d(TAG, "Not logged with firebase");
             startMain();
         }
     }
@@ -163,6 +167,10 @@ public class LoginActivity extends AppCompatActivity {
                 Log.i(TAG, "Logged with Facebook");
                 setLogged(Config.FB_LOGGED);
                 credentialFacebook(loginResult.getAccessToken());
+                if (FirebaseAuth.getInstance().getCurrentUser() != null)
+                    Log.d(TAG, "Correctly logged with facebook, email = " + mAuth.getCurrentUser().getEmail());
+                else
+                    Log.d(TAG, "Not logged with firebase");
                 //TODO: connection with the db, if it is not already a user, save basic info into db
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
@@ -247,6 +255,10 @@ public class LoginActivity extends AppCompatActivity {
             credentialGoogle(acct);
             Log.i(TAG, "Logged with Google");
             setLogged(Config.GOOGLE_LOGGED);
+            if (mAuth.getCurrentUser() != null)
+                Log.d(TAG, "Correctly logged with google, email = " + mAuth.getCurrentUser().getEmail());
+            else
+                Log.d(TAG, "Not logged with firebase");
             startMain();
             //TODO: connection with the db, if it is not already a user, save basic info into db
         } else {

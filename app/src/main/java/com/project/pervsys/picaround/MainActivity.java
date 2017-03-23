@@ -44,6 +44,10 @@ public class MainActivity extends AppCompatActivity {
             BasicInfoDialog dialog = new BasicInfoDialog();
             dialog.show(getFragmentManager(),"");
         }
+        if (FirebaseAuth.getInstance().getCurrentUser() != null)
+            Log.d(TAG, "Correctly logged with email = " + FirebaseAuth.getInstance().getCurrentUser().getEmail());
+        else
+            Log.d(TAG, "Not logged with firebase");
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
         TextView t = (TextView) findViewById(R.id.textView);
@@ -72,6 +76,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+            case R.id.profile:
+                Log.i(TAG, "Profile has been selected");
+                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
+                //Profile activity
+                return true;
             case R.id.settings:
                 Log.i(TAG, "Settings has been selected");
                 Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();

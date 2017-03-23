@@ -17,5 +17,5 @@
         android:id="@+id/profile"
         android:title="@string/profile"
         app:showAsAction="always"
-        android:icon="@drawable/com_facebook_tooltip_black_background"/>  <!-- TODO: change the icon -->
+        android:icon="@drawable/profile_icon"/>
 </menu>
