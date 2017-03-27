@@ -66,14 +66,13 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
-                .getString(Config.LOG_PREF_INFO,null);
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();
             /* GOOGLE LOGIN */
             setUpGoogleLogin();
         }
+        //else we are logged with Facebook
         else {
             setLogged(Config.FB_LOGGED);
             Log.i(TAG, "Logged with Facebook");
@@ -101,6 +100,7 @@ public class LoginActivity extends AppCompatActivity {
     public void onStart(){
         super.onStart();
 
+        //silent Google sign-in
         mAuth.addAuthStateListener(mAuthListener);
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
                 .getString(Config.LOG_PREF_INFO,null);
@@ -112,7 +112,8 @@ public class LoginActivity extends AppCompatActivity {
                 handleSignInResult(result);
             }
         }
-        else if (logged == Config.FB_LOGGED){
+        // get access token for facebook if we are already logged with
+        else if (logged.equals(Config.FB_LOGGED)){
             handleFacebookAccessToken(AccessToken.getCurrentAccessToken());
         }
     }
@@ -170,23 +171,25 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        //Google Sign-in
         if (requestCode == RC_SIGN_IN) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             handleSignInResult(result);
         }
+        //Link between accounts with the same email
         else if (requestCode == RC_LINK) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             handleLinkResult(result);
         }
+        //Facebook
         else
             callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
-    //maybe it could be integrated to onActivityResult
+    //Handle the result of Sign-in with Google
     private void handleSignInResult(GoogleSignInResult result) {
 
         if (result.isSuccess()) {
-            // Signed in successfully, show authenticated UI.
             ApplicationClass.setGoogleApiClient(mGoogleApiClient);
             GoogleSignInAccount acct = result.getSignInAccount();
             firebaseAuthWithGoogle(acct);
@@ -255,6 +258,7 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    //Use the Facebook access token for obtaining credential for Firebase authentication
     private void handleFacebookAccessToken(AccessToken token) {
         Log.d(TAG, "handleFacebookAccessToken:" + token);
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
@@ -265,10 +269,8 @@ public class LoginActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
 
-                        // If sign in fails, display a message to the user. If sign in succeeds
-                        // the auth state listener will be notified and logic to handle the
-                        // signed in user can be handled in the listener.
                         if (!task.isSuccessful()) {
+                            //if the email is already registered with Google, ask for the linking
                             if (task.getException().getClass() == FirebaseAuthUserCollisionException.class) {
                                 AlertDialog.Builder dialog = new AlertDialog.Builder(LoginActivity.this)
                                         .setTitle(R.string.registered_email)
@@ -297,12 +299,17 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+
     private void linkGoogleWithFacebook(){
         Log.i(TAG, "Linking Google and Facebook accounts");
         Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
         startActivityForResult(signInIntent, RC_LINK);
     }
 
+
+    //After another log with google, check if the email is the same as the facebook one
+    //if yes, make the linking
+    //otherwise, error on the used account (emails are different)
     private void handleLinkResult(GoogleSignInResult result) {
         if (result.isSuccess()) {
             ApplicationClass.setGoogleApiClient(mGoogleApiClient);
@@ -338,6 +345,8 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+
+    //authenticate the google account with firebase
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
 
@@ -383,6 +392,8 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+
+    //manage the link
     private void link(){
         mAuth.getCurrentUser().linkWithCredential(facebookCredentialToLink)
                 .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
