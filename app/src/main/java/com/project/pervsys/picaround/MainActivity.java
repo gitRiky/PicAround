@@ -3,6 +3,7 @@ package com.project.pervsys.picaround;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,6 +22,12 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.utility.Config;
 
 import static android.webkit.ConsoleMessage.MessageLevel.LOG;
@@ -28,9 +35,13 @@ import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 public class MainActivity extends AppCompatActivity {
 
     //this boolean will be removed, info passed by putExtra intent
-    private final static boolean firstTime = true;
+    private final static boolean firstTime = false;
     private final static String TAG = "MainActivity";
     private GoogleApiClient mGoogleApiClient;
+    private FirebaseAuth mAuth;
+    private FirebaseAuth.AuthStateListener mAuthListener;
+    DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,22 +50,39 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
+
         if (firstTime){
             Log.i(TAG, "First use of the application for the user");
             BasicInfoDialog dialog = new BasicInfoDialog();
             dialog.show(getFragmentManager(),"");
         }
-        if (FirebaseAuth.getInstance().getCurrentUser() != null)
-            Log.d(TAG, "Correctly logged with email = " + FirebaseAuth.getInstance().getCurrentUser().getEmail());
-        else
-            Log.d(TAG, "Not logged with firebase");
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
+
+        final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
-        TextView t = (TextView) findViewById(R.id.textView);
-        t.setText(logged);
+        final TextView t = (TextView) findViewById(R.id.textView);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            Log.i(TAG, "Logged with Firebase, UID: " + user.getUid());
+        }
+        else {
+            Log.i(TAG, "Not logged with Firebase");
+        }
 
+        mAuth = FirebaseAuth.getInstance();
+        mAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    // User is signed in
+                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                } else {
+                    // User is signed out
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+            }
+        };
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
@@ -65,22 +93,16 @@ public class MainActivity extends AppCompatActivity {
         //if the user is not logged, then add login to the menu
         if(logged != null && !logged.equals(Config.NOT_LOGGED))
             menu.add(R.string.logout);
-        //if the user is logged, then add logout to the menu
+            //if the user is logged, then add logout to the menu
         else
             menu.add(R.string.login);
         return super.onCreateOptionsMenu(menu);
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.profile:
-                Log.i(TAG, "Profile has been selected");
-                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
-                //Profile activity
-                return true;
             case R.id.settings:
                 Log.i(TAG, "Settings has been selected");
                 Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();
@@ -101,6 +123,11 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
                 //Info activity
                 return true;
+            case R.id.profile:
+                Log.i(TAG, "Profile has been selected");
+                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
+                //Profile activity
+                return true;
             default:
                 String title = (String) item.getTitle();
                 if (title.equals(getResources().getString(R.string.login))) {
@@ -118,8 +145,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
-
-
 
     private void prepareLogOut(){
         mGoogleApiClient = ApplicationClass.getGoogleApiClient();
@@ -141,16 +166,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logOut(){
+        FirebaseAuth.getInstance().signOut();
+        // logout Facebook
         if (Profile.getCurrentProfile() != null){
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
-            FirebaseAuth.getInstance().signOut();
             getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
                     .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
-            startLogin();
         }
         String logged = getSharedPreferences(Config.LOG_PREFERENCES,MODE_PRIVATE)
                 .getString(Config.LOG_PREF_INFO,null);
+        //logout Google
         if (logged != null){
             if (logged.equals(Config.GOOGLE_LOGGED)) {
                 Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
@@ -162,7 +188,6 @@ public class MainActivity extends AppCompatActivity {
                                     getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
                                             .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
                                     ApplicationClass.setGoogleApiClient(null);
-                                    FirebaseAuth.getInstance().signOut();
                                     startLogin();
                                 } else
                                     Log.e(TAG, "Error during the Google logout");
@@ -170,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
                         });
             }
         }
+        startLogin();
     }
-
 
     private void startLogin(){
         Intent i = new Intent(this, LoginActivity.class);
@@ -182,8 +207,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy(){
         super.onDestroy();
+        FirebaseAuth.getInstance().signOut();
         getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
                 putString(Config.LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mAuth.addAuthStateListener(mAuthListener);
+    }
+
+    protected void onStop() {
+        super.onStop();
+        if (mAuthListener != null) {
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
+    }
+
 }

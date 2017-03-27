@@ -16,4 +16,8 @@
     <string name="help">Help</string>
     <string name="info">Info</string>
     <string name="profile">Profile</string>
+    <string name="registered_email">Email already registered</string>
+    <string name="link_account_message">Do you want to link this account to the already registered one?</string>
+    <string name="auth_error_link">Authentication failed. Please select the correct Google account</string>
+    <string name="auth_ok_link">Accounts have been linked</string>
 </resources>
