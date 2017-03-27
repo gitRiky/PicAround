@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "687030280886",
+    "firebase_url": "https://picaround-34ab3.firebaseio.com",
+    "project_id": "picaround-34ab3",
+    "storage_bucket": "picaround-34ab3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687030280886:android:e8c871491428f589",
+        "android_client_info": {
+          "package_name": "com.project.pervsys.picaround"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "687030280886-oqap4m5qm44kcgosqhu4rbsc9jeg496q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.project.pervsys.picaround",
+            "certificate_hash": "632324aa1cd4c3212700fc869b004bbfb10e7f6f"
+          }
+        },
+        {
+          "client_id": "687030280886-0cs103jt2f69ecvjl0fn7kuu6lh9q3h1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.project.pervsys.picaround",
+            "certificate_hash": "f4e98d24b59677db37ba32500291da764b81c4aa"
+          }
+        },
+        {
+          "client_id": "687030280886-hntb2uj454mgjptvsvjbtflbir73u7h4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFJXIlxmyRbXegkLZFaLrbG4LfYpLI7xM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "687030280886-hntb2uj454mgjptvsvjbtflbir73u7h4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
