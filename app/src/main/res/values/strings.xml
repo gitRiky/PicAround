@@ -4,4 +4,5 @@
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
          AIzaSyDlw4SqqMWqXS5kOjqhy1i351H2BnxW4tg
     </string>
+    <string name="album_name">PicAround</string>
 </resources>

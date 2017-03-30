@@ -20,18 +20,26 @@
             tools:context="com.project.pervsys.picaround.MapsActivity" />
 
         <android.support.design.widget.FloatingActionButton
-            android:id="@+id/floatingActionButton2"
-            android:layout_width="75dp"
-            android:layout_height="75dp"
-            android:layout_gravity="top|left"
+            android:id="@+id/floatingActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:clickable="true"
-            map:backgroundTint="@android:color/holo_orange_dark"
-            map:elevation="10dp"
-            map:fabSize="mini"
-            map:layout_anchor="@+id/map"
-            map:layout_anchorGravity="bottom|right"
+            map:backgroundTint="@android:color/holo_green_light"
+            map:elevation="15dp"
+            map:fabSize="normal"
+            map:layout_anchor="@id/map"
+            map:layout_anchorGravity="bottom|left"
             map:srcCompat="@android:drawable/ic_menu_camera"
             map:useCompatPadding="true" />
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="106dp"
+            android:layout_height="86dp"
+            android:layout_gravity="bottom|right"
+            android:visibility="visible"
+            map:layout_anchor="@+id/map"
+            map:layout_anchorGravity="top|left" />
 
     </android.support.design.widget.CoordinatorLayout>
 
