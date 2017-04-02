@@ -5,7 +5,7 @@
     <string name="login">Login</string>
     <string name="fb_login_protocol_scheme">fb1895338284044111</string>
     <string name="no_login_text"><u>NO, THANKS</u></string>
-    <string name="continue_mex">CONTINUE</string>
+    <string name="continue_mex">Continue</string>
     <string name="dialog_profile_info_title">Registration</string>
     <string name="auth_error">Authentication Error! Please try again verifying your credentials</string>
     <string name="logout_message">Do you really want to log out?</string>
@@ -20,4 +20,7 @@
     <string name="link_account_message">Do you want to link this account to the already registered one?</string>
     <string name="auth_error_link">Authentication failed. Please select the correct Google account</string>
     <string name="auth_ok_link">Accounts have been linked</string>
+    <string name="username">Username</string>
+    <string name="age">Age</string>
+    <string name="basic_info_text">Welcome to the PicAround world! \nPlease pick the username and type your age</string>
 </resources>

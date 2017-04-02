@@ -19,7 +19,7 @@
         app:layout_constraintVertical_bias="0.075" />
 
     <EditText
-        android:id="@+id/editText"
+        android:id="@+id/dialog_age"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
@@ -30,7 +30,7 @@
         app:layout_constraintRight_toRightOf="parent" />
 
     <EditText
-        android:id="@+id/editText2"
+        android:id="@+id/dialog_username"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"

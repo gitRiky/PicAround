@@ -35,8 +35,11 @@ import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 public class MainActivity extends AppCompatActivity {
 
     //this boolean will be removed, info passed by putExtra intent
-    private final static boolean firstTime = false;
+    private boolean firstTime;
+    private final static String EMAIL = "email";
+    private final static String USERS = "users";
     private final static String TAG = "MainActivity";
+    private final static int RC_REGISTRATION = 3;
     private GoogleApiClient mGoogleApiClient;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -51,12 +54,6 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
 
-        if (firstTime){
-            Log.i(TAG, "First use of the application for the user");
-            BasicInfoDialog dialog = new BasicInfoDialog();
-            dialog.show(getFragmentManager(),"");
-        }
-
         final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
         final TextView t = (TextView) findViewById(R.id.textView);
@@ -67,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
         else {
             Log.i(TAG, "Not logged with Firebase");
         }
-
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -82,6 +78,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+        if (!getIntent().getBooleanExtra("alreadyRegistered", true)){
+            Log.i(TAG, "First use of the application for the user");
+            /*BasicInfoDialog dialog = new BasicInfoDialog();
+            dialog.show(getFragmentManager(),"");*/
+            Intent intent = new Intent(this, GetBasicInfoActivity.class);
+            startActivityForResult(intent, RC_REGISTRATION);
+        }
     }
 
     @Override
@@ -219,10 +222,22 @@ public class MainActivity extends AppCompatActivity {
         mAuth.addAuthStateListener(mAuthListener);
     }
 
+
+    @Override
     protected void onStop() {
         super.onStop();
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Check which request we're responding to
+        Log.e(TAG, "Result obtained");
+        if (requestCode == RC_REGISTRATION) {
+            //do nothing
+            Log.i(TAG, "returned from registration");
         }
     }
 

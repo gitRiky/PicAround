@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround;
 
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -40,6 +41,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.utility.Config;
 
 import org.json.JSONException;
@@ -60,6 +66,8 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private AuthCredential facebookCredentialToLink;
     private String facebookEmail;
+    private boolean alreadyRegistered;
+    private ProgressDialog progress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +84,10 @@ public class LoginActivity extends AppCompatActivity {
         else {
             setLogged(Config.FB_LOGGED);
             Log.i(TAG, "Logged with Facebook");
-            startMain();
+            Intent i = new Intent(getApplicationContext(), MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+            i.putExtra("alreadyRegistered", true);
+            startActivity(i);
         }
 
         mAuth = FirebaseAuth.getInstance();
@@ -135,7 +146,10 @@ public class LoginActivity extends AppCompatActivity {
             case R.id.no_login:
                 setLogged(Config.NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
-                startMain();
+                Intent i = new Intent(getApplicationContext(), MainActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+
         }
     }
 
@@ -435,10 +449,43 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void startMain(){
-        Intent i = new Intent(getApplicationContext(), MainActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(i);
+        progress = new ProgressDialog(this);
+        progress.setMessage("Loading");
+        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progress.setIndeterminate(true);
+        checkUserRegistration();
     }
 
 
+    private void checkUserRegistration() {
+        // check if email is already registered
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child("users").orderByChild("email").equalTo("distefanor3@gmail.com")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Intent i = new Intent(getApplicationContext(), MainActivity.class);
+                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        if (dataSnapshot.exists()) {
+                            // email already registered
+                            Log.i(TAG, "User registered");
+                            alreadyRegistered = true;
+                        } else {
+                            // email not registered
+                            Log.i(TAG, "User not registered");
+                            alreadyRegistered = false;
+                        }
+                        i.putExtra("alreadyRegistered", alreadyRegistered);
+                        progress.dismiss();
+                        startActivity(i);
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+        progress.show();
+    }
 }
