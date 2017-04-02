@@ -59,6 +59,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String FIELDS = "fields";
     private static final String NEEDED_FB_INFO = "name,email";
     private static final String TAG = "LoginActivity";
+    private static final String USERS = "users";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
@@ -204,6 +205,7 @@ public class LoginActivity extends AppCompatActivity {
     private void handleSignInResult(GoogleSignInResult result) {
 
         if (result.isSuccess()) {
+            ApplicationClass.setGoogleSignInResult(result);
             ApplicationClass.setGoogleApiClient(mGoogleApiClient);
             GoogleSignInAccount acct = result.getSignInAccount();
             firebaseAuthWithGoogle(acct);
@@ -450,7 +452,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void startMain(){
         progress = new ProgressDialog(this);
-        progress.setMessage("Loading");
+        progress.setMessage(getString(R.string.loading));
         progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progress.setIndeterminate(true);
         checkUserRegistration();
@@ -460,7 +462,8 @@ public class LoginActivity extends AppCompatActivity {
     private void checkUserRegistration() {
         // check if email is already registered
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child("users").orderByChild("email").equalTo("distefanor3@gmail.com")
+        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -475,7 +478,7 @@ public class LoginActivity extends AppCompatActivity {
                             Log.i(TAG, "User not registered");
                             alreadyRegistered = false;
                         }
-                        i.putExtra("alreadyRegistered", alreadyRegistered);
+                        i.putExtra(Config.REGISTERED, alreadyRegistered);
                         progress.dismiss();
                         startActivity(i);
                     }

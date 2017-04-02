@@ -100,4 +100,9 @@ public class User {
         result = 31 * result + (profile_picture != null ? profile_picture.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString(){
+        return name + ", " + surname + ", " + email + "\n" + username + ", " + age;
+    }
 }

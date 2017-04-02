@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private final static String EMAIL = "email";
     private final static String USERS = "users";
     private final static String TAG = "MainActivity";
-    private final static int RC_REGISTRATION = 3;
     private GoogleApiClient mGoogleApiClient;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -78,12 +77,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        if (!getIntent().getBooleanExtra("alreadyRegistered", true)){
+        if (!getIntent().getBooleanExtra(Config.REGISTERED, true)){
             Log.i(TAG, "First use of the application for the user");
             /*BasicInfoDialog dialog = new BasicInfoDialog();
             dialog.show(getFragmentManager(),"");*/
             Intent intent = new Intent(this, GetBasicInfoActivity.class);
-            startActivityForResult(intent, RC_REGISTRATION);
+            startActivityForResult(intent, Config.RC_REGISTRATION);
         }
     }
 
@@ -214,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
         getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
                 putString(Config.LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
+        ApplicationClass.setGoogleSignInResult(null);
     }
 
     @Override
@@ -234,8 +234,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Check which request we're responding to
-        Log.e(TAG, "Result obtained");
-        if (requestCode == RC_REGISTRATION) {
+        if (requestCode == Config.RC_REGISTRATION) {
             //do nothing
             Log.i(TAG, "returned from registration");
         }

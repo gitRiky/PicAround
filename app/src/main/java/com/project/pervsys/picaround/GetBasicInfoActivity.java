@@ -9,6 +9,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.facebook.Profile;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -16,6 +21,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.domain.User;
+import com.project.pervsys.picaround.utility.Config;
 
 public class GetBasicInfoActivity extends AppCompatActivity {
     private static final int MIN_AGE = 6;
@@ -23,6 +30,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     private final static String TAG = "GetBasicInfoActivity";
     private final static String USERS = "users";
     private final static String USERNAME = "username";
+    private User newUser;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
 
@@ -38,7 +46,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         else {
             Log.i(TAG, "Not logged with Firebase");
         }
-
+        newUser = new User();
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -53,6 +61,26 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                 }
             }
         };
+        final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
+                .getString(Config.LOG_PREF_INFO, null);
+        if(logged != null){
+            //set up user
+            newUser.setEmail(user.getEmail());
+            if (logged.equals(Config.FB_LOGGED)){
+                //get information from facebook
+                Profile fbProfile = Profile.getCurrentProfile();
+                newUser.setName(fbProfile.getFirstName());
+                newUser.setSurname(fbProfile.getLastName());
+                newUser.setProfile_picture(fbProfile.getProfilePictureUri(10,10).toString());
+            }
+            else{
+                //get information from google
+                GoogleSignInAccount googProfile = ApplicationClass.getGoogleSignInResult().getSignInAccount();
+                newUser.setName(googProfile.getGivenName());
+                newUser.setSurname(googProfile.getFamilyName());
+                newUser.setProfile_picture(googProfile.getPhotoUrl().toString());
+            }
+        }
     }
 
     @Override
@@ -63,11 +91,11 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         }
     }
 
-    /*@Override
+    @Override
     public void onBackPressed(){
-        Toast.makeText(this, "You have to complete the registration!", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.registration_needed, Toast.LENGTH_SHORT).show();
     }
-*/
+
 
     public void onClick(View w){
         EditText ageField = (EditText) findViewById(R.id.age);
@@ -75,6 +103,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         EditText usernameField = (EditText) findViewById(R.id.username);
         String username = usernameField.getText().toString();
         if (checkAge(age)){
+            newUser.setAge(Integer.parseInt(age));
             if (!checkUsername(username)) {
                 usernameField.setHint(R.string.username);
                 usernameField.setText("");
@@ -88,25 +117,24 @@ public class GetBasicInfoActivity extends AppCompatActivity {
 
     private boolean checkAge(String age){
         if (age.equals("")) {
-            Toast.makeText(this, "Age is missing", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.age_missing, Toast.LENGTH_SHORT).show();
             return false;
         }
         int a = Integer.parseInt(age);
         if (a < MIN_AGE || a > MAX_AGE){
-            Toast.makeText(this, "Age not in range. Please put your real age", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.age_not_in_range, Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
     }
 
-    private boolean checkUsername(String username){
+    private boolean checkUsername(final String username){
         if (username.equals("")){
-            Toast.makeText(this, "Username is missing", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.username_missing, Toast.LENGTH_SHORT).show();
             return false;
         }
         if (username.contains(" ")){
-            Toast.makeText(this, "Username cannot contain spaces",Toast.LENGTH_SHORT).show();
-
+            Toast.makeText(this, R.string.username_with_spaces,Toast.LENGTH_SHORT).show();
             return false;
         }
         //query to database
@@ -115,17 +143,24 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Log.e(TAG, "I'M IN DATA CHANGE");
                         if (dataSnapshot.exists()) {
-                            // email already registered
+                            // username already used
                             Toast.makeText(getApplicationContext(),
-                                    "Sorry, this username is not available",
+                                    R.string.username_unavailable,
                                     Toast.LENGTH_SHORT).show();
+                            Log.i(TAG, "Username unavailable");
                         } else {
-                            Toast.makeText(getApplicationContext(), "Registration successful",
+                            //username not used
+                            newUser.setUsername(username);
+                            // put the user into the database
+                            DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+                            databaseRef.child(USERS).push().setValue(newUser);
+                            Toast.makeText(getApplicationContext(), R.string.registration_ok,
                                     Toast.LENGTH_SHORT).show();
+                            Log.i(TAG, "User registered, data sent to database");
                             Intent i = getIntent();
                             setResult(RESULT_OK,i);
+                            Log.e(TAG, newUser.toString());
                             finish();
                         }
                     }

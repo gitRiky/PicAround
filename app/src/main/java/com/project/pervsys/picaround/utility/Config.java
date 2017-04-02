@@ -7,4 +7,6 @@ public class Config {
     public static final String NOT_LOGGED = "noLog";
     public static final String LOG_PREFERENCES = "Logging";
     public static final String LOG_PREF_INFO = "Logged";
+    public static final int RC_REGISTRATION = 3;
+    public static final String REGISTERED = "alreadyRegistered";
 }
