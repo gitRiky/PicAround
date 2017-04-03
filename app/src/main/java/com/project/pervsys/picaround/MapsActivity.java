@@ -49,6 +49,11 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.utility.Config;
 
 import org.json.JSONArray;
@@ -323,6 +328,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
     }
 
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        FirebaseAuth.getInstance().signOut();
+        getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
+                putString(Config.LOG_PREF_INFO, null).apply();
+        ApplicationClass.setGoogleApiClient(null);
+        ApplicationClass.setGoogleSignInResult(null);
+    }
+
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case REQUEST_TAKE_PHOTO: {
@@ -426,7 +441,34 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     private void populatePoints() {
+        // get all the points
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child("points")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        // each child is a single point
+                        for(DataSnapshot child : dataSnapshot.getChildren()){
+                            try {
+                                Map<String, String> point = (Map<String, String>) child.getValue();
+                                JSONObject jsonPoint = new JSONObject(point);
+                                String lat = jsonPoint.getString("lat");
+                                String lon = jsonPoint.getString("long");
+                                mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon))));
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
 
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
     }
 
     private void setupGPS() {
@@ -644,14 +686,4 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         startActivity(i);
     }
 
-
-    @Override
-    protected void onDestroy(){
-        super.onDestroy();
-        FirebaseAuth.getInstance().signOut();
-        getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
-                putString(Config.LOG_PREF_INFO, null).apply();
-        ApplicationClass.setGoogleApiClient(null);
-        ApplicationClass.setGoogleSignInResult(null);
-    }
 }
