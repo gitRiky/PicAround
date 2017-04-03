@@ -411,7 +411,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mPerth = mMap.addMarker(new MarkerOptions()
                 .position(PERTH)
                 .title("Perth")
-                .snippet("This is how we show the snippet!")
+                .snippet("This is how we show the snippet")
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher)));
         mPerth.setTag(0);
 
