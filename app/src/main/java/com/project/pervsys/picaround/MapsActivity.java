@@ -35,11 +35,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class MapsActivity extends FragmentActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
 
@@ -55,14 +60,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
 
     private GoogleMap mMap;
     private Marker mPerth;
-
+    private JSONArray listOfPoints = null;
     private ImageView mImageView;
 
     private String mCurrentPhotoPath;
     private Bitmap mImageBitmap;
     private AlbumStorageDirFactory mAlbumStorageDirFactory = null;
 
-    private LocationManager locationManager;
+    private LocationManager locationManager = null;
     private String provider;
 
     private String getAlbumName() {
@@ -330,6 +335,8 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
     public void onMapReady(GoogleMap googleMap) {
 
         setupGPS();
+        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
+        populatePoints();
 
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
@@ -350,6 +357,10 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
 
         // Set InfoWindowAdapter
         mMap.setInfoWindowAdapter(this);
+    }
+
+    private void populatePoints() {
+
     }
 
     private void setupGPS() {
