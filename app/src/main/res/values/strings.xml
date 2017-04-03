@@ -1,8 +1,41 @@
 <resources>
     <string name="app_name">PicAround</string>
+    <string name="facebook_app_id">1895338284044111</string>
+    <string name="logout">Logout</string>
+    <string name="login">Login</string>
+    <string name="fb_login_protocol_scheme">fb1895338284044111</string>
+    <string name="no_login_text"><u>NO, THANKS</u></string>
+    <string name="continue_mex">Continue</string>
+    <string name="dialog_profile_info_title">Registration</string>
+    <string name="auth_error">Authentication Error! Please try again verifying your credentials</string>
+    <string name="logout_message">Do you really want to log out?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="settings">Settings</string>
+    <string name="contact">Contact us</string>
+    <string name="help">Help</string>
+    <string name="info">Info</string>
+    <string name="profile">Profile</string>
+    <string name="registered_email">Email already registered</string>
+    <string name="link_account_message">Do you want to link this account to the already registered one?</string>
+    <string name="auth_error_link">Authentication failed. Please select the correct Google account</string>
+    <string name="auth_ok_link">Accounts have been linked</string>
+    <string name="username">Username</string>
+    <string name="age">Age</string>
+    <string name="basic_info_text">Welcome to the PicAround world! \nPlease pick the username and type your age</string>
+    <string name="registration_needed">You have to complete the registration!</string>
+    <string name="age_missing">Age is missing</string>
+    <string name="age_not_in_range">Age not in range. Please put your real age</string>
+    <string name="username_missing">Username is missing</string>
+    <string name="username_unavailable">Sorry, this username is not available</string>
+    <string name="username_with_spaces">Username cannot contain spaces</string>
+    <string name="registration_ok">Registration successful!</string>
+    <string name="loading">Loading</string>
     <string name="title_activity_maps">Map</string>
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
          AIzaSyDlw4SqqMWqXS5kOjqhy1i351H2BnxW4tg
-    </string>
+    </string>  <!-- TODO: change API key -->
     <string name="album_name">PicAround</string>
+    <string name="exit">Exit</string>
+    <string name="registration_exit">Do you really want to exit from the registration?</string>
 </resources>

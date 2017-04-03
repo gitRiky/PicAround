@@ -1,46 +1,52 @@
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="match_parent"
-    android:layout_width="match_parent">
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
+    <include layout="@layout/toolbar"></include>
 
-    <android.support.design.widget.CoordinatorLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="false"
-        android:visibility="visible">
-
-        <fragment
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_height="match_parent">
+        <android.support.design.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:context="com.project.pervsys.picaround.MapsActivity" />
+            android:fitsSystemWindows="false"
+            android:visibility="visible">
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/floatingActionButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            map:backgroundTint="@android:color/holo_green_light"
-            map:elevation="15dp"
-            map:fabSize="normal"
-            map:layout_anchor="@id/map"
-            map:layout_anchorGravity="bottom|left"
-            map:srcCompat="@android:drawable/ic_menu_camera"
-            map:useCompatPadding="true" />
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:context="com.project.pervsys.picaround.MapsActivity" />
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="106dp"
-            android:layout_height="86dp"
-            android:layout_gravity="bottom|right"
-            android:visibility="visible"
-            map:layout_anchor="@+id/map"
-            map:layout_anchorGravity="top|left" />
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/floatingActionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                map:backgroundTint="@android:color/holo_green_light"
+                map:elevation="15dp"
+                map:fabSize="normal"
+                map:layout_anchor="@id/map"
+                map:layout_anchorGravity="bottom|left"
+                map:srcCompat="@android:drawable/ic_menu_camera"
+                map:useCompatPadding="true" />
 
-    </android.support.design.widget.CoordinatorLayout>
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="106dp"
+                android:layout_height="86dp"
+                android:layout_gravity="bottom|right"
+                android:visibility="visible"
+                map:layout_anchor="@+id/map"
+                map:layout_anchorGravity="top|left" />
 
-</RelativeLayout>
+        </android.support.design.widget.CoordinatorLayout>
+
+    </RelativeLayout>
+
+</LinearLayout>
