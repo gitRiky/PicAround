@@ -36,4 +36,6 @@
          AIzaSyDlw4SqqMWqXS5kOjqhy1i351H2BnxW4tg
     </string>  <!-- TODO: change API key -->
     <string name="album_name">PicAround</string>
+    <string name="exit">Exit</string>
+    <string name="registration_exit">Do you really want to exit from the registration?</string>
 </resources>

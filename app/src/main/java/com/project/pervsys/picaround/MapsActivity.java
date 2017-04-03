@@ -16,15 +16,28 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.Profile;
+import com.facebook.login.LoginManager;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
@@ -34,6 +47,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.project.pervsys.picaround.utility.Config;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,18 +62,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class MapsActivity extends FragmentActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
+public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
 
     private static final LatLng PERTH = new LatLng(-31.952854, 115.857342);
     private static final LatLng SYDNEY = new LatLng(-33.87365, 151.20689);
     private static final LatLng BRISBANE = new LatLng(-27.47093, 153.0235);
-
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
-
+    private static final String TAG = "MapsActivity";
     private GoogleMap mMap;
     private Marker mPerth;
     private JSONArray listOfPoints = null;
@@ -69,6 +84,9 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
 
     private LocationManager locationManager = null;
     private String provider;
+    private FirebaseAuth mAuth;
+    private FirebaseAuth.AuthStateListener mAuthListener;
+    private GoogleApiClient mGoogleApiClient;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -208,6 +226,38 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        //set toolbar
+        Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(R.string.app_name);
+
+        //firebase authentication
+        final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
+                .getString(Config.LOG_PREF_INFO, null);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            Log.i(TAG, "Logged with Firebase, UID: " + user.getUid());
+        }
+        else {
+            Log.i(TAG, "Not logged with Firebase");
+        }
+        mAuth = FirebaseAuth.getInstance();
+        mAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    // User is signed in
+                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
+                } else {
+                    // User is signed out
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+            }
+        };
+
+
         mImageView = (ImageView) findViewById(R.id.imageView);
         mImageBitmap = null;
 
@@ -243,6 +293,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
         mapFragment.getMapAsync(this);
     }
 
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mAuth.addAuthStateListener(mAuthListener);
+    }
+
+
     /* Request updates at startup */
     @Override
     protected void onResume() {
@@ -255,6 +313,14 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
     protected void onPause() {
         super.onPause();
         locationManager.removeUpdates(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mAuthListener != null) {
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -456,5 +522,136 @@ public class MapsActivity extends FragmentActivity implements LocationListener,O
     public void onProviderDisabled(String provider) {
         Toast.makeText(this, "Disabled provider " + provider,
                 Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
+                .getString(Config.LOG_PREF_INFO, null);
+        //if the user is not logged, then add login to the menu
+        if(logged != null && !logged.equals(Config.NOT_LOGGED))
+            menu.add(R.string.logout);
+            //if the user is logged, then add logout to the menu
+        else
+            menu.add(R.string.login);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.settings:
+                Log.i(TAG, "Settings has been selected");
+                Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();
+                //Settings activity
+                return true;
+            case R.id.contact:
+                Log.i(TAG, "Contact has been selected");
+                Toast.makeText(this, "Selected contact", Toast.LENGTH_SHORT).show();
+                //Contact activity
+                return true;
+            case R.id.help:
+                Log.i(TAG, "Help has been selected");
+                Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
+                //Help activity
+                return true;
+            case R.id.info:
+                Log.i(TAG, "Info has been selected");
+                Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
+                //Info activity
+                return true;
+            case R.id.profile:
+                Log.i(TAG, "Profile has been selected");
+                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
+                //Profile activity
+                return true;
+            default:
+                String title = (String) item.getTitle();
+                if (title.equals(getResources().getString(R.string.login))) {
+                    Log.i(TAG, "Login has been selected");
+                    Toast.makeText(this, "Selected login", Toast.LENGTH_SHORT).show();
+                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
+                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                    startLogin();
+                    return true;
+                } else {
+                    Log.i(TAG, "Logout has been selected");
+                    Toast.makeText(this, "Selected logout", Toast.LENGTH_SHORT).show();
+                    prepareLogOut();
+                }
+        }
+        return false;
+    }
+
+    private void prepareLogOut(){
+        mGoogleApiClient = ApplicationClass.getGoogleApiClient();
+        if (mGoogleApiClient != null)
+            mGoogleApiClient.connect();
+        AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this)
+                .setTitle(R.string.logout)
+                .setMessage(R.string.logout_message)
+                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        logOut();
+                    }
+                }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //do nothing
+                    }
+                });
+        dialog.show();
+    }
+
+    private void logOut(){
+        FirebaseAuth.getInstance().signOut();
+        // logout Facebook
+        if (Profile.getCurrentProfile() != null){
+            LoginManager.getInstance().logOut();
+            Log.i(TAG, "Logout from Facebook");
+            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
+                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+        }
+        String logged = getSharedPreferences(Config.LOG_PREFERENCES,MODE_PRIVATE)
+                .getString(Config.LOG_PREF_INFO,null);
+        //logout Google
+        if (logged != null){
+            if (logged.equals(Config.GOOGLE_LOGGED)) {
+                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                        new ResultCallback<Status>() {
+                            @Override
+                            public void onResult(Status status) {
+                                if (status.isSuccess()) {
+                                    Log.i(TAG, "Logout from Google");
+                                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                                    ApplicationClass.setGoogleApiClient(null);
+                                    startLogin();
+                                } else
+                                    Log.e(TAG, "Error during the Google logout");
+                            }
+                        });
+            }
+        }
+        startLogin();
+    }
+
+    private void startLogin(){
+        Intent i = new Intent(this, LoginActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(i);
+    }
+
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        FirebaseAuth.getInstance().signOut();
+        getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
+                putString(Config.LOG_PREF_INFO, null).apply();
+        ApplicationClass.setGoogleApiClient(null);
+        ApplicationClass.setGoogleSignInResult(null);
     }
 }

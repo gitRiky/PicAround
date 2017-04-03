@@ -46,6 +46,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.utility.Config;
 
 import org.json.JSONException;
@@ -55,11 +56,15 @@ public class LoginActivity extends AppCompatActivity {
 
     private static final int RC_SIGN_IN = 1;
     private static final int RC_LINK = 2;
+    private static final int RC_GET_INFO_FB = 3;
+    private static final int RC_GET_INFO_GOOGLE = 4;
     private static final String EMAIL = "email";
     private static final String FIELDS = "fields";
     private static final String NEEDED_FB_INFO = "name,email";
     private static final String TAG = "LoginActivity";
     private static final String USERS = "users";
+    private static final String USERNAME = "username";
+    private static final String AGE = "age";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
@@ -67,8 +72,13 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private AuthCredential facebookCredentialToLink;
     private String facebookEmail;
-    private boolean alreadyRegistered;
     private ProgressDialog progress;
+    private LoginResult loginRes;
+    private boolean firstLog;
+    private User newUser;
+    private String username;
+    private String age;
+    private GoogleSignInAccount acct;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +95,7 @@ public class LoginActivity extends AppCompatActivity {
         else {
             setLogged(Config.FB_LOGGED);
             Log.i(TAG, "Logged with Facebook");
-            Intent i = new Intent(getApplicationContext(), MainActivity.class);
+            Intent i = new Intent(getApplicationContext(), MapsActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             i.putExtra("alreadyRegistered", true);
             startActivity(i);
@@ -124,10 +134,6 @@ public class LoginActivity extends AppCompatActivity {
                 handleSignInResult(result);
             }
         }
-        // get access token for facebook if we are already logged with
-        else if (logged.equals(Config.FB_LOGGED)){
-            handleFacebookAccessToken(AccessToken.getCurrentAccessToken());
-        }
     }
 
     @Override
@@ -147,7 +153,7 @@ public class LoginActivity extends AppCompatActivity {
             case R.id.no_login:
                 setLogged(Config.NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
-                Intent i = new Intent(getApplicationContext(), MainActivity.class);
+                Intent i = new Intent(getApplicationContext(), MapsActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
 
@@ -186,29 +192,59 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        //Google Sign-in
-        if (requestCode == RC_SIGN_IN) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            handleSignInResult(result);
+        switch(requestCode) {
+
+            case RC_SIGN_IN:
+                //Google Sign-in
+                GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+                handleSignInResult(result);
+                break;
+            case RC_LINK:
+                //Link between accounts with the same email
+                GoogleSignInResult res = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+                handleLinkResult(res);
+                break;
+            case RC_GET_INFO_FB:
+                //return from GetBasicInfoActivity
+                if (resultCode == RESULT_OK) {
+                    startProgressBar();
+                    username = data.getStringExtra(USERNAME);
+                    age = data.getStringExtra(AGE);
+                    Log.e(TAG, username + " " + age);
+                    if (loginRes != null)
+                        handleFacebookAccessToken(loginRes.getAccessToken());
+                    else
+                        Log.e(TAG, "ERROR!");
+                }
+                else
+                    firstLog = false;
+                break;
+            case RC_GET_INFO_GOOGLE:
+                if (resultCode == RESULT_OK){
+                    startProgressBar();
+                    username = data.getStringExtra(USERNAME);
+                    age = data.getStringExtra(AGE);
+                    Log.e(TAG, username + " " + age);
+                    firebaseAuthWithGoogle(acct);
+                }
+                else
+                    firstLog = false;
+                break;
+            default:
+                //Facebook
+                callbackManager.onActivityResult(requestCode, resultCode, data);
         }
-        //Link between accounts with the same email
-        else if (requestCode == RC_LINK) {
-            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-            handleLinkResult(result);
-        }
-        //Facebook
-        else
-            callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
     //Handle the result of Sign-in with Google
     private void handleSignInResult(GoogleSignInResult result) {
 
         if (result.isSuccess()) {
+            startProgressBar();
             ApplicationClass.setGoogleSignInResult(result);
             ApplicationClass.setGoogleApiClient(mGoogleApiClient);
-            GoogleSignInAccount acct = result.getSignInAccount();
-            firebaseAuthWithGoogle(acct);
+            acct = result.getSignInAccount();
+            checkEmailGoogle(acct);
             Log.i(TAG, "Logged with Google");
             setLogged(Config.GOOGLE_LOGGED);
         } else {
@@ -225,8 +261,7 @@ public class LoginActivity extends AppCompatActivity {
             private ProfileTracker mProfileTracker;
 
             @Override
-            public void onSuccess(LoginResult loginResult) {
-                handleFacebookAccessToken(loginResult.getAccessToken());
+            public void onSuccess(final LoginResult loginResult) {
                 //It is needed for the profile update
                 if (Profile.getCurrentProfile() == null){
                     mProfileTracker = new ProfileTracker() {
@@ -236,8 +271,10 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     };
                 }
+                startProgressBar();
                 Log.i(TAG, "Logged with Facebook");
                 setLogged(Config.FB_LOGGED);
+                loginRes = loginResult;
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
                 GraphRequest request = GraphRequest.newMeRequest(
@@ -250,6 +287,8 @@ public class LoginActivity extends AppCompatActivity {
                                 } else {
                                     try {
                                         facebookEmail = me.getString(EMAIL);
+                                        checkEmailFb(loginResult.getAccessToken());
+
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
@@ -273,6 +312,72 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
     }
+
+
+    private void checkEmailFb(final AccessToken token){
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        //String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(facebookEmail)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            // email already registered
+                            Log.i(TAG, "User already registered");
+                            handleFacebookAccessToken(token);
+                        } else {
+                            // email not registered
+                            Log.i(TAG, "User not registered");
+                            Intent i = new Intent(LoginActivity.this, GetBasicInfoActivity.class);
+                            firstLog = true;
+                            if (progress != null)
+                                progress.dismiss();
+                            startActivityForResult(i, RC_GET_INFO_FB);
+
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+    }
+
+    private void checkEmailGoogle(final GoogleSignInAccount acct){
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            // email already registered
+                            Log.i(TAG, "User already registered");
+                            firebaseAuthWithGoogle(acct);
+                        } else {
+                            // email not registered
+                            Log.i(TAG, "User not registered");
+                            Intent i = new Intent(LoginActivity.this, GetBasicInfoActivity.class);
+                            firstLog = true;
+                            if (progress != null)
+                                progress.dismiss();
+                            startActivityForResult(i, RC_GET_INFO_GOOGLE);
+
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+    }
+
 
     //Use the Facebook access token for obtaining credential for Firebase authentication
     private void handleFacebookAccessToken(AccessToken token) {
@@ -309,7 +414,18 @@ public class LoginActivity extends AppCompatActivity {
                             }
                         }
                         else {
-                            startMain();
+                            if (firstLog){
+                                Log.i(TAG, "First usage for the user");
+                                Profile profile = Profile.getCurrentProfile();
+                                newUser = new User(username, facebookEmail, profile.getFirstName(),
+                                        profile.getLastName(), Integer.parseInt(age),
+                                        profile.getProfilePictureUri(10,10).toString());
+                                DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+                                databaseRef.child(USERS).push().setValue(newUser);
+                                Log.i(TAG, "User has been registered");
+                            }
+                            if (progress != null)
+                                progress.dismiss();
                         }
                     }
                 });
@@ -363,7 +479,7 @@ public class LoginActivity extends AppCompatActivity {
 
 
     //authenticate the google account with firebase
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+    private void firebaseAuthWithGoogle(final GoogleSignInAccount acct) {
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
 
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
@@ -380,6 +496,19 @@ public class LoginActivity extends AppCompatActivity {
                             Log.w(TAG, "signInWithCredential", task.getException());
                             Toast.makeText(LoginActivity.this, R.string.auth_error,
                                     Toast.LENGTH_SHORT).show();
+                        }
+                        else{
+                            if (firstLog){
+                                Log.i(TAG, "First usage for the user");
+                                newUser = new User(username, acct.getEmail(), acct.getGivenName(),
+                                        acct.getFamilyName(), Integer.parseInt(age),
+                                        acct.getPhotoUrl().toString());
+                                DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+                                databaseRef.child(USERS).push().setValue(newUser);
+                                Log.i(TAG, "User has been registered");
+                            }
+                            if (progress != null)
+                                progress.dismiss();
                         }
 
                     }
@@ -451,44 +580,17 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void startMain(){
+        Intent i = new Intent(this, MapsActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(i);
+    }
+
+    private void startProgressBar(){
         progress = new ProgressDialog(this);
         progress.setMessage(getString(R.string.loading));
         progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progress.setIndeterminate(true);
-        checkUserRegistration();
-    }
-
-
-    private void checkUserRegistration() {
-        // check if email is already registered
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Intent i = new Intent(getApplicationContext(), MainActivity.class);
-                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                        if (dataSnapshot.exists()) {
-                            // email already registered
-                            Log.i(TAG, "User registered");
-                            alreadyRegistered = true;
-                        } else {
-                            // email not registered
-                            Log.i(TAG, "User not registered");
-                            alreadyRegistered = false;
-                        }
-                        i.putExtra(Config.REGISTERED, alreadyRegistered);
-                        progress.dismiss();
-                        startActivity(i);
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
+        progress.setCanceledOnTouchOutside(false);
         progress.show();
     }
 }
