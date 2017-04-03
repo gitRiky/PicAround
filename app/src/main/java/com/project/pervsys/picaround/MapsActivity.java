@@ -18,17 +18,19 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,39 +44,47 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Place;
+import com.project.pervsys.picaround.domain.Point;
 import com.project.pervsys.picaround.utility.Config;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
 
     private static final LatLng PERTH = new LatLng(-31.952854, 115.857342);
     private static final LatLng SYDNEY = new LatLng(-33.87365, 151.20689);
     private static final LatLng BRISBANE = new LatLng(-27.47093, 153.0235);
+    private static final LatLng ROME = new LatLng(41.890635, 12.490726);
+
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
+    private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
+
     private GoogleMap mMap;
-    private Marker mPerth;
+    private Marker mRome;
     private JSONArray listOfPoints = null;
     private ImageView mImageView;
 
@@ -221,7 +231,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             };
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -231,6 +240,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
+
 
         //firebase authentication
         final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
@@ -293,13 +303,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mapFragment.getMapAsync(this);
     }
 
-
     @Override
     protected void onStart() {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
     }
-
 
     /* Request updates at startup */
     @Override
@@ -407,13 +415,63 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
 
+
+        // Create points from data
+        Point point = new Point(
+                "478765", "Colosseum", 41.890638, 12.49075,
+                "Monumental 3-tiered roman amphitheater once used for gladiatorial games, with guided tour option.",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/icon.png?alt=media&token=bcbbf65e-e6f9-4974-95c7-83486cc8f4fc",
+                "Historical Landmark", "normal");
+
+        Picture pic1 = new Picture("42131","pic1","Colosseum at sunset",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c01.jpg?alt=media&token=3864cad4-ca38-4ac4-90eb-4022fa5b58e3",
+                123,41,0.36,"4561176412","artistic","657314","dbern",
+                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+        Picture pic2 = new Picture("42131","pic1","Colosseum at sunset",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c02.jpg?alt=media&token=74823bd1-2796-4f96-b146-a930532958fb",
+                123,41,0.36,"4561176412","artistic","657314","dbern",
+                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+        Picture pic3 = new Picture("42131","pic1","Colosseum at sunset",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c03.jpg?alt=media&token=1fc22b30-f271-4822-b0a8-8091f6796b1e",
+                123,41,0.36,"4561176412","artistic","657314","dbern",
+                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+        Picture pic4 = new Picture("42131","pic1","Colosseum at sunset",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c04.jpg?alt=media&token=04eb6baf-0d4f-4b9f-a7b7-c8e031899401",
+                123,41,0.36,"4561176412","artistic","657314","dbern",
+                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+        Picture pic5 = new Picture("42131","pic1","Colosseum at sunset",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c05.jpg?alt=media&token=5cd84317-ee22-4f58-b93d-32f49f6da033",
+                123,41,0.36,"4561176412","artistic","657314","dbern",
+                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+        Picture pic6 = new Picture("42131","pic1","Colosseum at sunset",
+                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c06.jpg?alt=media&token=ea713bf2-d258-467b-8b0b-3cd8ad42ae72",
+                123,41,0.36,"4561176412","artistic","657314","dbern",
+                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+
+        point.getPictures().add(pic1);
+        point.getPictures().add(pic2);
+        point.getPictures().add(pic3);
+        point.getPictures().add(pic4);
+        point.getPictures().add(pic5);
+        point.getPictures().add(pic6);
+
+
+        LatLng pointPosition = new LatLng(point.getLat(),point.getLon());
+
         // Add some markers to the map, and add a data object to each marker.
-        mPerth = mMap.addMarker(new MarkerOptions()
-                .position(PERTH)
-                .title("Perth")
-                .snippet("This is how we show the snippet")
-                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher)));
-        mPerth.setTag(0);
+        mRome = mMap.addMarker(new MarkerOptions()
+                .position(pointPosition)
+                .title(point.getName())
+                .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_radio_button_checked_red_24dp)));
+        mRome.setTag(point);
+
+
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(pointPosition)      // Sets the center of the map to the point position
+                .zoom(16)                   // Sets the zoom
+                .build();                   // Creates a CameraPosition from the builder
+        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
@@ -462,40 +520,104 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
-        // Retrieve the data from the marker.
-        Integer clickCount = (Integer) marker.getTag();
+        // Calculate required horizontal shift for current screen density
+        final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
+        // Calculate required vertical shift for current screen density
+        final int dY = getResources().getDimensionPixelSize(R.dimen.map_dy);
+        final Projection projection = mMap.getProjection();
+        final android.graphics.Point markerPoint = projection.toScreenLocation(marker.getPosition());
+        // Shift the point we will use to center the map
+        markerPoint.offset(dX, dY);
+        final LatLng newLatLng = projection.fromScreenLocation(markerPoint);
+        // Smoothly move camera
+        mMap.animateCamera(CameraUpdateFactory.newLatLng(newLatLng));
 
-        // Check if a click count was set, then display the click count.
-        if (clickCount != null) {
-            clickCount = clickCount + 1;
-            marker.setTag(clickCount);
-            Toast.makeText(this,
-                    marker.getTitle() +
-                            " has been clicked " + clickCount + " times.",
-                    Toast.LENGTH_SHORT).show();
-        }
+        mMap.getUiSettings().setMapToolbarEnabled(true);
 
-        // Return false to indicate that we have not consumed the event and that we wish
-        // for the default behavior to occur (which is for the camera to move such that the
-        // marker is centered and for the marker's info window to open, if it has one).
-        return false;
+        marker.showInfoWindow();
+
+        return true;
     }
 
     @Override
     public void onInfoWindowClick(Marker marker) {
+        //TODO: start PointActivity
         String toShow = marker.getPosition().toString();
         Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public View getInfoWindow(Marker marker) {
-        View v = getLayoutInflater().inflate(R.layout.sample_info_window_view, null);
-        return v;
+        return null;
     }
 
     @Override
     public View getInfoContents(Marker marker) {
-        return null;
+        // First opening the infoWindow: loading
+        if (marker.getSnippet() != null) {
+            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
+
+            View v = getLayoutInflater().inflate(R.layout.info_window, null);
+
+            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
+            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
+
+            Point point = (Point) marker.getTag();
+
+            Picasso.with(this)
+                    .load(point.getIcon())
+                    .into(icon, new MarkerCallback(marker));
+
+            addPictures(marker, point, gridLayout);
+
+            return loadingView;
+        }
+        // Second opening of the infoWindow: show info window
+        else {
+            View v = getLayoutInflater().inflate(R.layout.info_window, null);
+
+            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
+            TextView title = (TextView) v.findViewById(R.id.info_title);
+            TextView category = (TextView) v.findViewById(R.id.info_category);
+            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
+            TextView description = (TextView) v.findViewById(R.id.info_description);
+
+            Point point = (Point) marker.getTag();
+
+            String iconPath = point.getIcon();
+            Log.i(TAG, iconPath);
+            Picasso.with(this)
+                    .load(iconPath)
+                    .into(icon, new MarkerCallback(marker));
+
+            title.setText(point.getName());
+            category.setText(point.getCategory());
+            description.setText(point.getDescription());
+
+            addPictures(marker, point, gridLayout);
+
+            return v;
+        }
+    }
+
+    private void addPictures(Marker marker, Point point, GridLayout gridLayout) {
+        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, this.getResources().getDisplayMetrics());
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
+
+        List<Picture> pictures = point.getPictures();
+        for (Picture pic : pictures) {
+            ImageView imageView = new ImageView(this);
+            imageView.setLayoutParams(layoutParams);
+            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            gridLayout.addView(imageView);
+
+            String path = pic.getPath();
+
+            Picasso.with(this)
+                    .load(path)
+                    .into(imageView, new MarkerCallback(marker));
+        }
     }
 
     @Override
@@ -653,5 +775,32 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 putString(Config.LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
         ApplicationClass.setGoogleSignInResult(null);
+    }
+}
+
+class MarkerCallback implements Callback {
+
+    private static final int THUMBNAILS_NUMBER = 7;
+    private static int counter = 0;
+
+    Marker marker=null;
+
+    MarkerCallback(Marker marker) {
+        this.marker=marker;
+    }
+
+    @Override
+    public void onError() {
+        Log.e(getClass().getSimpleName(), "Error loading thumbnail!");
+    }
+
+    @Override
+    public void onSuccess() {
+        counter++;
+        if (counter == THUMBNAILS_NUMBER && marker != null && marker.isInfoWindowShown()) {
+            marker.setSnippet(null);
+            marker.hideInfoWindow();
+            marker.showInfoWindow();
+        }
     }
 }
