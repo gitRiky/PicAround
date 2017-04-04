@@ -18,6 +18,7 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -27,6 +28,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.ImageView;
@@ -236,13 +239,20 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        //set toolbar
+        // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
 
+        // Set status bar color
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            Window window = this.getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
+        }
 
-        //firebase authentication
+        // Firebase authentication
         final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -584,15 +594,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
             Point point = (Point) marker.getTag();
 
-            String iconPath = point.getIcon();
-            Log.i(TAG, iconPath);
-            Picasso.with(this)
-                    .load(iconPath)
-                    .into(icon, new MarkerCallback(marker));
-
             title.setText(point.getName());
             category.setText(point.getCategory());
             description.setText(point.getDescription());
+
+            String iconPath = point.getIcon();
+            Picasso.with(this)
+                    .load(iconPath)
+                    .into(icon, new MarkerCallback(marker));
 
             addPictures(marker, point, gridLayout);
 
@@ -688,6 +697,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
                 Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
+                //Profile activity
+                return true;
+            case R.id.search:
+                Log.i(TAG, "Search has been selected");
+                Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
                 //Profile activity
                 return true;
             default:
