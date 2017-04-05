@@ -104,8 +104,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private Bitmap mImageBitmap;
     private AlbumStorageDirFactory mAlbumStorageDirFactory = null;
 
-    private LocationManager locationManager = null;
-    private String provider;
+    private LocationManager mLocationManager = null;
+    private String mProvider;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
@@ -302,19 +302,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         // Get the location manager
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        Location location = locationManager.getLastKnownLocation(provider);
-
-        // Initialize the location fields
-        if (location != null) {
-            System.out.println("Provider " + provider + " has been selected.");
-            onLocationChanged(location);
-        }
-        else {
-            Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
-        }
+        mProvider = mLocationManager.getBestProvider(criteria, true);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
@@ -334,14 +324,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        locationManager.requestLocationUpdates(provider, 400, 1, this);
+        mLocationManager.requestLocationUpdates(mProvider, 400, 1, this);
     }
 
     /* Remove the location listener updates when Activity is paused */
     @Override
     protected void onPause() {
         super.onPause();
-        locationManager.removeUpdates(this);
+        mLocationManager.removeUpdates(this);
     }
 
     @Override
@@ -439,63 +429,75 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
-        setupGPS();
-        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
-        populatePoints();
-
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
 
+        setupGPS();
+
+        Log.i(TAG, "mProvider=" + mProvider);
+        Location location = mLocationManager.getLastKnownLocation(mProvider);
+
+        // Initialize the location fields
+        if (location != null) {
+            System.out.println("Provider " + mProvider + " has been selected.");
+            onLocationChanged(location);
+        }
+        else {
+            Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
+        }
+
+        populatePoints();
 
         // Create points from data
-        Point point = new Point(
-                "478765", "Colosseum", 41.890638, 12.49075,
-                "Monumental 3-tiered roman amphitheater once used for gladiatorial games, with guided tour option.",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/icon.png?alt=media&token=bcbbf65e-e6f9-4974-95c7-83486cc8f4fc",
-                "Historical Landmark", "normal");
+//        Point point = new Point(
+//                "478765", "Point2", 41.210638, 12.26075,
+//                "Monumental 3-tiered roman amphitheater once used for gladiatorial games, with guided tour option.",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/icon.png?alt=media&token=bcbbf65e-e6f9-4974-95c7-83486cc8f4fc",
+//                "Historical Landmark", "normal");
+//
+//        Picture pic1 = new Picture("42131","pic1","Colosseum at sunset",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c01.jpg?alt=media&token=3864cad4-ca38-4ac4-90eb-4022fa5b58e3",
+//                123,41,0.36,"4561176412","artistic","657314","dbern",
+//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+//        Picture pic2 = new Picture("42131","pic1","Colosseum at sunset",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c02.jpg?alt=media&token=74823bd1-2796-4f96-b146-a930532958fb",
+//                123,41,0.36,"4561176412","artistic","657314","dbern",
+//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+//        Picture pic3 = new Picture("42131","pic1","Colosseum at sunset",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c03.jpg?alt=media&token=1fc22b30-f271-4822-b0a8-8091f6796b1e",
+//                123,41,0.36,"4561176412","artistic","657314","dbern",
+//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+//        Picture pic4 = new Picture("42131","pic1","Colosseum at sunset",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c04.jpg?alt=media&token=04eb6baf-0d4f-4b9f-a7b7-c8e031899401",
+//                123,41,0.36,"4561176412","artistic","657314","dbern",
+//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+//        Picture pic5 = new Picture("42131","pic1","Colosseum at sunset",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c05.jpg?alt=media&token=5cd84317-ee22-4f58-b93d-32f49f6da033",
+//                123,41,0.36,"4561176412","artistic","657314","dbern",
+//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+//        Picture pic6 = new Picture("42131","pic1","Colosseum at sunset",
+//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c06.jpg?alt=media&token=ea713bf2-d258-467b-8b0b-3cd8ad42ae72",
+//                123,41,0.36,"4561176412","artistic","657314","dbern",
+//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
+//
+//        point.getPictures().add(pic1);
+//        point.getPictures().add(pic2);
+//        point.getPictures().add(pic3);
+//        point.getPictures().add(pic4);
+//        point.getPictures().add(pic5);
+//        point.getPictures().add(pic6);
 
-        Picture pic1 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c01.jpg?alt=media&token=3864cad4-ca38-4ac4-90eb-4022fa5b58e3",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic2 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c02.jpg?alt=media&token=74823bd1-2796-4f96-b146-a930532958fb",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic3 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c03.jpg?alt=media&token=1fc22b30-f271-4822-b0a8-8091f6796b1e",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic4 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c04.jpg?alt=media&token=04eb6baf-0d4f-4b9f-a7b7-c8e031899401",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic5 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c05.jpg?alt=media&token=5cd84317-ee22-4f58-b93d-32f49f6da033",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic6 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c06.jpg?alt=media&token=ea713bf2-d258-467b-8b0b-3cd8ad42ae72",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-
-        point.getPictures().add(pic1);
-        point.getPictures().add(pic2);
-        point.getPictures().add(pic3);
-        point.getPictures().add(pic4);
-        point.getPictures().add(pic5);
-        point.getPictures().add(pic6);
 
 
-        LatLng pointPosition = new LatLng(point.getLat(),point.getLon());
-
-        // Add some markers to the map, and add a data object to each marker.
-        mRome = mMap.addMarker(new MarkerOptions()
-                .position(pointPosition)
-                .title(point.getName())
-                .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_radio_button_checked_red_24dp)));
-        mRome.setTag(point);
+        LatLng pointPosition = new LatLng(41.891550, 12.490122);
+//
+//        // Add some markers to the map, and add a data object to each marker.
+//        mRome = mMap.addMarker(new MarkerOptions()
+//                .position(pointPosition)
+//                .title(point.getName())
+//                .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+//                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_radio_button_checked_red_24dp)));
+//        mRome.setTag(point);
 
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
@@ -516,25 +518,21 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populatePoints() {
         // get all the points
-        //mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child("points").keepSynced(true);
         mDatabaseRef.child("points")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
+
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
-                            try {
-                                Map<String, String> point = (Map<String, String>) child.getValue();
-                                JSONObject jsonPoint = new JSONObject(point);
-                                String lat = jsonPoint.getString("lat");
-                                String lon = jsonPoint.getString("long");
-                                mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon))));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
+                            Point p = child.getValue(Point.class);
+                            Log.i(TAG, p.getName());
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(p.getLat(), p.getLon())))
+                                    .setTag(p);
                             }
 
-                        }
                     }
 
                     @Override
@@ -546,9 +544,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     private void setupGPS() {
-        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean enabled = service
-                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+//        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean enabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
         // check if enabled and if not send user to the GSP settings
         // Better solution would be to display a dialog and suggesting to
@@ -671,6 +668,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
             String path = pic.getPath();
 
+            Log.i(TAG, path);
+
             Picasso.with(this)
                     .load(path)
                     .into(imageView, new MarkerCallback(marker));
@@ -681,9 +680,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onLocationChanged(Location location) {
         int lat = (int) (location.getLatitude());
         int lng = (int) (location.getLongitude());
-        if(mMap != null){
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat,lng)));
-        }
+//        if(mMap != null){
+//            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat,lng)));
+//        }
     }
 
     @Override
@@ -693,13 +692,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onProviderEnabled(String provider) {
-        Toast.makeText(this, "Enabled new provider " + provider,
+        Toast.makeText(this, "Enabled new mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        Toast.makeText(this, "Disabled provider " + provider,
+        Toast.makeText(this, "Disabled mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
     }
 

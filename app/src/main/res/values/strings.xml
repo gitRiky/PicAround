@@ -40,4 +40,6 @@
     <string name="registration_exit">Do you really want to exit from the registration?</string>
     <string name="open">Open</string>
     <string name="search">Search</string>
+    <string name="welcome_to_picaround">Welcome to\nPicAround!</string>
+    <string name="sign_in_with_facebook">    Sign in with Facebook</string>
 </resources>
