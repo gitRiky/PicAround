@@ -78,9 +78,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
+
     private GoogleMap mMap;
     private Marker mPerth;
-    private JSONArray listOfPoints = null;
+
     private ImageView mImageView;
 
     private String mCurrentPhotoPath;
@@ -92,6 +93,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
+    private DatabaseReference mDatabaseRef = null;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -292,6 +294,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
         }
 
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -442,8 +447,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populatePoints() {
         // get all the points
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child("points")
+        //mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child("points")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
