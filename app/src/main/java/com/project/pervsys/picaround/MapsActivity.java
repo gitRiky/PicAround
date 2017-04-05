@@ -738,8 +738,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 //Help activity
                 return true;
             case R.id.info:
+                //TODO: I'm using this item for starting my UploadPhotoActivity
                 Log.i(TAG, "Info has been selected");
                 Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(this, UploadPhotoActivity.class);
+                startActivity(i);
                 //Info activity
                 return true;
             case R.id.profile:
@@ -750,7 +753,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case R.id.search:
                 Log.i(TAG, "Search has been selected");
                 Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                //Search activity
                 return true;
             default:
                 String title = (String) item.getTitle();
