@@ -28,6 +28,7 @@ public class ApplicationClass extends Application{
         return result;
     }
 
+
     public static void setAlreadyEnabledPersistence(boolean state){
         alreadyEnabledPersistence = state;
     }
