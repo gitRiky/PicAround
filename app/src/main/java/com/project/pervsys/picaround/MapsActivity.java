@@ -12,6 +12,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -87,12 +88,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final LatLng ROME = new LatLng(41.890635, 12.490726);
 
     private static final int REQUEST_TAKE_PHOTO = 1;
+    private static final int REQUEST_UPLOAD_PHOTO = 2;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
+    private static final String PHOTO_PATH = "photoPath";
 
     private GoogleMap mMap;
     private Marker mRome;
@@ -183,10 +186,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         bmOptions.inSampleSize = scaleFactor;
         bmOptions.inPurgeable = true;
 
-		/* Decode the JPEG file into a Bitmap */
+		/* Decode the JPEG file into a Bitmap*/
         Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
 
-		/* Associate the Bitmap to the ImageView */
+
         mImageView.setImageBitmap(bitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
@@ -228,8 +231,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void handleBigCameraPhoto() {
 
         if (mCurrentPhotoPath != null) {
+            Log.i(TAG, "The photo has been taken");
             setPic();
+            Log.i(TAG, "Set pic ok");
             galleryAddPic();
+            Log.i(TAG, "Gallery pic ok");
+            //Start the UploadPhotoActivity, passing the photo's path
+            Intent i = new Intent(this, UploadPhotoActivity.class);
+            i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
+            Log.i(TAG, "Starting Upload activity");
+            startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
             mCurrentPhotoPath = null;
         }
 
@@ -360,6 +371,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 putString(Config.LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
         ApplicationClass.setGoogleSignInResult(null);
+        Log.i(TAG, "onDestroy");
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -527,7 +539,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                 Map<String, String> point = (Map<String, String>) child.getValue();
                                 JSONObject jsonPoint = new JSONObject(point);
                                 String lat = jsonPoint.getString("lat");
-                                String lon = jsonPoint.getString("long");
+                                String lon = jsonPoint.getString("lon");
                                 mMap.addMarker(new MarkerOptions()
                                 .position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon))));
                             } catch (JSONException e) {
@@ -709,6 +721,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         inflater.inflate(R.menu.main_menu, menu);
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
+        Log.e(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
         if(logged != null && !logged.equals(Config.NOT_LOGGED))
             menu.add(R.string.logout);

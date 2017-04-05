@@ -61,6 +61,7 @@
         -->
         <activity
             android:name=".MapsActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_maps"></activity>
         <activity android:name=".GetBasicInfoActivity" />
         <activity android:name=".UploadPhotoActivity"></activity>
