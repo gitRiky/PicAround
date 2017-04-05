@@ -10,6 +10,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <android.support.design.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -27,14 +28,12 @@
                 android:id="@+id/floatingActionButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:clickable="true"
-                map:backgroundTint="@android:color/holo_green_light"
-                map:elevation="15dp"
-                map:fabSize="normal"
+                map:backgroundTint="@color/colorAccent"
                 map:layout_anchor="@id/map"
-                map:layout_anchorGravity="bottom|left"
-                map:srcCompat="@android:drawable/ic_menu_camera"
-                map:useCompatPadding="true" />
+                map:fabSize="normal"
+                map:layout_anchorGravity="bottom|right"
+                map:useCompatPadding="true"
+                android:src="@drawable/ic_photo_camera_white_24dp"/>
 
             <ImageView
                 android:id="@+id/imageView"
