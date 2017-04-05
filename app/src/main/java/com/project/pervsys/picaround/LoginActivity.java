@@ -84,7 +84,11 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        if (!ApplicationClass.alreadyEnabledPersistence()){
+            Log.i(TAG, "Enabling database persistence");
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            ApplicationClass.setAlreadyEnabledPersistence(true);
+        }
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();

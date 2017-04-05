@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "687030280886-mkkpi9rg0s5e5bo30fq61ar1b8msvjmh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.project.pervsys.picaround",
+            "certificate_hash": "c32da4846dfc066da138a685a4d765cd9773f34c"
+          }
+        },
+        {
           "client_id": "687030280886-oqap4m5qm44kcgosqhu4rbsc9jeg496q.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
