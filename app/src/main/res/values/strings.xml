@@ -30,7 +30,7 @@
     <string name="username_unavailable">Sorry, this username is not available</string>
     <string name="username_with_spaces">Username cannot contain spaces</string>
     <string name="registration_ok">Registration successful!</string>
-    <string name="loading">Loading</string>
+    <string name="loading">Loading...</string>
     <string name="title_activity_maps">Map</string>
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
          AIzaSyDlw4SqqMWqXS5kOjqhy1i351H2BnxW4tg
@@ -38,4 +38,6 @@
     <string name="album_name">PicAround</string>
     <string name="exit">Exit</string>
     <string name="registration_exit">Do you really want to exit from the registration?</string>
+    <string name="open">Open</string>
+    <string name="search">Search</string>
 </resources>
