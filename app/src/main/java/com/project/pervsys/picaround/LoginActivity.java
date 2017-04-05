@@ -64,6 +64,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final String USERS = "users";
     private static final String USERNAME = "username";
+    
     private static final String AGE = "age";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
