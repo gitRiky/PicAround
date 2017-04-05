@@ -69,12 +69,15 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
 
@@ -94,7 +97,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private GoogleMap mMap;
     private Marker mRome;
     private JSONArray listOfPoints = null;
-    private GoogleMap mMap;
     private Marker mPerth;
     private ImageView mImageView;
 
@@ -246,7 +248,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -315,7 +316,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
         }
 
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.

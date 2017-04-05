@@ -10,6 +10,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 public class ApplicationClass extends Application{
     private static GoogleApiClient mGoogleApiClient;
     private static GoogleSignInResult result;
+    private static boolean alreadyEnabledPersistence;
 
     public static void setGoogleApiClient(GoogleApiClient gac){
         mGoogleApiClient = gac;
@@ -25,5 +26,13 @@ public class ApplicationClass extends Application{
 
     public static GoogleSignInResult getGoogleSignInResult(){
         return result;
+    }
+
+    public static void setAlreadyEnabledPersistence(boolean state){
+        alreadyEnabledPersistence = state;
+    }
+
+    public static boolean alreadyEnabledPersistence(){
+        return alreadyEnabledPersistence;
     }
 }
