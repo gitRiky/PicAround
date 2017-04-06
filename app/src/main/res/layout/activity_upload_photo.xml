@@ -50,6 +50,7 @@
                 android:layout_marginEnd="@dimen/activity_horizontal_margin"
                 android:layout_marginStart="@dimen/activity_horizontal_margin"
                 android:hint="@string/name"
+                android:maxLength="50"
                 android:inputType="text" />
             <!--android:layout_below="@+id/textView5"
                 android:layout_alignStart="@+id/age" -->
@@ -72,6 +73,7 @@
                 android:layout_marginStart="@dimen/activity_horizontal_margin"
                 android:layout_marginBottom="@dimen/activity_vertical_margin"
                 android:hint="@string/description"
+                android:maxLength="150"
                 android:inputType="text" />
             <!--android:layout_below="@+id/textView5"
                 android:layout_alignStart="@+id/age" -->
