@@ -3,6 +3,7 @@ package com.project.pervsys.picaround;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
@@ -41,8 +42,14 @@ import com.facebook.Profile;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
@@ -87,6 +94,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final LatLng ROME = new LatLng(41.890635, 12.490726);
 
     private static final int REQUEST_TAKE_PHOTO = 1;
+    private static final int REQUEST_CHECK_SETTINGS = 3;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
@@ -96,7 +104,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private GoogleMap mMap;
     private Marker mRome;
-    private JSONArray listOfPoints = null;
     private Marker mPerth;
     private ImageView mImageView;
 
@@ -104,8 +111,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private Bitmap mImageBitmap;
     private AlbumStorageDirFactory mAlbumStorageDirFactory = null;
 
-    private LocationManager locationManager = null;
-    private String provider;
+    private LocationManager mLocationManager = null;
+    private String mProvider;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
@@ -302,19 +309,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         // Get the location manager
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        Location location = locationManager.getLastKnownLocation(provider);
-
-        // Initialize the location fields
-        if (location != null) {
-            System.out.println("Provider " + provider + " has been selected.");
-            onLocationChanged(location);
-        }
-        else {
-            Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
-        }
+        mProvider = mLocationManager.getBestProvider(criteria, false);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
@@ -334,14 +331,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        locationManager.requestLocationUpdates(provider, 400, 1, this);
+        mLocationManager.requestLocationUpdates(mProvider, 400, 1, this);
     }
 
     /* Remove the location listener updates when Activity is paused */
     @Override
     protected void onPause() {
         super.onPause();
-        locationManager.removeUpdates(this);
+        mLocationManager.removeUpdates(this);
     }
 
     @Override
@@ -439,13 +436,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
-        setupGPS();
-        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
-        populatePoints();
-
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
 
+        setupGPS(this);
+
+        Location location = mLocationManager.getLastKnownLocation(mProvider);
+
+        // Initialize the location fields
+        if (location != null) {
+            System.out.println("Provider " + mProvider + " has been selected.");
+            onLocationChanged(location);
+        }
+        else {
+            Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
+        }
+        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
+        populatePoints();
 
         // Create points from data
         Point point = new Point(
@@ -545,33 +552,73 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 });
     }
 
-    private void setupGPS() {
-        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean enabled = service
-                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+    private void setupGPS(Context context) {
+//        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+//        boolean enabled = service
+//                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+//
+//        // check if enabled and if not send user to the GSP settings
+//        // Better solution would be to display a dialog and suggesting to
+//        // go to the settings
+//        if (!enabled) {
+//            new AlertDialog.Builder(this)
+//                    .setTitle("GPS enabling")
+//                    .setMessage("It seems your GPS is turned off. Would you like to turn it ON?")
+//                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+//                        public void onClick(DialogInterface dialog, int which) {
+//                            // continue with GPS activation
+//                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//                            startActivity(intent);
+//                        }
+//                    })
+//                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+//                        public void onClick(DialogInterface dialog, int which) {
+//                            // do nothing
+//                        }
+//                    })
+//                    .setIcon(android.R.drawable.ic_dialog_alert)
+//                    .show();
+//            Log.i(TAG, "Passed start activity");
+//        }
 
-        // check if enabled and if not send user to the GSP settings
-        // Better solution would be to display a dialog and suggesting to
-        // go to the settings
-        if (!enabled) {
-            new AlertDialog.Builder(this)
-                    .setTitle("GPS enabling")
-                    .setMessage("It seems your GPS is turned off. Would you like to turn it ON?")
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            // continue with GPS activation
-                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                            startActivity(intent);
+        GoogleApiClient googleApiClient = new GoogleApiClient.Builder(context)
+                .addApi(LocationServices.API).build();
+        googleApiClient.connect();
+
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(10000 / 2);
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+
+        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult result) {
+                final Status status = result.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        Log.i(TAG, "All location settings are satisfied.");
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        Log.i(TAG, "Location settings are not satisfied. Show the user a dialog to upgrade location settings ");
+
+                        try {
+                            // Show the dialog by calling startResolutionForResult(), and check the result
+                            // in onActivityResult().
+                            status.startResolutionForResult(MapsActivity.this, REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.i(TAG, "PendingIntent unable to execute request.");
                         }
-                    })
-                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            // do nothing
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        Log.i(TAG, "Location settings are inadequate, and cannot be fixed here. Dialog not created.");
+                        break;
+                }
+            }
+        });
     }
 
     /** Called when the user clicks a marker. */
@@ -682,6 +729,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         int lat = (int) (location.getLatitude());
         int lng = (int) (location.getLongitude());
         if(mMap != null){
+            System.out.println("mMap is not NULL !");
             mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat,lng)));
         }
     }
@@ -693,13 +741,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onProviderEnabled(String provider) {
-        Toast.makeText(this, "Enabled new provider " + provider,
+        Toast.makeText(this, "Enabled new mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        Toast.makeText(this, "Disabled provider " + provider,
+        Toast.makeText(this, "Disabled mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
     }
 
