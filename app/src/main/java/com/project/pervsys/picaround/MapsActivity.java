@@ -81,11 +81,6 @@ import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
 
-    private static final LatLng PERTH = new LatLng(-31.952854, 115.857342);
-    private static final LatLng SYDNEY = new LatLng(-33.87365, 151.20689);
-    private static final LatLng BRISBANE = new LatLng(-27.47093, 153.0235);
-    private static final LatLng ROME = new LatLng(41.890635, 12.490726);
-
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
@@ -93,11 +88,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
+    private static final String POINT_ID = "pointId";
 
     private GoogleMap mMap;
-    private Marker mRome;
     private JSONArray listOfPoints = null;
-    private Marker mPerth;
     private ImageView mImageView;
 
     private String mCurrentPhotoPath;
@@ -248,6 +242,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -448,47 +443,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         populatePoints();
 
-        // Create points from data
-//        Point point = new Point(
-//                "478765", "Point2", 41.210638, 12.26075,
-//                "Monumental 3-tiered roman amphitheater once used for gladiatorial games, with guided tour option.",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/icon.png?alt=media&token=bcbbf65e-e6f9-4974-95c7-83486cc8f4fc",
-//                "Historical Landmark", "normal");
-//
-//        Picture pic1 = new Picture("42131","pic1","Colosseum at sunset",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c01.jpg?alt=media&token=3864cad4-ca38-4ac4-90eb-4022fa5b58e3",
-//                123,41,0.36,"4561176412","artistic","657314","dbern",
-//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-//        Picture pic2 = new Picture("42131","pic1","Colosseum at sunset",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c02.jpg?alt=media&token=74823bd1-2796-4f96-b146-a930532958fb",
-//                123,41,0.36,"4561176412","artistic","657314","dbern",
-//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-//        Picture pic3 = new Picture("42131","pic1","Colosseum at sunset",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c03.jpg?alt=media&token=1fc22b30-f271-4822-b0a8-8091f6796b1e",
-//                123,41,0.36,"4561176412","artistic","657314","dbern",
-//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-//        Picture pic4 = new Picture("42131","pic1","Colosseum at sunset",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c04.jpg?alt=media&token=04eb6baf-0d4f-4b9f-a7b7-c8e031899401",
-//                123,41,0.36,"4561176412","artistic","657314","dbern",
-//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-//        Picture pic5 = new Picture("42131","pic1","Colosseum at sunset",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c05.jpg?alt=media&token=5cd84317-ee22-4f58-b93d-32f49f6da033",
-//                123,41,0.36,"4561176412","artistic","657314","dbern",
-//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-//        Picture pic6 = new Picture("42131","pic1","Colosseum at sunset",
-//                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c06.jpg?alt=media&token=ea713bf2-d258-467b-8b0b-3cd8ad42ae72",
-//                123,41,0.36,"4561176412","artistic","657314","dbern",
-//                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-//
-//        point.getPictures().add(pic1);
-//        point.getPictures().add(pic2);
-//        point.getPictures().add(pic3);
-//        point.getPictures().add(pic4);
-//        point.getPictures().add(pic5);
-//        point.getPictures().add(pic6);
-
-
-
         LatLng pointPosition = new LatLng(41.891550, 12.490122);
 //
 //        // Add some markers to the map, and add a data object to each marker.
@@ -527,8 +481,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
-                            Log.i(TAG, p.getName());
                             mMap.addMarker(new MarkerOptions()
+//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
                                     .position(new LatLng(p.getLat(), p.getLon())))
                                     .setTag(p);
                             }
@@ -596,9 +550,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-        //TODO: start PointActivity
-        String toShow = marker.getPosition().toString();
-        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
+        // Start PointActivity
+//        String toShow = marker.getPosition().toString();
+//        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
+        Point point = (Point) marker.getTag();
+        Intent i = new Intent(this, PointActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        i.putExtra(POINT_ID, point.getId());
+        startActivity(i);
     }
 
     @Override

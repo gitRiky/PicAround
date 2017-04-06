@@ -17,11 +17,11 @@ public class Point {
     private List<Picture> pictures;
 
     public Point(){
-
+        // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
 
-    public Point(String id, String name, double lat, double lon, String description, String icon, String category, String type) {
-        this.id = id;
+    public Point(String name, double lat, double lon, String description, String icon, String category, String type) {
+        this.id = null;
         this.name = name;
         this.lat = lat;
         this.lon = lon;
