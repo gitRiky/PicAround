@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -65,6 +66,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.utility.Config;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
@@ -96,7 +98,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
     private static final String PHOTO_PATH = "photoPath";
+    private static final String USERS = "users";
+    private static final String USERNAME = "username";
+    private static final String EMAIL = "email";
 
+    private ProgressDialog progress;
     private GoogleMap mMap;
     private Marker mRome;
     private JSONArray listOfPoints = null;
@@ -106,7 +112,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String mCurrentPhotoPath;
     private Bitmap mImageBitmap;
     private AlbumStorageDirFactory mAlbumStorageDirFactory = null;
-
+    private String username;
     private LocationManager locationManager = null;
     private String provider;
     private FirebaseAuth mAuth;
@@ -205,6 +211,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             //Start the UploadPhotoActivity, passing the photo's path
             Intent i = new Intent(this, UploadPhotoActivity.class);
             i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
+            Log.d(TAG, "Username " + username);
+            i.putExtra(USERNAME, username);
             Log.i(TAG, "Starting Upload activity");
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
             mCurrentPhotoPath = null;
@@ -273,6 +281,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 MediaStore.ACTION_IMAGE_CAPTURE
         );
 
+
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         // Get the location manager
@@ -291,6 +300,38 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+
+        //Obtain the username
+        startProgressBar();
+
+        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        Log.d(TAG, "Email = " + email);
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for(DataSnapshot child : dataSnapshot.getChildren()) {
+                            if (child != null) {
+                                Log.i(TAG, "Username obtained");
+                                User user = child.getValue(User.class);
+                                Log.e(TAG, user.toString());
+                                username = user.getUsername();
+                                if (progress != null)
+                                    progress.dismiss();
+                            }
+                            else
+                                Log.e(TAG, "Cannot obtain the username");
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -811,6 +852,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
     }
+
+    private void startProgressBar(){
+        progress = new ProgressDialog(this);
+        progress.setMessage(getString(R.string.loading));
+        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progress.setIndeterminate(true);
+        progress.setCanceledOnTouchOutside(false);
+        progress.show();
+    }
+
 
 }
 

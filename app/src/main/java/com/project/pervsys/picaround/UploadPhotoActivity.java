@@ -38,6 +38,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
     private static final String PHOTO_PATH = "photoPath";
     private static final String USER_PICTURE = "pictures";
+    private static final String USERNAME = "username";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private StorageReference mStorageRef;
@@ -47,6 +48,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String mPhotoPath;
     private String name;
     private String description;
+    private String username;
     private com.project.pervsys.picaround.domain.Picture picture;
 
 
@@ -85,6 +87,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         };
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
+        username = getIntent().getStringExtra(USERNAME);
         Log.i(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         nameField = (EditText) findViewById(R.id.photo_name);
@@ -134,17 +137,20 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 description = descriptionField.getText().toString();
                 if(checkName() && checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
-                    Toast.makeText(this, "Selected upload", Toast.LENGTH_SHORT).show();
+
                     //put the photo into the storage
                     Uri file = Uri.fromFile(new File(mPhotoPath));
-                    StorageReference riversRef = mStorageRef.child(name);
+                    //save the image as username_name-of-the-photo
+                    name = name.replace(" ", "-");
 
+                    //StorageReference riversRef = mStorageRef.child(username + "_" + name);
+                    StorageReference riversRef = mStorageRef.child(name);
                     riversRef.putFile(file)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     // Get a URL to the uploaded content
-                                    Log.d(TAG, "DONEEEE");
+                                    Log.d(TAG, "OnSuccess");
                                     getPath();
                                 }
                             })
@@ -219,8 +225,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     }
 
     private void getPath(){
-
-        StorageReference pathRef = mStorageRef.child(nameField.getText().toString());
+        Log.d(TAG, "getPath");
+        StorageReference pathRef = mStorageRef.child(name);
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
             public void onSuccess(Uri uri) {
@@ -233,6 +239,17 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         R.string.upload_ok,
                         Toast.LENGTH_SHORT)
                         .show();
+            }
+        })
+        .addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                // Handle unsuccessful uploads
+                // ...
+                Log.e(TAG, "Error during the upload, " + exception.toString());
+                Toast.makeText(getApplicationContext(),
+                        R.string.upload_failed,
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
