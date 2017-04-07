@@ -1,7 +1,9 @@
 package com.project.pervsys.picaround;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Picture;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -23,6 +25,8 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -33,6 +37,7 @@ import java.io.File;
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
     private static final String PHOTO_PATH = "photoPath";
+    private static final String USER_PICTURE = "pictures";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private StorageReference mStorageRef;
@@ -40,6 +45,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private EditText nameField;
     private EditText descriptionField;
     private String mPhotoPath;
+    private String name;
+    private String description;
+    private com.project.pervsys.picaround.domain.Picture picture;
 
 
 
@@ -108,6 +116,13 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+    @Override
+    public void onBackPressed(){
+        Intent i = getIntent();
+        setResult(RESULT_CANCELED, i);
+        finish();
+    }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
@@ -115,9 +130,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch(id){
             case R.id.upload:
                 Log.i(TAG, "Upload has been selected");
-                String name = nameField.getText().toString();
-                String description = descriptionField.getText().toString();
-                if(checkName(name) && checkDescription(description)) {
+                name = nameField.getText().toString();
+                description = descriptionField.getText().toString();
+                if(checkName() && checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     Toast.makeText(this, "Selected upload", Toast.LENGTH_SHORT).show();
                     //put the photo into the storage
@@ -138,10 +153,15 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 public void onFailure(@NonNull Exception exception) {
                                     // Handle unsuccessful uploads
                                     // ...
-                                    Log.d(TAG, "ERROR!");
+                                    Log.e(TAG, "Error during the upload, " + exception.toString());
+                                    Toast.makeText(getApplicationContext(),
+                                            R.string.upload_failed,
+                                            Toast.LENGTH_SHORT).show();
                                 }
                             });
-                    //TODO: close the activity with RESULT_OK
+                    Intent i = getIntent();
+                    setResult(RESULT_OK, i);
+                    finish();
                 }
                 return true;
         }
@@ -184,7 +204,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mImageView.setVisibility(View.VISIBLE);
     }
 
-    private boolean checkName(String name){
+    private boolean checkName(){
         if (name.replace(" ", "").equals("")){
             Toast.makeText(this, R.string.name_missing, Toast.LENGTH_SHORT).show();
             nameField.setText("");
@@ -193,19 +213,26 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return true;
     }
 
-    private boolean checkDescription(String description){
+    private boolean checkDescription(){
         //TODO: remove this if no check is needed
         return true;
     }
 
     private void getPath(){
-        StorageReference pathRef = mStorageRef.child(nameField.getText().toString());
 
+        StorageReference pathRef = mStorageRef.child(nameField.getText().toString());
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink:  " + uri);
-                //TODO: put the path into the db
+                picture = new com.project.pervsys.picaround.domain.Picture(name, description, uri.toString());
+                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+                databaseReference.child(USER_PICTURE).push().setValue(picture);
+                Log.i(TAG, "Picture's path sent to db");
+                Toast.makeText(getApplicationContext(),
+                        R.string.upload_ok,
+                        Toast.LENGTH_SHORT)
+                        .show();
             }
         });
     }

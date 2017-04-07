@@ -339,13 +339,18 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_TAKE_PHOTO: {
+            case REQUEST_TAKE_PHOTO:
                 if (resultCode == RESULT_OK) {
                     handleBigCameraPhoto();
                 }
                 break;
-            } // REQUEST_TAKE_PHOTO
-        } // switch
+            case REQUEST_UPLOAD_PHOTO:
+                if (resultCode == RESULT_OK)
+                    Log.i(TAG, "Photo in uploading");
+                else
+                    Log.d(TAG, "Photo upload cancelled");
+                break;
+        }
     }
 
     // Some lifecycle callbacks so that the image can survive orientation change

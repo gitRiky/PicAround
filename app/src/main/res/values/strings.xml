@@ -49,4 +49,6 @@
     <string name="twt_share">Share on Twitter</string>
     <string name="name_missing">Name is missing</string>
     <string name="name_too_long">Name is too long</string>
+    <string name="upload_failed">Error during the upload of the photo</string>
+    <string name="upload_ok">The photo has been uploaded!</string>
 </resources>
