@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
 
@@ -54,17 +55,20 @@
                 android:ellipsize="end"
                 android:text="The Colosseum or Coliseum, also known as the Flavian Amphitheatre, is an oval amphitheatre in the centre of the city of Rome, Italy. Built of concrete and sand, it is the largest amphitheatre ever built. The Colosseum is situated just east of the Roman Forum. Construction began under the emperor Vespasian in AD 72, and was completed in AD 80 under his successor and heir Titus. Further modifications were made during the reign of Domitian." />
 
-            <GridLayout
+            <GridView
                 android:id="@+id/point_pictures"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="300dp"
                 android:layout_below="@id/point_description"
-                android:paddingTop="10dp"
-                android:useDefaultMargins="true"
-                android:columnCount="3">
-            </GridLayout>
+                android:numColumns="3"
+                android:verticalSpacing="3dp"
+                android:horizontalSpacing="10dp"
+                android:nestedScrollingEnabled="true"
 
+                />
+            <!--android:columnWidth="75dp"-->
         </RelativeLayout>
 
     </LinearLayout>
+
 </ScrollView>

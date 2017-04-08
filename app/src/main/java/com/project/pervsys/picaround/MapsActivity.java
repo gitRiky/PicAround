@@ -76,6 +76,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -544,6 +545,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
         marker.showInfoWindow();
+        Point p = (Point) marker.getTag();
+        Log.i(TAG, p.toString());
 
         return true;
     }
@@ -555,7 +558,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 //        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
         Point point = (Point) marker.getTag();
         Intent i = new Intent(this, PointActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         i.putExtra(POINT_ID, point.getId());
         startActivity(i);
     }
@@ -618,16 +620,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
 
-        List<Picture> pictures = point.getPictures();
-        for (Picture pic : pictures) {
+        HashMap<String,Picture> pictures = point.getPictures();
+        for (Picture pic : pictures.values()) {
             ImageView imageView = new ImageView(this);
             imageView.setLayoutParams(layoutParams);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             gridLayout.addView(imageView);
 
             String path = pic.getPath();
-
-            Log.i(TAG, path);
 
             Picasso.with(this)
                     .load(path)
