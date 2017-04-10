@@ -16,7 +16,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -50,6 +49,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
@@ -75,7 +75,6 @@ import com.project.pervsys.picaround.utility.Config;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -101,6 +100,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
+    private static final int MIN_TIME_LOCATION_UPDATE = 400;
+    private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
 
     private GoogleMap mMap;
     private Marker mRome;
@@ -310,8 +311,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         // Get the location manager
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        mProvider = mLocationManager.getBestProvider(criteria, false);
+        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
@@ -331,7 +331,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        mLocationManager.requestLocationUpdates(mProvider, 400, 1, this);
+        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
     }
 
     /* Remove the location listener updates when Activity is paused */
@@ -441,75 +441,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         setupGPS(this);
 
-        Location location = mLocationManager.getLastKnownLocation(mProvider);
+        //Location location = mLocationManager.getLastKnownLocation(mProvider);
 
-        // Initialize the location fields
-        if (location != null) {
-            System.out.println("Provider " + mProvider + " has been selected.");
-            onLocationChanged(location);
-        }
-        else {
-            Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
-        }
         //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
         populatePoints();
-
-        // Create points from data
-        Point point = new Point(
-                "478765", "Colosseum", 41.890638, 12.49075,
-                "Monumental 3-tiered roman amphitheater once used for gladiatorial games, with guided tour option.",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/icon.png?alt=media&token=bcbbf65e-e6f9-4974-95c7-83486cc8f4fc",
-                "Historical Landmark", "normal");
-
-        Picture pic1 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c01.jpg?alt=media&token=3864cad4-ca38-4ac4-90eb-4022fa5b58e3",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic2 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c02.jpg?alt=media&token=74823bd1-2796-4f96-b146-a930532958fb",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic3 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c03.jpg?alt=media&token=1fc22b30-f271-4822-b0a8-8091f6796b1e",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic4 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c04.jpg?alt=media&token=04eb6baf-0d4f-4b9f-a7b7-c8e031899401",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic5 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c05.jpg?alt=media&token=5cd84317-ee22-4f58-b93d-32f49f6da033",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic6 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c06.jpg?alt=media&token=ea713bf2-d258-467b-8b0b-3cd8ad42ae72",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-
-        point.getPictures().add(pic1);
-        point.getPictures().add(pic2);
-        point.getPictures().add(pic3);
-        point.getPictures().add(pic4);
-        point.getPictures().add(pic5);
-        point.getPictures().add(pic6);
-
-
-        LatLng pointPosition = new LatLng(point.getLat(),point.getLon());
-
-        // Add some markers to the map, and add a data object to each marker.
-        mRome = mMap.addMarker(new MarkerOptions()
-                .position(pointPosition)
-                .title(point.getName())
-                .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_radio_button_checked_red_24dp)));
-        mRome.setTag(point);
-
-
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(pointPosition)      // Sets the center of the map to the point position
-                .zoom(16)                   // Sets the zoom
-                .build();                   // Creates a CameraPosition from the builder
-        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
@@ -553,33 +488,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     private void setupGPS(Context context) {
-//        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
-//        boolean enabled = service
-//                .isProviderEnabled(LocationManager.GPS_PROVIDER);
-//
-//        // check if enabled and if not send user to the GSP settings
-//        // Better solution would be to display a dialog and suggesting to
-//        // go to the settings
-//        if (!enabled) {
-//            new AlertDialog.Builder(this)
-//                    .setTitle("GPS enabling")
-//                    .setMessage("It seems your GPS is turned off. Would you like to turn it ON?")
-//                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-//                        public void onClick(DialogInterface dialog, int which) {
-//                            // continue with GPS activation
-//                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-//                            startActivity(intent);
-//                        }
-//                    })
-//                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-//                        public void onClick(DialogInterface dialog, int which) {
-//                            // do nothing
-//                        }
-//                    })
-//                    .setIcon(android.R.drawable.ic_dialog_alert)
-//                    .show();
-//            Log.i(TAG, "Passed start activity");
-//        }
 
         GoogleApiClient googleApiClient = new GoogleApiClient.Builder(context)
                 .addApi(LocationServices.API).build();
@@ -726,12 +634,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onLocationChanged(Location location) {
-        int lat = (int) (location.getLatitude());
-        int lng = (int) (location.getLongitude());
-        if(mMap != null){
-            System.out.println("mMap is not NULL !");
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat,lng)));
-        }
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 16);
+        mMap.animateCamera(cameraUpdate);
+        mLocationManager.removeUpdates(this);
     }
 
     @Override
@@ -743,12 +649,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onProviderEnabled(String provider) {
         Toast.makeText(this, "Enabled new mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
+        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
+        Log.i(TAG, "New provider enabled: " + provider);
     }
 
     @Override
     public void onProviderDisabled(String provider) {
         Toast.makeText(this, "Disabled mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
+        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
+        Log.i(TAG, "New provider disabled: " + provider);
     }
 
     @Override
