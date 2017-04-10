@@ -101,7 +101,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         username = getIntent().getStringExtra(USERNAME);
-        Log.i(TAG, "Started activity, photo's path = " + mPhotoPath);
+        Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         nameField = (EditText) findViewById(R.id.photo_name);
         descriptionField = (EditText) findViewById(R.id.photo_description);
@@ -115,7 +115,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
         if (latitude == null || longitude == null){
             Log.d(TAG, "Position not available in the metadata");
-            // start a new activity that allows the user to select a place;
+            // TODO: start a new activity that allows the user to select a place;
         }
         else{
             Geocoder geocoder;
@@ -123,9 +123,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
             geocoder = new Geocoder(this, Locale.getDefault());
             try {
                 // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                //addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
-                 //       Double.parseDouble(longitude), 1);
-                addresses = geocoder.getFromLocation(41.890638, 12.49075, 1);
+                addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
+                        Double.parseDouble(longitude), 1);
                 String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
                 String city = addresses.get(0).getLocality();
                 Log.d(TAG, "address = " + address + " city = " + city);
@@ -150,9 +149,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         Log.d(TAG, "Timestamp = " + timestamp + " lat = " + latitude + " long = " + longitude);
     }
 
-    private String getTagString(String tag, ExifInterface exif) {
-        return (tag + " : " + exif.getAttribute(tag) + "\n");
-    }
 
     @Override
     protected void onStart() {
@@ -287,6 +283,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink:  " + uri);
                 picture = new com.project.pervsys.picaround.domain.Picture(name, description, uri.toString());
+                picture.setTimestamp(timestamp);
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
                 databaseReference.child(USER_PICTURE).push().setValue(picture);
                 /*TODO: the picture has to be sent to pictures and

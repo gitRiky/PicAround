@@ -760,11 +760,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 //Help activity
                 return true;
             case R.id.info:
-                //TODO: I'm using this item for starting my UploadPhotoActivity
                 Log.i(TAG, "Info has been selected");
                 Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
-                Intent i = new Intent(this, UploadPhotoActivity.class);
-                startActivity(i);
+                //Info activity
                 //Info activity
                 return true;
             case R.id.profile:
