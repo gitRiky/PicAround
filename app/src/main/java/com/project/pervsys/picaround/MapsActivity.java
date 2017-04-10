@@ -763,7 +763,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 Log.i(TAG, "Info has been selected");
                 Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
                 //Info activity
-                //Info activity
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
