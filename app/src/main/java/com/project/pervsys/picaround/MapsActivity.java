@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -71,6 +73,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.utility.Config;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
@@ -94,6 +97,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_CHECK_SETTINGS = 3;
+    private static final int REQUEST_UPLOAD_PHOTO = 2;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
@@ -102,7 +106,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
+    private static final String PHOTO_PATH = "photoPath";
+    private static final String USERS = "users";
+    private static final String USERNAME = "username";
+    private static final String EMAIL = "email";
 
+    private ProgressDialog progress;
     private GoogleMap mMap;
     private Marker mRome;
     private Marker mPerth;
@@ -114,6 +123,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private LocationManager mLocationManager = null;
     private String mProvider;
+    private String username;
+ 
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
@@ -164,40 +175,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         return f;
     }
 
-    private void setPic() {
 
-		/* There isn't enough memory to open up more than a couple camera photos */
-		/* So pre-scale the target bitmap into which the file is decoded */
-
-		/* Get the size of the ImageView */
-        int targetW = mImageView.getWidth();
-        int targetH = mImageView.getHeight();
-
-		/* Get the size of the image */
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-		/* Figure out which way needs to be reduced less */
-        int scaleFactor = 1;
-        if ((targetW > 0) || (targetH > 0)) {
-            scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-        }
-
-		/* Set bitmap options to scale the image decode target */
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
-
-		/* Decode the JPEG file into a Bitmap */
-        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
-
-		/* Associate the Bitmap to the ImageView */
-        mImageView.setImageBitmap(bitmap);
-        mImageView.setVisibility(View.VISIBLE);
-    }
 
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
@@ -236,8 +214,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void handleBigCameraPhoto() {
 
         if (mCurrentPhotoPath != null) {
-            setPic();
+            Log.i(TAG, "The photo has been taken");
+            Log.i(TAG, "Set pic ok");
             galleryAddPic();
+            Log.i(TAG, "Gallery pic ok");
+            //Start the UploadPhotoActivity, passing the photo's path
+            Intent i = new Intent(this, UploadPhotoActivity.class);
+            i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
+            Log.d(TAG, "Username " + username);
+            i.putExtra(USERNAME, username);
+            Log.i(TAG, "Starting Upload activity");
+            startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
             mCurrentPhotoPath = null;
         }
 
@@ -295,9 +282,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         };
 
 
-        mImageView = (ImageView) findViewById(R.id.imageView);
-        mImageBitmap = null;
-
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floatingActionButton);
@@ -307,6 +291,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 MediaStore.ACTION_IMAGE_CAPTURE
         );
 
+
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         // Get the location manager
@@ -314,6 +299,38 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mProvider = mLocationManager.getBestProvider(new Criteria(), true);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+
+        //Obtain the username
+        startProgressBar();
+
+        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        Log.d(TAG, "Email = " + email);
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for(DataSnapshot child : dataSnapshot.getChildren()) {
+                            if (child != null) {
+                                Log.i(TAG, "Username obtained");
+                                User user = child.getValue(User.class);
+                                Log.e(TAG, user.toString());
+                                username = user.getUsername();
+                                if (progress != null)
+                                    progress.dismiss();
+                            }
+                            else
+                                Log.e(TAG, "Cannot obtain the username");
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -357,17 +374,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 putString(Config.LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
         ApplicationClass.setGoogleSignInResult(null);
+        Log.i(TAG, "onDestroy");
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_TAKE_PHOTO: {
+            case REQUEST_TAKE_PHOTO:
                 if (resultCode == RESULT_OK) {
                     handleBigCameraPhoto();
                 }
                 break;
-            } // REQUEST_TAKE_PHOTO
-        } // switch
+            case REQUEST_UPLOAD_PHOTO:
+                if (resultCode == RESULT_OK)
+                    Log.i(TAG, "Photo in uploading");
+                else
+                    Log.d(TAG, "Photo upload cancelled");
+                break;
+        }
     }
 
     // Some lifecycle callbacks so that the image can survive orientation change
@@ -469,7 +492,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                 Map<String, String> point = (Map<String, String>) child.getValue();
                                 JSONObject jsonPoint = new JSONObject(point);
                                 String lat = jsonPoint.getString("lat");
-                                String lon = jsonPoint.getString("long");
+                                String lon = jsonPoint.getString("lon");
                                 mMap.addMarker(new MarkerOptions()
                                 .position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon))));
                             } catch (JSONException e) {
@@ -667,6 +690,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         inflater.inflate(R.menu.main_menu, menu);
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
+        Log.e(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
         if(logged != null && !logged.equals(Config.NOT_LOGGED))
             menu.add(R.string.logout);
@@ -708,7 +732,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case R.id.search:
                 Log.i(TAG, "Search has been selected");
                 Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                //Search activity
                 return true;
             default:
                 String title = (String) item.getTitle();
@@ -785,6 +809,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
     }
+
+    private void startProgressBar(){
+        progress = new ProgressDialog(this);
+        progress.setMessage(getString(R.string.loading));
+        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progress.setIndeterminate(true);
+        progress.setCanceledOnTouchOutside(false);
+        progress.show();
+    }
+
 
 }
 

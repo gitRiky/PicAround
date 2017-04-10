@@ -38,6 +38,17 @@
     <string name="album_name">PicAround</string>
     <string name="exit">Exit</string>
     <string name="registration_exit">Do you really want to exit from the registration?</string>
+    <string name="registration">Registration</string>
     <string name="open">Open</string>
     <string name="search">Search</string>
+    <string name="upload">UPLOAD</string>
+    <string name="upload_title">Upload picture</string>
+    <string name="name">Name</string>
+    <string name="description">Description</string>
+    <string name="fb_share">Share on Facebook</string>
+    <string name="twt_share">Share on Twitter</string>
+    <string name="name_missing">Name is missing</string>
+    <string name="name_too_long">Name is too long</string>
+    <string name="upload_failed">Error during the upload of the photo</string>
+    <string name="upload_ok">The photo has been uploaded!</string>
 </resources>
