@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -37,24 +38,18 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     private final static String USERNAME = "username";
     private final static String AGE = "age";
     private GoogleApiClient mGoogleApiClient;
-    private User newUser;
-    private FirebaseAuth mAuth;
-    private FirebaseAuth.AuthStateListener mAuthListener;
     private String age;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_get_basic_info);
+        // Set toolbar
+        Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(R.string.registration);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (mAuthListener != null) {
-            mAuth.removeAuthStateListener(mAuthListener);
-        }
-    }
 
     @Override
     public void onBackPressed(){
@@ -70,12 +65,10 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         if (checkAge(age)){
             //newUser.setAge(Integer.parseInt(age));
             if (!checkUsername(username)) {
-                usernameField.setHint(R.string.username);
                 usernameField.setText("");
             }
         }
         else{
-            ageField.setHint(R.string.age);
             ageField.setText("");
         }
     }
@@ -122,6 +115,9 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                             i.putExtra(AGE, age);
                             setResult(RESULT_OK, i);
                             Log.i(TAG, "Data sent to LoginActivity");
+                            /*Toast.makeText(getApplicationContext(),
+                                    R.string.registration_ok,
+                                    Toast.LENGTH_SHORT).show();*/
                             finish();
                         }
                     }

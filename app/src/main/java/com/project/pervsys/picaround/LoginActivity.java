@@ -364,7 +364,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void checkEmailGoogle(final GoogleSignInAccount acct){
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
         databaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
                 .addListenerForSingleValueEvent(new ValueEventListener() {

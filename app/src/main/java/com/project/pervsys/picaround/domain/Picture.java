@@ -35,6 +35,15 @@ public class Picture {
         this.place = place;
     }
 
+
+    //TODO: remove this constructor
+    // temp constructor for simulating the upload of a picture
+    public Picture(String name, String description, String path){
+        this.name = name;
+        this.description = description;
+        this.path = path;
+    }
+
     public String getId() {
         return id;
     }
