@@ -9,7 +9,7 @@ public class Place {
     private String pointId;
 
     public Place(){
-
+        // Default constructor required for calls to DataSnapshot.getValue(Place.class)
     }
 
     public Place(String id, String address, double lat, double lon, String pointId) {

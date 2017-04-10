@@ -16,7 +16,7 @@ public class Picture {
     private Place place;
 
     public Picture(){
-
+        // Default constructor required for calls to DataSnapshot.getValue(Picture.class)
     }
 
     public Picture(String id, String name, String description, String path, int views, int likes,

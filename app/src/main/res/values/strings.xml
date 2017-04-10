@@ -41,6 +41,9 @@
     <string name="registration">Registration</string>
     <string name="open">Open</string>
     <string name="search">Search</string>
+    <string name="welcome_to_picaround">Welcome to\nPicAround!</string>
+    <string name="sign_in_with_facebook">    Sign in with Facebook</string>
+    <string name="point_activity">Point</string>
     <string name="upload">UPLOAD</string>
     <string name="upload_title">Upload picture</string>
     <string name="name">Name</string>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.project.pervsys.picaround.PointActivity">
+
+        <include layout="@layout/toolbar"></include>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/point_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:textSize="20sp"
+                android:textColor="@color/primary_text_black"
+                android:text="Colosseum" />
+
+            <TextView
+                android:id="@+id/point_address"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/point_name"
+                android:layout_marginBottom="10dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:textSize="16sp"
+                android:textColor="@color/secondary_text_black"
+                android:text="Piazza del Colosseo, 1, 00184 Roma" />
+
+            <TextView
+                android:id="@+id/point_description"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/point_address"
+                android:layout_marginBottom="10dp"
+                android:textSize="16sp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:textColor="@color/secondary_text_black"
+                android:maxLines="6"
+                android:ellipsize="end"
+                android:text="The Colosseum or Coliseum, also known as the Flavian Amphitheatre, is an oval amphitheatre in the centre of the city of Rome, Italy. Built of concrete and sand, it is the largest amphitheatre ever built. The Colosseum is situated just east of the Roman Forum. Construction began under the emperor Vespasian in AD 72, and was completed in AD 80 under his successor and heir Titus. Further modifications were made during the reign of Domitian." />
+
+            <GridView
+                android:id="@+id/point_pictures"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_below="@id/point_description"
+                android:numColumns="3"
+                android:verticalSpacing="3dp"
+                android:horizontalSpacing="10dp"
+                android:nestedScrollingEnabled="true"
+
+                />
+            <!--android:columnWidth="75dp"-->
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</ScrollView>
