@@ -85,15 +85,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
-
-    private static final LatLng PERTH = new LatLng(-31.952854, 115.857342);
-    private static final LatLng SYDNEY = new LatLng(-33.87365, 151.20689);
-    private static final LatLng BRISBANE = new LatLng(-27.47093, 153.0235);
-    private static final LatLng ROME = new LatLng(41.890635, 12.490726);
 
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_CHECK_SETTINGS = 3;
@@ -104,6 +100,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
+
+    private static final String POINT_ID = "pointId";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
     private static final String PHOTO_PATH = "photoPath";
@@ -123,8 +121,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private LocationManager mLocationManager = null;
     private String mProvider;
+
     private String username;
- 
+
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
@@ -243,6 +242,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -296,6 +296,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         // Get the location manager
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
         mProvider = mLocationManager.getBestProvider(new Criteria(), true);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
@@ -481,25 +482,21 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populatePoints() {
         // get all the points
-        //mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child("points").keepSynced(true);
         mDatabaseRef.child("points")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
+
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
-                            try {
-                                Map<String, String> point = (Map<String, String>) child.getValue();
-                                JSONObject jsonPoint = new JSONObject(point);
-                                String lat = jsonPoint.getString("lat");
-                                String lon = jsonPoint.getString("lon");
-                                mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon))));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
+                            Point p = child.getValue(Point.class);
+                            mMap.addMarker(new MarkerOptions()
+//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+                                    .position(new LatLng(p.getLat(), p.getLon())))
+                                    .setTag(p);
                             }
 
-                        }
                     }
 
                     @Override
@@ -571,15 +568,21 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
         marker.showInfoWindow();
+        Point p = (Point) marker.getTag();
+        Log.i(TAG, p.toString());
 
         return true;
     }
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-        //TODO: start PointActivity
-        String toShow = marker.getPosition().toString();
-        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
+        // Start PointActivity
+//        String toShow = marker.getPosition().toString();
+//        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
+        Point point = (Point) marker.getTag();
+        Intent i = new Intent(this, PointActivity.class);
+        i.putExtra(POINT_ID, point.getId());
+        startActivity(i);
     }
 
     @Override
@@ -640,8 +643,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
 
-        List<Picture> pictures = point.getPictures();
-        for (Picture pic : pictures) {
+        HashMap<String,Picture> pictures = point.getPictures();
+        for (Picture pic : pictures.values()) {
             ImageView imageView = new ImageView(this);
             imageView.setLayoutParams(layoutParams);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);

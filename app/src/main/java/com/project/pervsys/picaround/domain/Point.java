@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround.domain;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,14 +15,14 @@ public class Point {
     private String category;
     private String type;
     private List<Integer> places;
-    private List<Picture> pictures;
+    private HashMap<String,Picture> pictures;
 
     public Point(){
-
+        // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
 
-    public Point(String id, String name, double lat, double lon, String description, String icon, String category, String type) {
-        this.id = id;
+    public Point(String name, double lat, double lon, String description, String icon, String category, String type) {
+        this.id = null;
         this.name = name;
         this.lat = lat;
         this.lon = lon;
@@ -30,7 +31,7 @@ public class Point {
         this.icon = icon;
         this.category = category;
         this.places = new LinkedList<>();
-        this.pictures = new LinkedList<>();
+        this.pictures = new HashMap<>();
     }
 
     public String getId() {
@@ -105,11 +106,11 @@ public class Point {
         this.places = places;
     }
 
-    public List<Picture> getPictures() {
+    public HashMap<String,Picture> getPictures() {
         return pictures;
     }
 
-    public void setPictures(List<Picture> pictures) {
+    public void setPictures(HashMap<String,Picture> pictures) {
         this.pictures = pictures;
     }
 
