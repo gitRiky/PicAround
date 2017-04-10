@@ -13,8 +13,10 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.nfc.Tag;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -178,6 +180,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
+        Log.i(TAG, "Photo added in gallery");
         File f = new File(mCurrentPhotoPath);
         Uri contentUri = Uri.fromFile(f);
         mediaScanIntent.setData(contentUri);
@@ -214,9 +217,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         if (mCurrentPhotoPath != null) {
             Log.i(TAG, "The photo has been taken");
-            Log.i(TAG, "Set pic ok");
-            galleryAddPic();
-            Log.i(TAG, "Gallery pic ok");
             //Start the UploadPhotoActivity, passing the photo's path
             Intent i = new Intent(this, UploadPhotoActivity.class);
             i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
@@ -224,7 +224,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             i.putExtra(USERNAME, username);
             Log.i(TAG, "Starting Upload activity");
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
-            mCurrentPhotoPath = null;
         }
 
     }
@@ -302,36 +301,35 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
         //Obtain the username
-        startProgressBar();
-
-        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        Log.d(TAG, "Email = " + email);
-        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for(DataSnapshot child : dataSnapshot.getChildren()) {
-                            if (child != null) {
-                                Log.i(TAG, "Username obtained");
-                                User user = child.getValue(User.class);
-                                Log.e(TAG, user.toString());
-                                username = user.getUsername();
-                                if (progress != null)
-                                    progress.dismiss();
+        if (user != null) {
+            startProgressBar();
+            String email = user.getEmail();
+            Log.d(TAG, "Email = " + email);
+            mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                if (child != null) {
+                                    Log.i(TAG, "Username obtained");
+                                    User user = child.getValue(User.class);
+                                    Log.d(TAG, user.toString());
+                                    username = user.getUsername();
+                                    if (progress != null)
+                                        progress.dismiss();
+                                } else
+                                    Log.e(TAG, "Cannot obtain the username");
                             }
-                            else
-                                Log.e(TAG, "Cannot obtain the username");
+
                         }
 
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
-
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //database error, e.g. permission denied (not logged with Firebase)
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
+        }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -386,13 +384,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 }
                 break;
             case REQUEST_UPLOAD_PHOTO:
-                if (resultCode == RESULT_OK)
+                if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo in uploading");
+                    galleryAddPic();
+                }
                 else
                     Log.d(TAG, "Photo upload cancelled");
+                mCurrentPhotoPath = null;
                 break;
         }
     }
+
 
     // Some lifecycle callbacks so that the image can survive orientation change
     @Override
@@ -693,7 +695,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         inflater.inflate(R.menu.main_menu, menu);
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
-        Log.e(TAG, "LOGGED WITH " + logged);
+        Log.i(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
         if(logged != null && !logged.equals(Config.NOT_LOGGED))
             menu.add(R.string.logout);

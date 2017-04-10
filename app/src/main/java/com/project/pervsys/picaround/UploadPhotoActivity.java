@@ -3,7 +3,8 @@ package com.project.pervsys.picaround;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Picture;
+import android.graphics.Matrix;
+import com.project.pervsys.picaround.domain.Picture;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
@@ -47,6 +48,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final String USER_PICTURE = "pictures";
     private static final String USERNAME = "username";
     private static final String SEPARATOR = "_";
+    private static final int PIC_HOR_RIGHT = 1;
+    private static final int PIC_HOR_LEFT = 3;
+    private static final int PIC_VER_BOTTOM = 8;
+    private static final int PIC_VER_TOP = 6;
+
     private static final String POINT_PICTURE = "points/pictures";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -62,7 +68,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String timestamp;
     private String latitude;
     private String longitude;
-    private com.project.pervsys.picaround.domain.Picture picture;
+    private int orientation;
+    private Picture picture;
 
 
 
@@ -105,7 +112,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         nameField = (EditText) findViewById(R.id.photo_name);
         descriptionField = (EditText) findViewById(R.id.photo_description);
-        setPic();
+        //take metadata from the picture
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             takeExifInfo(exif);
@@ -113,11 +120,15 @@ public class UploadPhotoActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
         }
+        //set the image into imageView
+        setPic();
+
         if (latitude == null || longitude == null){
             Log.d(TAG, "Position not available in the metadata");
             // TODO: start a new activity that allows the user to select a place;
         }
         else{
+            //take the address once we got latitude and longitude
             Geocoder geocoder;
             List<Address> addresses;
             geocoder = new Geocoder(this, Locale.getDefault());
@@ -140,13 +151,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
         timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
         timestamp = timestamp.replace(" ", SEPARATOR);
         latitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
-        //myAttribute += getTagString(ExifInterface.TAG_GPS_LATITUDE_REF, exif);
         longitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
-        //myAttribute += getTagString(ExifInterface.TAG_GPS_LONGITUDE_REF, exif);
-        //myAttribute += getTagString(ExifInterface.TAG_IMAGE_LENGTH, exif);
-        //myAttribute += getTagString(ExifInterface.TAG_IMAGE_WIDTH, exif);
-        //myAttribute += getTagString(ExifInterface.TAG_ORIENTATION, exif);
-        Log.d(TAG, "Timestamp = " + timestamp + " lat = " + latitude + " long = " + longitude);
+        orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
     }
 
 
@@ -255,9 +261,14 @@ public class UploadPhotoActivity extends AppCompatActivity {
         bmOptions.inPurgeable = true;
 
 		/* Decode the JPEG file into a Bitmap*/
+
         Bitmap bitmap = BitmapFactory.decodeFile(mPhotoPath, bmOptions);
 
-        mImageView.setImageBitmap(bitmap);
+        //Use the matrix for rotate the image, if needed
+        Matrix matrix = new Matrix();
+        matrix.postRotate(getRotation());
+        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
+        mImageView.setImageBitmap(rotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
 
@@ -269,6 +280,22 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
         return true;
     }
+
+
+    private int getRotation(){
+        switch(orientation){
+            case PIC_HOR_RIGHT:
+                return 0;
+            case PIC_VER_TOP:
+                return 90;
+            case PIC_HOR_LEFT:
+                return 180;
+            case PIC_VER_BOTTOM:
+                return 270;
+        }
+        return 0;
+    }
+
 
     private boolean checkDescription(){
         //TODO: remove this if no check is needed
