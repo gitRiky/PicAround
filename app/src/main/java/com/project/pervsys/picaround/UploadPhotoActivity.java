@@ -36,11 +36,14 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.squareup.picasso.Picasso;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.security.Timestamp;
 import java.util.List;
 import java.util.Locale;
+
+import id.zelory.compressor.Compressor;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
@@ -50,8 +53,10 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final String SEPARATOR = "_";
     private static final int PIC_HOR_RIGHT = 1;
     private static final int PIC_HOR_LEFT = 3;
-    private static final int PIC_VER_BOTTOM = 8;
     private static final int PIC_VER_TOP = 6;
+    private static final int PIC_VER_BOTTOM = 8;
+    private static final int MAX_WIDTH = 3264;
+    private static final int MAX_HEIGHT = 2448;
 
     private static final String POINT_PICTURE = "points/pictures";
     private FirebaseAuth mAuth;
@@ -70,6 +75,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String longitude;
     private int orientation;
     private Picture picture;
+
 
 
 
@@ -123,7 +129,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         //set the image into imageView
         setPic();
 
-        if (latitude == null || longitude == null){
+       if (latitude == null || longitude == null){
             Log.d(TAG, "Position not available in the metadata");
             // TODO: start a new activity that allows the user to select a place;
         }
@@ -134,6 +140,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
             geocoder = new Geocoder(this, Locale.getDefault());
             try {
                 // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+                latitude = "41.890638";
+                longitude = "12.49075";
                 addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
                         Double.parseDouble(longitude), 1);
                 String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
@@ -238,9 +246,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
 		/* There isn't enough memory to open up more than a couple camera photos */
 		/* So pre-scale the target bitmap into which the file is decoded */
 
-		/* Get the size of the ImageView */
-        int targetW = mImageView.getWidth();
-        int targetH = mImageView.getHeight();
 
 		/* Get the size of the image */
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
@@ -249,25 +254,24 @@ public class UploadPhotoActivity extends AppCompatActivity {
         int photoW = bmOptions.outWidth;
         int photoH = bmOptions.outHeight;
 
-		/* Figure out which way needs to be reduced less */
-        int scaleFactor = 1;
-        if ((targetW > 0) || (targetH > 0)) {
-            scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-        }
-
 		/* Set bitmap options to scale the image decode target */
         bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
         bmOptions.inPurgeable = true;
 
 		/* Decode the JPEG file into a Bitmap*/
 
         Bitmap bitmap = BitmapFactory.decodeFile(mPhotoPath, bmOptions);
-
         //Use the matrix for rotate the image, if needed
         Matrix matrix = new Matrix();
         matrix.postRotate(getRotation());
+        Log.d(TAG, "Bitmap W = " + bitmap.getWidth() + " H = " + bitmap.getHeight());
+
         Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
+
+        if (rotatedBitmap.getWidth() > MAX_WIDTH || rotatedBitmap.getHeight() > MAX_HEIGHT)
+            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, MAX_WIDTH, MAX_HEIGHT, false);
+
+        Log.d(TAG, "Bitmap W = " + rotatedBitmap.getWidth() + " H = " + rotatedBitmap.getHeight());
         mImageView.setImageBitmap(rotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
