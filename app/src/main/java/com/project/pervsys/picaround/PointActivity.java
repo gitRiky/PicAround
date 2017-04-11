@@ -34,6 +34,7 @@ import com.project.pervsys.picaround.domain.Point;
 import com.project.pervsys.picaround.utility.Config;
 import com.squareup.picasso.Picasso;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class PointActivity extends AppCompatActivity {
@@ -55,13 +56,13 @@ public class PointActivity extends AppCompatActivity {
         getSupportActionBar().setTitle(R.string.point_activity);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-//        // Set status bar color
-//        if (android.os.Build.VERSION.SDK_INT >= 21) {
-//            Window window = this.getWindow();
-//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-//            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
-//        }
+        // Set status bar color
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            Window window = this.getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
+        }
 
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -81,31 +82,33 @@ public class PointActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String pointId = intent.getStringExtra(POINT_ID);
 
-        final TextView pointNameView = (TextView) findViewById(R.id.point_name);
-        final TextView pointAddressView = (TextView) findViewById(R.id.point_address);
-        final TextView pointDescriptionView = (TextView) findViewById(R.id.point_description);
         final GridView pointPictures = (GridView) findViewById(R.id.point_pictures);
 
-        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        final HashMap<String, Picture> pictures = new HashMap<>();
 
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child("points").orderByKey().equalTo(pointId)
             .addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    for(DataSnapshot child : dataSnapshot.getChildren()){
-                        Point point = child.getValue(Point.class);
-                        pointNameView.setText(point.getName());
-                        pointAddressView.setText(point.getCategory());
-                        pointDescriptionView.setText(point.getDescription());
+                    for(DataSnapshot point : dataSnapshot.getChildren()){
+                        DataSnapshot picturesSnap = point.child("pictures");
 
-                        ImageAdapter adapter = new ImageAdapter(PointActivity.this, point.getPictures());
+                        for(DataSnapshot picture : picturesSnap.getChildren()) {
+                            Picture pic = picture.getValue(Picture.class);
+                            pictures.put(picture.getKey(),pic);
+                        }
+
+                        ImageAdapter adapter = new ImageAdapter(PointActivity.this, pictures);
                         pointPictures.setAdapter(adapter);
                         pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
                             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                                Picture p = (Picture) adapterView.getItemAtPosition(i);
+                                Picture picture = (Picture) adapterView.getItemAtPosition(i);
 
+                                Toast.makeText(PointActivity.this, picture.getName(),Toast.LENGTH_SHORT)
+                                        .show();
                             }
                         });
                     }

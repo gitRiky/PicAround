@@ -492,7 +492,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
                             mMap.addMarker(new MarkerOptions()
-//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
                                     .position(new LatLng(p.getLat(), p.getLon())))
                                     .setTag(p);
                             }
@@ -568,8 +568,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
         marker.showInfoWindow();
-        Point p = (Point) marker.getTag();
-        Log.i(TAG, p.toString());
 
         return true;
     }
@@ -577,8 +575,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onInfoWindowClick(Marker marker) {
         // Start PointActivity
-//        String toShow = marker.getPosition().toString();
-//        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
         Point point = (Point) marker.getTag();
         Intent i = new Intent(this, PointActivity.class);
         i.putExtra(POINT_ID, point.getId());
@@ -592,50 +588,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-        // First opening the infoWindow: loading
-        if (marker.getSnippet() != null) {
-            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
-
+        // First opening the infoWindow: show loading
+//        if (marker.getSnippet() != null) {
+//            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
+//            View v = getLayoutInflater().inflate(R.layout.info_window, null);
+//            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
+//            Point point = (Point) marker.getTag();
+//            addPictures(marker, point, gridLayout);
+//            return loadingView;
+//        }
+//        // Second opening of the infoWindow: show info window
+//        else {
             View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
             GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-
             Point point = (Point) marker.getTag();
-
-            Picasso.with(this)
-                    .load(point.getIcon())
-                    .into(icon, new MarkerCallback(marker));
-
             addPictures(marker, point, gridLayout);
-
-            return loadingView;
-        }
-        // Second opening of the infoWindow: show info window
-        else {
-            View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
-            TextView title = (TextView) v.findViewById(R.id.info_title);
-            TextView category = (TextView) v.findViewById(R.id.info_category);
-            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-            TextView description = (TextView) v.findViewById(R.id.info_description);
-
-            Point point = (Point) marker.getTag();
-
-            title.setText(point.getName());
-            category.setText(point.getCategory());
-            description.setText(point.getDescription());
-
-            String iconPath = point.getIcon();
-            Picasso.with(this)
-                    .load(iconPath)
-                    .into(icon, new MarkerCallback(marker));
-
-            addPictures(marker, point, gridLayout);
-
             return v;
-        }
+//        }
     }
 
     private void addPictures(Marker marker, Point point, GridLayout gridLayout) {
@@ -643,17 +612,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
 
-        HashMap<String,Picture> pictures = point.getPictures();
-        for (Picture pic : pictures.values()) {
+        List<String> thumbnails = point.getThumbnails();
+        for (String thumbnailPath : thumbnails) {
             ImageView imageView = new ImageView(this);
             imageView.setLayoutParams(layoutParams);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             gridLayout.addView(imageView);
 
-            String path = pic.getPath();
-
             Picasso.with(this)
-                    .load(path)
+                    .load(thumbnailPath)
                     .into(imageView, new MarkerCallback(marker));
         }
     }
@@ -822,15 +789,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         progress.show();
     }
 
-
 }
 
 class MarkerCallback implements Callback {
 
-    private static final int THUMBNAILS_NUMBER = 7;
+    private static final int THUMBNAILS_NUMBER = 6;
     private static int counter = 0;
 
-    Marker marker=null;
+    Marker marker = null;
 
     MarkerCallback(Marker marker) {
         this.marker=marker;
@@ -843,9 +809,11 @@ class MarkerCallback implements Callback {
 
     @Override
     public void onSuccess() {
-        counter++;
-        if (counter == THUMBNAILS_NUMBER && marker != null && marker.isInfoWindowShown()) {
-            marker.setSnippet(null);
+        Log.i("MapsActivity", "Picasso onSuccess, counter=" + counter);
+//        counter++;
+        if (marker != null && marker.isInfoWindowShown()) {
+//            counter = 0;
+//            marker.setSnippet(null);
             marker.hideInfoWindow();
             marker.showInfoWindow();
         }
