@@ -246,7 +246,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle(R.string.app_name);
+//        getSupportActionBar().setTitle(R.string.app_name);
 
         // Set status bar color
         if (android.os.Build.VERSION.SDK_INT >= 21) {
@@ -301,37 +301,37 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
-        //Obtain the username
-        startProgressBar();
 
-        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        Log.d(TAG, "Email = " + email);
-        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for(DataSnapshot child : dataSnapshot.getChildren()) {
-                            if (child != null) {
-                                Log.i(TAG, "Username obtained");
-                                User user = child.getValue(User.class);
-                                Log.e(TAG, user.toString());
-                                username = user.getUsername();
-                                if (progress != null)
-                                    progress.dismiss();
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            //Obtain the username
+            startProgressBar();
+            String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+            Log.d(TAG, "Email = " + email);
+            mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                if (child != null) {
+                                    Log.i(TAG, "Username obtained");
+                                    User user = child.getValue(User.class);
+                                    Log.e(TAG, user.toString());
+                                    username = user.getUsername();
+                                    if (progress != null)
+                                        progress.dismiss();
+                                } else
+                                    Log.e(TAG, "Cannot obtain the username");
                             }
-                            else
-                                Log.e(TAG, "Cannot obtain the username");
+
                         }
 
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
-
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //database error, e.g. permission denied (not logged with Firebase)
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
+        }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()

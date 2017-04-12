@@ -54,4 +54,7 @@
     <string name="name_too_long">Name is too long</string>
     <string name="upload_failed">Error during the upload of the photo</string>
     <string name="upload_ok">The photo has been uploaded!</string>
+    <string name="views">views</string>
+    <string name="likes">likes</string>
+    <string name="popularity">popularity</string>
 </resources>

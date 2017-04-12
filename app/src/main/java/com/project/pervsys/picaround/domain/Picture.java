@@ -1,5 +1,9 @@
 package com.project.pervsys.picaround.domain;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
 public class Picture {
 
     private String id;
@@ -13,26 +17,27 @@ public class Picture {
     private String type;
     private String userId;
     private String username;
+    private String userIcon;
     private Place place;
+    private HashMap<String,String> likesList;
+    private HashMap<String,String> viewsList;
 
     public Picture(){
         // Default constructor required for calls to DataSnapshot.getValue(Picture.class)
     }
 
-    public Picture(String id, String name, String description, String path, int views, int likes,
-                   double popularity, String timestamp, String type, String userId, String username, Place place) {
-        this.id = id;
+    public Picture(String name, String description, String path, String timestamp, String type,
+                   String userId, String username, Place place) {
         this.name = name;
         this.description = description;
         this.path = path;
-        this.views = views;
-        this.likes = likes;
-        this.popularity = popularity;
         this.timestamp = timestamp;
         this.type = type;
         this.userId = userId;
         this.username = username;
         this.place = place;
+        this.likesList = new HashMap<>();
+        this.viewsList = new HashMap<>();
     }
 
 
@@ -140,6 +145,30 @@ public class Picture {
         this.place = place;
     }
 
+    public String getUserIcon() {
+        return userIcon;
+    }
+
+    public void setUserIcon(String userIcon) {
+        this.userIcon = userIcon;
+    }
+
+    public HashMap<String, String> getLikesList() {
+        return likesList;
+    }
+
+    public void setLikesList(HashMap<String, String> likesList) {
+        this.likesList = likesList;
+    }
+
+    public HashMap<String, String> getViewsList() {
+        return viewsList;
+    }
+
+    public void setViewsList(HashMap<String, String> viewsList) {
+        this.viewsList = viewsList;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -170,7 +199,10 @@ public class Picture {
                 ", type='" + type + '\'' +
                 ", userId=" + userId +
                 ", username='" + username + '\'' +
-                ", place=" + place +
+                ", userIcon='" + userIcon + '\'' +
+                ", place=" + place + '\'' +
+                ", likesList=" + likesList + '\'' +
+                ", viewsList=" + viewsList +
                 '}';
     }
 }

@@ -2,6 +2,7 @@ package com.project.pervsys.picaround;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -39,8 +40,9 @@ import java.util.List;
 
 public class PointActivity extends AppCompatActivity {
 
-    private static final String TAG = "MapsActivity";
+    private static final String TAG = "PointActivity";
     private static final String POINT_ID = "pointId";
+    private static final String PICTURE_ID = "pictureId";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference mDatabaseRef = null;
@@ -53,7 +55,7 @@ public class PointActivity extends AppCompatActivity {
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle(R.string.point_activity);
+//        getSupportActionBar().setTitle(R.string.point_activity);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // Set status bar color
@@ -104,11 +106,13 @@ public class PointActivity extends AppCompatActivity {
                         pointPictures.setAdapter(adapter);
                         pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
-                            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                                Picture picture = (Picture) adapterView.getItemAtPosition(i);
+                            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                                Picture picture = (Picture) adapterView.getItemAtPosition(position);
 
-                                Toast.makeText(PointActivity.this, picture.getName(),Toast.LENGTH_SHORT)
-                                        .show();
+                                // Start PictureActivity
+                                Intent i = new Intent(PointActivity.this, PictureActivity.class);
+                                i.putExtra(PICTURE_ID, picture.getId());
+                                startActivity(i);
                             }
                         });
                     }
@@ -178,6 +182,9 @@ public class PointActivity extends AppCompatActivity {
                 Log.i(TAG, "Search has been selected");
                 Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
                 //Profile activity
+                return true;
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
                 return true;
             default:
                 return true;
