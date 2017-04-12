@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
@@ -90,6 +91,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
+
 public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
 
     private static final int REQUEST_TAKE_PHOTO = 1;
@@ -129,6 +132,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
     private DatabaseReference mDatabaseRef = null;
+    private CameraPosition mCameraPosition;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -280,7 +284,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             }
         };
 
-
+        // Set file settings
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floatingActionButton);
@@ -289,9 +293,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 mTakePicOnClickListener,
                 MediaStore.ACTION_IMAGE_CAPTURE
         );
-
-
-        mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         // Get the location manager
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -331,7 +332,22 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 });
 
 
+        // Set the last Map configurations if available
+
+        SharedPreferences settings = getSharedPreferences(SHARED_MAP_POSITION, 0);
+        double latitude = Double.parseDouble(settings.getString("latitude", "0"));
+        double longitude = Double.parseDouble(settings.getString("longitude", "0"));
+        float zoom = Float.parseFloat(settings.getString("zoom", "0"));
+
+        LatLng startPosition = new LatLng(latitude, longitude);
+
+        mCameraPosition = new CameraPosition.Builder()
+                .target(startPosition)
+                .zoom(zoom)
+                .build();                   // Creates a CameraPosition from the builder
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -371,6 +387,22 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onStop() {
         super.onStop();
+
+        // Save map configurations
+
+        CameraPosition mMyCam = mMap.getCameraPosition();
+        String latitude = mMyCam.target.latitude + "";
+        String longitude = mMyCam.target.longitude + "";
+        String zoom = mMyCam.zoom + "";
+
+        SharedPreferences settings = getSharedPreferences(SHARED_MAP_POSITION, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("latitude", latitude);
+        editor.putString("longitude", longitude);
+        editor.putString("zoom", zoom);
+
+        editor.apply();
+
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
@@ -379,6 +411,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
         FirebaseAuth.getInstance().signOut();
         getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
                 putString(Config.LOG_PREF_INFO, null).apply();
@@ -470,6 +503,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+
+        // Restore previous configurations of the map, if available
+        if (mCameraPosition != null)
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
+
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions

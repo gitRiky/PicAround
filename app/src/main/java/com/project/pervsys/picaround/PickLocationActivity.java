@@ -1,6 +1,9 @@
 package com.project.pervsys.picaround;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -10,16 +13,19 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
+import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
 
 public class PickLocationActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private Button mPickLocation;
     private Button mExit;
+    private CameraPosition mCameraPosition;
 
     Button.OnClickListener mExitListener =
             new Button.OnClickListener() {
@@ -29,6 +35,7 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
                 }
             };
 
+
     private void handleExitPressed() {
         Intent i = new Intent();
         setResult(RESULT_CANCELED, i);
@@ -36,7 +43,7 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
     }
 
     Button.OnClickListener mPickListener =
-            new Button.OnClickListener(){
+            new Button.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     handlePickLocationSelected();
@@ -44,7 +51,7 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
             };
 
     private void handlePickLocationSelected() {
-        if(mMap != null) {
+        if (mMap != null) {
             LatLng selectedLatLng = mMap.getCameraPosition().target;
             String location = selectedLatLng.toString();
             Intent data = new Intent();
@@ -64,6 +71,18 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
         mExit = (Button) findViewById(R.id.exit_button_from_pickloc);
         mExit.setOnClickListener(mExitListener);
 
+        // Load map configurations, if available
+        SharedPreferences settings = getSharedPreferences(SHARED_MAP_POSITION, 0);
+        double latitude = Double.parseDouble(settings.getString("latitude", "0"));
+        double longitude = Double.parseDouble(settings.getString("longitude", "0"));
+        float zoom = Float.parseFloat(settings.getString("zoom", "0"));
+
+        LatLng startPosition = new LatLng(latitude, longitude);
+
+        mCameraPosition = new CameraPosition.Builder()
+                .target(startPosition)
+                .zoom(zoom)
+                .build();                   // Creates a CameraPosition from the builder
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -83,6 +102,21 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        // Restore previous configurations of the map, if available
+        if (mCameraPosition != null)
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
+
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
 
         mPickLocation.setOnClickListener(mPickListener);
     }
