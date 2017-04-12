@@ -20,6 +20,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -89,7 +90,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
+public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
 
     private static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_CHECK_SETTINGS = 3;
@@ -141,8 +142,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             storageDir = mAlbumStorageDirFactory.getAlbumStorageDir(getAlbumName());
             System.out.println("StorageDir: " + storageDir.toString());
             if (storageDir != null) {
-                if (! storageDir.mkdirs()) {
-                    if (! storageDir.exists()){
+                if (!storageDir.mkdirs()) {
+                    if (!storageDir.exists()) {
                         Log.d(getAlbumName(), "failed to create directory");
                         return null;
                     }
@@ -175,7 +176,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
 
-
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
         File f = new File(mCurrentPhotoPath);
@@ -188,7 +188,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        switch(actionCode) {
+        switch (actionCode) {
             case REQUEST_TAKE_PHOTO:
                 File f = null;
 
@@ -244,7 +244,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         setContentView(R.layout.activity_maps);
 
         // Set toolbar
-        Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
 
@@ -262,8 +262,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             Log.i(TAG, "Logged with Firebase, UID: " + user.getUid());
-        }
-        else {
+        } else {
             Log.i(TAG, "Not logged with Firebase");
         }
         mAuth = FirebaseAuth.getInstance();
@@ -310,7 +309,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        for(DataSnapshot child : dataSnapshot.getChildren()) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
                             if (child != null) {
                                 Log.i(TAG, "Username obtained");
                                 User user = child.getValue(User.class);
@@ -318,8 +317,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                 username = user.getUsername();
                                 if (progress != null)
                                     progress.dismiss();
-                            }
-                            else
+                            } else
                                 Log.e(TAG, "Cannot obtain the username");
                         }
 
@@ -349,6 +347,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            Log.i(TAG, "Location permission not allowed");
+            return;
+        }
         mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
     }
 
@@ -368,7 +377,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     @Override
-    protected void onDestroy(){
+    protected void onDestroy() {
         super.onDestroy();
         FirebaseAuth.getInstance().signOut();
         getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
@@ -398,7 +407,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelable(BITMAP_STORAGE_KEY, mImageBitmap);
-        outState.putBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY, (mImageBitmap != null) );
+        outState.putBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY, (mImageBitmap != null));
         super.onSaveInstanceState(outState);
     }
 
@@ -443,7 +452,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (isIntentAvailable(this, intentName)) {
             btn.setOnClickListener(onClickListener);
         } else {
-            Toast.makeText(this, "ERROR related to " + btn.toString(),Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "ERROR related to " + btn.toString(), Toast.LENGTH_SHORT).show();
             btn.setClickable(false);
         }
     }
@@ -461,11 +470,28 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            Log.i(TAG, "Location permission not allowed");
+            return;
+        }
         mMap.setMyLocationEnabled(true);
 
         setupGPS(this);
 
-        //Location location = mLocationManager.getLastKnownLocation(mProvider);
+        Location location = mLocationManager.getLastKnownLocation(mProvider);
+        if(location != null){
+            Log.i(TAG, "getLastKnownLocation is not null !!");
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 16);
+            mMap.animateCamera(cameraUpdate);
+        }
 
         //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
         populatePoints();
