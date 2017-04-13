@@ -1,6 +1,7 @@
 package com.project.pervsys.picaround;
 
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -385,17 +386,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 }
                 break;
             case REQUEST_UPLOAD_PHOTO:
-                if (resultCode == RESULT_OK) {
+                if (resultCode == RESULT_OK)
                     Log.i(TAG, "Photo in uploading");
-                }
                 if (resultCode == RESULT_CANCELED) {
-                    Log.d(TAG, "Photo upload cancelled");
+                    Log.i(TAG, "Photo upload cancelled");
                     File f = new File(mCurrentPhotoPath);
-                    boolean deleted = f.delete();
-                    Log.d(TAG, "File deleted?? " + deleted);
-                    Intent scanIntent = new Intent(Intent.ACTION_MEDIA_REMOVED);
-                    scanIntent.setData(Uri.fromFile(f));
-                    this.sendBroadcast(scanIntent);
+                    f.delete();
+                    deleteFileFromMediaStore(this.getContentResolver(), f);
                     Log.i(TAG, "Image has been deleted");
                 }
                 mCurrentPhotoPath = null;
@@ -403,6 +400,25 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
     }
 
+    //method used for deleting the image from gallery
+    public static void deleteFileFromMediaStore(final ContentResolver contentResolver, final File file) {
+        String canonicalPath;
+        try {
+            canonicalPath = file.getCanonicalPath();
+        } catch (IOException e) {
+            canonicalPath = file.getAbsolutePath();
+        }
+        final Uri uri = MediaStore.Files.getContentUri("external");
+        final int result = contentResolver.delete(uri,
+                MediaStore.Files.FileColumns.DATA + "=?", new String[] {canonicalPath});
+        if (result == 0) {
+            final String absolutePath = file.getAbsolutePath();
+            if (!absolutePath.equals(canonicalPath)) {
+                contentResolver.delete(uri,
+                        MediaStore.Files.FileColumns.DATA + "=?", new String[]{absolutePath});
+            }
+        }
+    }
 
     // Some lifecycle callbacks so that the image can survive orientation change
     @Override
