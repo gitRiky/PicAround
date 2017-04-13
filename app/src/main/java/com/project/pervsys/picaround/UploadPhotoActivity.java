@@ -1,9 +1,13 @@
 package com.project.pervsys.picaround;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+
+import com.google.firebase.storage.OnProgressListener;
 import com.project.pervsys.picaround.domain.Picture;
 import android.location.Address;
 import android.location.Geocoder;
@@ -14,6 +18,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -58,9 +63,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_HOR_LEFT = 3;
     private static final int PIC_VER_TOP = 6;
     private static final int PIC_VER_BOTTOM = 8;
-    private static final int MAX_COMPR_WIDTH = 3264;
-    private static final int MAX_COMPR_HEIGHT = 2448;
-
+    private static final int COMPRESSION_QUALITY = 65;
+    private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
     private static final String POINT_PICTURE = "points/pictures";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -69,6 +73,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private EditText nameField;
     private EditText descriptionField;
     private String mPhotoPath;
+    private NotificationManager mNotifyManager;
+    private NotificationCompat.Builder mBuilder;
     private String name;
     private String description;
     private String username;
@@ -80,8 +86,12 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private Picture picture;
     private int photoW;
     private int photoH;
-    private int maxWidth = 3264;
-    private int maxHeight = 2448;
+    private int maxWidth;
+    private int maxHeight;
+    private long transferredBytes;
+    private long totalBytes;
+    private boolean inUpload = false;
+
 
 
 
@@ -90,7 +100,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload_photo);
-
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -215,20 +224,24 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     /*Uri file2 =  Uri.fromFile(Compressor         //from 4 MB to 30 KB
                             .getDefault(this)
                             .compressToFile(new File(mPhotoPath)));*/
-                    Uri file2 = Uri.fromFile(new File(mPhotoPath));
-                    Uri file = Uri.fromFile(new Compressor.Builder(this)
+                    //Uri file2 = Uri.fromFile(new File(mPhotoPath));
+                    File compressedFile = new Compressor.Builder(this)
                             .setMaxHeight(photoW)
                             .setMaxWidth(photoW)
-                            .setQuality(70)
+                            .setQuality(COMPRESSION_QUALITY)
                             .setCompressFormat(Bitmap.CompressFormat.JPEG)
                             .build()
-                            .compressToFile(new File(mPhotoPath)));
-
-                    //save the image as username_name-of-the-photo
+                            .compressToFile(new File(mPhotoPath));
+                    Uri file = Uri.fromFile(compressedFile);
+                    totalBytes = compressedFile.length();
+                    Log.d(TAG, "total bytes = " + totalBytes);
+                    //save the image as username_timestamp
 
                     photoId = username + SEPARATOR + timestamp;
                     StorageReference riversRef = mStorageRef.child(photoId);
-                    riversRef.putFile(file2)
+                    inUpload = true;
+                    showProgressBar();
+                    riversRef.putFile(file)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
@@ -247,8 +260,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                             R.string.upload_failed,
                                             Toast.LENGTH_SHORT).show();
                                 }
-                            });
-                    final String photoId2 = username + SEPARATOR + timestamp + "_compressed" ;
+                            })
+                        .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            @SuppressWarnings("VisibleForTests")
+                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                transferredBytes = taskSnapshot.getBytesTransferred();
+                                Log.d(TAG, "TransferredBytes " + transferredBytes);
+                            }
+                        });
+                    /*final String photoId2 = username + SEPARATOR + timestamp + "_compressed" ;
                     StorageReference riversRef2 = mStorageRef.child(photoId2);
                     riversRef2.putFile(file)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -269,7 +290,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                             R.string.upload_failed,
                                             Toast.LENGTH_SHORT).show();
                                 }
-                            });
+                            });*/
                     Intent i = getIntent();
                     setResult(RESULT_OK, i);
                     finish();
@@ -279,7 +300,51 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return false;
     }
 
-    private void getPath2(String photoId2){
+    private void showProgressBar(){
+        mNotifyManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mBuilder = new NotificationCompat.Builder(this);
+        mBuilder.setContentTitle("Picture Upload")
+                .setContentText("Upload in progress")           //TODO: change the icon
+                .setSmallIcon(R.drawable.btn_google_signin_light_normal_xxxhdpi)
+                .setAutoCancel(true);
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        int percentage;
+                        int id = 0;
+                        while(inUpload) {
+                            // Sets the progress indicator to a max value, the
+                            // current completion percentage, and "determinate"
+                            // state
+                            percentage = (int)((double)(transferredBytes)/(double)(totalBytes)*100);
+                            mBuilder.setProgress(100, percentage, false);
+                            // Displays the progress bar for the first time.
+                            mNotifyManager.notify(id, mBuilder.build());
+                            if(percentage == 100)
+                                inUpload = false;
+
+                            try {
+                                // Sleep for 5 seconds
+                                Thread.sleep(NOT_BAR_SLEEP);
+                            } catch (InterruptedException e) {
+                                Log.d(TAG, "sleep failure");
+                            }
+                        }
+
+                        // When the loop is finished, updates the notification
+                        mBuilder.setProgress(0,0,false);
+                        mBuilder.setContentText("Upload complete")
+                                // Removes the progress bar
+                                .setProgress(0,0,false);
+                        mNotifyManager.notify(id, mBuilder.build());
+                    }
+                }
+        ).start();
+    }
+
+    /*private void getPath2(String photoId2){
         StorageReference pathRef = mStorageRef.child(photoId2);
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
@@ -291,7 +356,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 databaseReference.child(USER_PICTURE).push().setValue(picture);
                 /*TODO: the picture has to be sent to pictures and
                   to the point associated with the position,
-                  for now always the same point    */
+                  for now always the same point
                 databaseReference.child("points/KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
@@ -311,7 +376,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
-    }
+    }*/
 
 
     private void setPic() {
