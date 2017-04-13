@@ -9,16 +9,19 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -55,8 +58,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_HOR_LEFT = 3;
     private static final int PIC_VER_TOP = 6;
     private static final int PIC_VER_BOTTOM = 8;
-    private static final int MAX_WIDTH = 3264;
-    private static final int MAX_HEIGHT = 2448;
+    private static final int MAX_COMPR_WIDTH = 3264;
+    private static final int MAX_COMPR_HEIGHT = 2448;
 
     private static final String POINT_PICTURE = "points/pictures";
     private FirebaseAuth mAuth;
@@ -75,6 +78,10 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String longitude;
     private int orientation;
     private Picture picture;
+    private int photoW;
+    private int photoH;
+    private int maxWidth = 3264;
+    private int maxHeight = 2448;
 
 
 
@@ -204,20 +211,52 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 description = descriptionField.getText().toString();
                 if(checkName() && checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
-
                     //put the photo into the storage
-                    Uri file = Uri.fromFile(new File(mPhotoPath));
+                    /*Uri file2 =  Uri.fromFile(Compressor         //from 4 MB to 30 KB
+                            .getDefault(this)
+                            .compressToFile(new File(mPhotoPath)));*/
+                    Uri file2 = Uri.fromFile(new File(mPhotoPath));
+                    Uri file = Uri.fromFile(new Compressor.Builder(this)
+                            .setMaxHeight(photoW)
+                            .setMaxWidth(photoW)
+                            .setQuality(70)
+                            .setCompressFormat(Bitmap.CompressFormat.JPEG)
+                            .build()
+                            .compressToFile(new File(mPhotoPath)));
+
                     //save the image as username_name-of-the-photo
-                    Log.d(TAG, "Timestamp = " + timestamp);
+
                     photoId = username + SEPARATOR + timestamp;
                     StorageReference riversRef = mStorageRef.child(photoId);
-                    riversRef.putFile(file)
+                    riversRef.putFile(file2)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     // Get a URL to the uploaded content
                                     Log.d(TAG, "OnSuccess");
                                     getPath();
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception exception) {
+                                    // Handle unsuccessful uploads
+                                    // ...
+                                    Log.e(TAG, "Error during the upload, " + exception.toString());
+                                    Toast.makeText(getApplicationContext(),
+                                            R.string.upload_failed,
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                    final String photoId2 = username + SEPARATOR + timestamp + "_compressed" ;
+                    StorageReference riversRef2 = mStorageRef.child(photoId2);
+                    riversRef2.putFile(file)
+                            .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                    // Get a URL to the uploaded content
+                                    Log.d(TAG, "OnSuccess");
+                                    getPath2(photoId2);
                                 }
                             })
                             .addOnFailureListener(new OnFailureListener() {
@@ -240,41 +279,95 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return false;
     }
 
+    private void getPath2(String photoId2){
+        StorageReference pathRef = mStorageRef.child(photoId2);
+        pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                Log.d(TAG, "MyDownloadLink:  " + uri);
+                picture = new com.project.pervsys.picaround.domain.Picture(name, description, uri.toString());
+                picture.setTimestamp(timestamp);
+                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+                databaseReference.child(USER_PICTURE).push().setValue(picture);
+                /*TODO: the picture has to be sent to pictures and
+                  to the point associated with the position,
+                  for now always the same point    */
+                databaseReference.child("points/KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
+                Log.i(TAG, "Picture's path sent to db");
+                Toast.makeText(getApplicationContext(),
+                        R.string.upload_ok,
+                        Toast.LENGTH_SHORT)
+                        .show();
+            }
+        })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        // ...
+                        Log.e(TAG, "Error during the upload, " + exception.toString());
+                        Toast.makeText(getApplicationContext(),
+                                R.string.upload_failed,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
 
     private void setPic() {
-
-		/* There isn't enough memory to open up more than a couple camera photos */
-		/* So pre-scale the target bitmap into which the file is decoded */
-
 
 		/* Get the size of the image */
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
         bmOptions.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(mPhotoPath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
+        photoW = bmOptions.outWidth;
+        photoH = bmOptions.outHeight;
 
 		/* Set bitmap options to scale the image decode target */
         bmOptions.inJustDecodeBounds = false;
         bmOptions.inPurgeable = true;
-
 		/* Decode the JPEG file into a Bitmap*/
-
         Bitmap bitmap = BitmapFactory.decodeFile(mPhotoPath, bmOptions);
-        //Use the matrix for rotate the image, if needed
+
+        //Use the matrix for rotate the image
         Matrix matrix = new Matrix();
         matrix.postRotate(getRotation());
-        Log.d(TAG, "Bitmap W = " + bitmap.getWidth() + " H = " + bitmap.getHeight());
-
         Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
 
-        if (rotatedBitmap.getWidth() > MAX_WIDTH || rotatedBitmap.getHeight() > MAX_HEIGHT)
-            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, MAX_WIDTH, MAX_HEIGHT, false);
+        //Scale the bitmap without changing the proportions
+        int width = rotatedBitmap.getWidth();
+        int height = rotatedBitmap.getHeight();
+        double scale;
+        if (width >= height)
+            scale = (double) width / height;
+        else
+            scale = (double) height / width;
+        maxWidth = this.getResources().getDisplayMetrics().widthPixels;
+        maxHeight = (width*bitmap.getHeight())/bitmap.getWidth();
+        if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP) {
+            if (width > maxHeight || height > maxWidth) {
+                if (height > maxWidth) {
+                    height = maxWidth;
+                    width = (int) (height / scale);
+                }
+            }
+            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
+        }
+        else {
+            if (width > maxWidth || height > maxHeight) {
+                if (width > maxWidth) {
+                    width = maxWidth;
+                    height = (int) (width / scale);
+                }
+            }
+            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
+        }
 
-        Log.d(TAG, "Bitmap W = " + rotatedBitmap.getWidth() + " H = " + rotatedBitmap.getHeight());
+        //set image into the imageView
         mImageView.setImageBitmap(rotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
+
 
     private boolean checkName(){
         if (name.replace(" ", "").equals("")){
@@ -306,6 +399,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return true;
     }
 
+
     private void getPath(){
         Log.d(TAG, "getPath");
         StorageReference pathRef = mStorageRef.child(photoId);
@@ -313,7 +407,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink:  " + uri);
-                picture = new com.project.pervsys.picaround.domain.Picture(name, description, uri.toString());
+                picture = new Picture(name, description, uri.toString());
                 picture.setTimestamp(timestamp);
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
                 databaseReference.child(USER_PICTURE).push().setValue(picture);

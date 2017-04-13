@@ -217,6 +217,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         if (mCurrentPhotoPath != null) {
             Log.i(TAG, "The photo has been taken");
+            galleryAddPic();
             //Start the UploadPhotoActivity, passing the photo's path
             Intent i = new Intent(this, UploadPhotoActivity.class);
             i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
@@ -386,10 +387,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case REQUEST_UPLOAD_PHOTO:
                 if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo in uploading");
-                    galleryAddPic();
                 }
-                else
+                if (resultCode == RESULT_CANCELED) {
                     Log.d(TAG, "Photo upload cancelled");
+                    File f = new File(mCurrentPhotoPath);
+                    boolean deleted = f.delete();
+                    Log.d(TAG, "File deleted?? " + deleted);
+                    Intent scanIntent = new Intent(Intent.ACTION_MEDIA_REMOVED);
+                    scanIntent.setData(Uri.fromFile(f));
+                    this.sendBroadcast(scanIntent);
+                    Log.i(TAG, "Image has been deleted");
+                }
                 mCurrentPhotoPath = null;
                 break;
         }
