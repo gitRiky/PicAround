@@ -1,5 +1,21 @@
 package com.project.pervsys.picaround.domain;
 
+import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,23 +30,10 @@ public class Point {
     private String category;
     private String type;
     private List<Integer> places;
-    private List<Picture> pictures;
+    private List<String> thumbnails;
 
     public Point(){
-
-    }
-
-    public Point(String id, String name, double lat, double lon, String description, String icon, String category, String type) {
-        this.id = id;
-        this.name = name;
-        this.lat = lat;
-        this.lon = lon;
-        this.description = description;
-        this.type = type;
-        this.icon = icon;
-        this.category = category;
-        this.places = new LinkedList<>();
-        this.pictures = new LinkedList<>();
+        // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
 
     public String getId() {
@@ -105,12 +108,12 @@ public class Point {
         this.places = places;
     }
 
-    public List<Picture> getPictures() {
-        return pictures;
+    public List<String> getThumbnails() {
+        return thumbnails;
     }
 
-    public void setPictures(List<Picture> pictures) {
-        this.pictures = pictures;
+    public void setThumbnails(List<String> thumbnails) {
+        this.thumbnails = thumbnails;
     }
 
     @Override
@@ -141,7 +144,7 @@ public class Point {
                 ", category='" + category + '\'' +
                 ", type='" + type + '\'' +
                 ", places=" + places +
-                ", pictures=" + pictures +
+                ", thumbnails=" + thumbnails +
                 '}';
     }
 }

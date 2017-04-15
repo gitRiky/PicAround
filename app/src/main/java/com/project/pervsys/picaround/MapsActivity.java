@@ -1,8 +1,10 @@
 package com.project.pervsys.picaround;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
@@ -12,10 +14,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -41,8 +43,15 @@ import com.facebook.Profile;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
@@ -54,8 +63,12 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
@@ -64,11 +77,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.utility.Config;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -76,17 +89,16 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
 
-    private static final LatLng PERTH = new LatLng(-31.952854, 115.857342);
-    private static final LatLng SYDNEY = new LatLng(-33.87365, 151.20689);
-    private static final LatLng BRISBANE = new LatLng(-27.47093, 153.0235);
-    private static final LatLng ROME = new LatLng(41.890635, 12.490726);
-
     private static final int REQUEST_TAKE_PHOTO = 1;
+    private static final int REQUEST_CHECK_SETTINGS = 3;
+    private static final int REQUEST_UPLOAD_PHOTO = 2;
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
@@ -94,18 +106,32 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
 
+    private static final String POINT_ID = "pointId";
+    private static final int MIN_TIME_LOCATION_UPDATE = 400;
+    private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
+    private static final String PHOTO_PATH = "photoPath";
+    private static final String USERS = "users";
+    private static final String USERNAME = "username";
+    private static final String PROFILE_PICTURE = "profilePicture";
+    private static final String EMAIL = "email";
+    public static final int THUMBNAILS_NUMBER = 6;
+    public static final String THUMB_PREFIX = "thumb_";
+
+    private ProgressDialog progress;
     private GoogleMap mMap;
-    private Marker mRome;
-    private JSONArray listOfPoints = null;
-    private Marker mPerth;
     private ImageView mImageView;
 
     private String mCurrentPhotoPath;
     private Bitmap mImageBitmap;
     private AlbumStorageDirFactory mAlbumStorageDirFactory = null;
 
-    private LocationManager locationManager = null;
-    private String provider;
+    private LocationManager mLocationManager = null;
+    private String mProvider;
+
+    private String username;
+    private String profilePicture;
+    private List<String> thumbnails;
+
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
@@ -156,40 +182,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         return f;
     }
 
-    private void setPic() {
 
-		/* There isn't enough memory to open up more than a couple camera photos */
-		/* So pre-scale the target bitmap into which the file is decoded */
-
-		/* Get the size of the ImageView */
-        int targetW = mImageView.getWidth();
-        int targetH = mImageView.getHeight();
-
-		/* Get the size of the image */
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-		/* Figure out which way needs to be reduced less */
-        int scaleFactor = 1;
-        if ((targetW > 0) || (targetH > 0)) {
-            scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-        }
-
-		/* Set bitmap options to scale the image decode target */
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
-
-		/* Decode the JPEG file into a Bitmap */
-        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
-
-		/* Associate the Bitmap to the ImageView */
-        mImageView.setImageBitmap(bitmap);
-        mImageView.setVisibility(View.VISIBLE);
-    }
 
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
@@ -228,8 +221,18 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void handleBigCameraPhoto() {
 
         if (mCurrentPhotoPath != null) {
-            setPic();
+            Log.i(TAG, "The photo has been taken");
+            Log.i(TAG, "Set pic ok");
             galleryAddPic();
+            Log.i(TAG, "Gallery pic ok");
+            //Start the UploadPhotoActivity, passing the photo's path
+            Intent i = new Intent(this, UploadPhotoActivity.class);
+            i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
+            Log.d(TAG, "Username " + username);
+            i.putExtra(USERNAME, username);
+            i.putExtra(PROFILE_PICTURE, profilePicture);
+            Log.i(TAG, "Starting Upload activity");
+            startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
             mCurrentPhotoPath = null;
         }
 
@@ -248,6 +251,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
         // Set toolbar
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -287,9 +291,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         };
 
 
-        mImageView = (ImageView) findViewById(R.id.imageView);
-        mImageBitmap = null;
-
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floatingActionButton);
@@ -299,24 +300,49 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 MediaStore.ACTION_IMAGE_CAPTURE
         );
 
+
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         // Get the location manager
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        Location location = locationManager.getLastKnownLocation(provider);
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        // Initialize the location fields
-        if (location != null) {
-            System.out.println("Provider " + provider + " has been selected.");
-            onLocationChanged(location);
-        }
-        else {
-            Toast.makeText(this,"Location not available",Toast.LENGTH_SHORT).show();
-        }
+        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+
+
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            //Obtain the username
+            startProgressBar();
+            String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+            Log.d(TAG, "Email = " + email);
+            mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                if (child != null) {
+                                    Log.i(TAG, "Username obtained");
+                                    User user = child.getValue(User.class);
+                                    Log.e(TAG, user.toString());
+                                    username = user.getUsername();
+                                    profilePicture = user.getProfilePicture();
+                                    if (progress != null)
+                                        progress.dismiss();
+                                } else
+                                    Log.e(TAG, "Cannot obtain the username");
+                            }
+
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //database error, e.g. permission denied (not logged with Firebase)
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
+        }
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -334,14 +360,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        locationManager.requestLocationUpdates(provider, 400, 1, this);
+        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
     }
 
     /* Remove the location listener updates when Activity is paused */
     @Override
     protected void onPause() {
         super.onPause();
-        locationManager.removeUpdates(this);
+        mLocationManager.removeUpdates(this);
     }
 
     @Override
@@ -360,17 +386,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 putString(Config.LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
         ApplicationClass.setGoogleSignInResult(null);
+        Log.i(TAG, "onDestroy");
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_TAKE_PHOTO: {
+            case REQUEST_TAKE_PHOTO:
                 if (resultCode == RESULT_OK) {
                     handleBigCameraPhoto();
                 }
                 break;
-            } // REQUEST_TAKE_PHOTO
-        } // switch
+            case REQUEST_UPLOAD_PHOTO:
+                if (resultCode == RESULT_OK)
+                    Log.i(TAG, "Photo in uploading");
+                else
+                    Log.d(TAG, "Photo upload cancelled");
+                break;
+        }
     }
 
     // Some lifecycle callbacks so that the image can survive orientation change
@@ -439,70 +471,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
-        setupGPS();
-        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
-        populatePoints();
-
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
 
+        setupGPS(this);
 
-        // Create points from data
-        Point point = new Point(
-                "478765", "Colosseum", 41.890638, 12.49075,
-                "Monumental 3-tiered roman amphitheater once used for gladiatorial games, with guided tour option.",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/icon.png?alt=media&token=bcbbf65e-e6f9-4974-95c7-83486cc8f4fc",
-                "Historical Landmark", "normal");
+        //Location location = mLocationManager.getLastKnownLocation(mProvider);
 
-        Picture pic1 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c01.jpg?alt=media&token=3864cad4-ca38-4ac4-90eb-4022fa5b58e3",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic2 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c02.jpg?alt=media&token=74823bd1-2796-4f96-b146-a930532958fb",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic3 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c03.jpg?alt=media&token=1fc22b30-f271-4822-b0a8-8091f6796b1e",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic4 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c04.jpg?alt=media&token=04eb6baf-0d4f-4b9f-a7b7-c8e031899401",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic5 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c05.jpg?alt=media&token=5cd84317-ee22-4f58-b93d-32f49f6da033",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-        Picture pic6 = new Picture("42131","pic1","Colosseum at sunset",
-                "https://firebasestorage.googleapis.com/v0/b/picaround-34ab3.appspot.com/o/c06.jpg?alt=media&token=ea713bf2-d258-467b-8b0b-3cd8ad42ae72",
-                123,41,0.36,"4561176412","artistic","657314","dbern",
-                new Place("43254","Via dei Fori Imperiali 86",42.062131,12.999619,"478765"));
-
-        point.getPictures().add(pic1);
-        point.getPictures().add(pic2);
-        point.getPictures().add(pic3);
-        point.getPictures().add(pic4);
-        point.getPictures().add(pic5);
-        point.getPictures().add(pic6);
-
-
-        LatLng pointPosition = new LatLng(point.getLat(),point.getLon());
-
-        // Add some markers to the map, and add a data object to each marker.
-        mRome = mMap.addMarker(new MarkerOptions()
-                .position(pointPosition)
-                .title(point.getName())
-                .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_radio_button_checked_red_24dp)));
-        mRome.setTag(point);
-
-
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(pointPosition)      // Sets the center of the map to the point position
-                .zoom(16)                   // Sets the zoom
-                .build();                   // Creates a CameraPosition from the builder
-        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
+        populatePoints();
 
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
@@ -516,25 +493,21 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populatePoints() {
         // get all the points
-        //mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child("points").keepSynced(true);
         mDatabaseRef.child("points")
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
+
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
-                            try {
-                                Map<String, String> point = (Map<String, String>) child.getValue();
-                                JSONObject jsonPoint = new JSONObject(point);
-                                String lat = jsonPoint.getString("lat");
-                                String lon = jsonPoint.getString("long");
-                                mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lon))));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
+                            Point p = child.getValue(Point.class);
+                            mMap.addMarker(new MarkerOptions()
+                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+                                    .position(new LatLng(p.getLat(), p.getLon())))
+                                    .setTag(p);
                             }
 
-                        }
                     }
 
                     @Override
@@ -545,33 +518,46 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 });
     }
 
-    private void setupGPS() {
-        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean enabled = service
-                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+    private void setupGPS(Context context) {
 
-        // check if enabled and if not send user to the GSP settings
-        // Better solution would be to display a dialog and suggesting to
-        // go to the settings
-        if (!enabled) {
-            new AlertDialog.Builder(this)
-                    .setTitle("GPS enabling")
-                    .setMessage("It seems your GPS is turned off. Would you like to turn it ON?")
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            // continue with GPS activation
-                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                            startActivity(intent);
+        GoogleApiClient googleApiClient = new GoogleApiClient.Builder(context)
+                .addApi(LocationServices.API).build();
+        googleApiClient.connect();
+
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(10000 / 2);
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true);
+
+        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(googleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult result) {
+                final Status status = result.getStatus();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        Log.i(TAG, "All location settings are satisfied.");
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        Log.i(TAG, "Location settings are not satisfied. Show the user a dialog to upgrade location settings ");
+
+                        try {
+                            // Show the dialog by calling startResolutionForResult(), and check the result
+                            // in onActivityResult().
+                            status.startResolutionForResult(MapsActivity.this, REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.i(TAG, "PendingIntent unable to execute request.");
                         }
-                    })
-                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            // do nothing
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        Log.i(TAG, "Location settings are inadequate, and cannot be fixed here. Dialog not created.");
+                        break;
+                }
+            }
+        });
     }
 
     /** Called when the user clicks a marker. */
@@ -599,9 +585,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-        //TODO: start PointActivity
-        String toShow = marker.getPosition().toString();
-        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
+        // Start PointActivity
+        Point point = (Point) marker.getTag();
+        Intent i = new Intent(this, PointActivity.class);
+        i.putExtra(POINT_ID, point.getId());
+        startActivity(i);
     }
 
     @Override
@@ -611,79 +599,100 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-        // First opening the infoWindow: loading
-        if (marker.getSnippet() != null) {
-            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
-
+        // First opening the infoWindow: show loading
+//        if (marker.getSnippet() != null) {
+//            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
+//            View v = getLayoutInflater().inflate(R.layout.info_window, null);
+//            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
+//            Point point = (Point) marker.getTag();
+//            addPictures(marker, point, gridLayout);
+//            return loadingView;
+//        }
+//        // Second opening of the infoWindow: show info window
+//        else {
             View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
             GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-
             Point point = (Point) marker.getTag();
-
-            Picasso.with(this)
-                    .load(point.getIcon())
-                    .into(icon, new MarkerCallback(marker));
-
-            addPictures(marker, point, gridLayout);
-
-            return loadingView;
-        }
-        // Second opening of the infoWindow: show info window
-        else {
-            View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
-            TextView title = (TextView) v.findViewById(R.id.info_title);
-            TextView category = (TextView) v.findViewById(R.id.info_category);
-            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-            TextView description = (TextView) v.findViewById(R.id.info_description);
-
-            Point point = (Point) marker.getTag();
-
-            title.setText(point.getName());
-            category.setText(point.getCategory());
-            description.setText(point.getDescription());
-
-            String iconPath = point.getIcon();
-            Picasso.with(this)
-                    .load(iconPath)
-                    .into(icon, new MarkerCallback(marker));
 
             addPictures(marker, point, gridLayout);
 
             return v;
-        }
+//        }
     }
 
-    private void addPictures(Marker marker, Point point, GridLayout gridLayout) {
+    private void addPictures(final Marker marker, Point point, final GridLayout gridLayout) {
         int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, this.getResources().getDisplayMetrics());
         int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
+        final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
 
-        List<Picture> pictures = point.getPictures();
-        for (Picture pic : pictures) {
-            ImageView imageView = new ImageView(this);
-            imageView.setLayoutParams(layoutParams);
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            gridLayout.addView(imageView);
+        if (thumbnails != null){
+            for (String thumbnailPath : thumbnails) {
+                ImageView imageView = new ImageView(MapsActivity.this);
+                imageView.setLayoutParams(layoutParams);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                gridLayout.addView(imageView);
+                Picasso.with(MapsActivity.this)
+                        .load(thumbnailPath)
+                        .into(imageView, new MarkerCallback(marker));
+            }
+        }
+        else {
+            DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+            databaseRef.child("points").keepSynced(true);
+            databaseRef.child("points").child(point.getId()).child("pictures")
+                    .orderByChild("popularity").limitToFirst(THUMBNAILS_NUMBER)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            thumbnails = new LinkedList<>();
+                            Log.i(TAG, "Number of thumbnails: " + dataSnapshot.getChildrenCount());
+                            for (DataSnapshot pictureSnap : dataSnapshot.getChildren()) {
+                                Picture picture = pictureSnap.getValue(Picture.class);
+                                String pictureName = picture.getName();
+                                final String thumbnailName = THUMB_PREFIX + pictureName;
+                                FirebaseStorage storage = FirebaseStorage.getInstance();
+                                StorageReference pathReference = storage.getReference().child(thumbnailName);
+                                Log.i(TAG, "storageRef=" + pathReference);
+                                pathReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                    @Override
+                                    public void onSuccess(Uri uri) {
+                                        thumbnails.add(uri.toString());
 
-            String path = pic.getPath();
+                                        ImageView imageView = new ImageView(MapsActivity.this);
+                                        imageView.setLayoutParams(layoutParams);
+                                        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                                        gridLayout.addView(imageView);
 
-            Picasso.with(this)
-                    .load(path)
-                    .into(imageView, new MarkerCallback(marker));
+                                        Picasso.with(MapsActivity.this)
+                                                .load(uri)
+                                                .into(imageView, new MarkerCallback(marker));
+
+
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception exception) {
+                                        Log.e(TAG, exception.toString());
+                                    }
+                                });
+
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
         }
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        int lat = (int) (location.getLatitude());
-        int lng = (int) (location.getLongitude());
-        if(mMap != null){
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat,lng)));
-        }
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 16);
+        mMap.animateCamera(cameraUpdate);
+        mLocationManager.removeUpdates(this);
     }
 
     @Override
@@ -693,14 +702,18 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public void onProviderEnabled(String provider) {
-        Toast.makeText(this, "Enabled new provider " + provider,
+        Toast.makeText(this, "Enabled new mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
+        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
+        Log.i(TAG, "New provider enabled: " + provider);
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        Toast.makeText(this, "Disabled provider " + provider,
+        Toast.makeText(this, "Disabled mProvider " + provider,
                 Toast.LENGTH_SHORT).show();
+        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
+        Log.i(TAG, "New provider disabled: " + provider);
     }
 
     @Override
@@ -709,6 +722,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         inflater.inflate(R.menu.main_menu, menu);
         String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
                 .getString(Config.LOG_PREF_INFO, null);
+        Log.e(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
         if(logged != null && !logged.equals(Config.NOT_LOGGED))
             menu.add(R.string.logout);
@@ -750,7 +764,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case R.id.search:
                 Log.i(TAG, "Search has been selected");
                 Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                //Search activity
                 return true;
             default:
                 String title = (String) item.getTitle();
@@ -828,14 +842,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         startActivity(i);
     }
 
+    private void startProgressBar(){
+        progress = new ProgressDialog(this);
+        progress.setMessage(getString(R.string.loading));
+        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progress.setIndeterminate(true);
+        progress.setCanceledOnTouchOutside(false);
+        progress.show();
+    }
+
 }
 
 class MarkerCallback implements Callback {
 
-    private static final int THUMBNAILS_NUMBER = 7;
+    private static final int THUMBNAILS_NUMBER = 6;
     private static int counter = 0;
 
-    Marker marker=null;
+    Marker marker = null;
 
     MarkerCallback(Marker marker) {
         this.marker=marker;
@@ -848,9 +871,10 @@ class MarkerCallback implements Callback {
 
     @Override
     public void onSuccess() {
-        counter++;
-        if (counter == THUMBNAILS_NUMBER && marker != null && marker.isInfoWindowShown()) {
-            marker.setSnippet(null);
+//        counter++;
+        if (marker != null && marker.isInfoWindowShown()) {
+//            counter = 0;
+//            marker.setSnippet(null);
             marker.hideInfoWindow();
             marker.showInfoWindow();
         }

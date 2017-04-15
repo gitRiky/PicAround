@@ -1,53 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/login_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context="com.project.pervsys.picaround.LoginActivity">
 
-    <com.facebook.login.widget.LoginButton
-        android:id="@+id/fb_login_button"
+    <TextView
+        android:id="@+id/login_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone"
-        tools:layout_editor_absoluteY="0dp"
-        tools:layout_editor_absoluteX="0dp" />
+        android:gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="310dp"
+        android:layout_centerHorizontal="true"
+        android:textSize="30sp"
+        android:textColor="@color/secondary_text_black"
+        android:text="@string/welcome_to_picaround"/>
 
     <Button
-        android:id="@+id/fb_fake"
-        android:layout_width="112dp"
-        android:layout_height="66dp"
-        android:background="@drawable/fb_signin_btn"
-        android:onClick="onClick"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/sign_in_button"
-        app:layout_constraintHorizontal_bias="0.501" />
-
-    <com.google.android.gms.common.SignInButton
         android:id="@+id/sign_in_button"
-        android:layout_width="wrap_content"
+        android:layout_below="@id/login_title"
+        android:layout_width="220dp"
         android:layout_height="wrap_content"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
-        app:layout_constraintVertical_bias="0.414" />
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/btn_google_signin_light_normal_xxxhdpi"
+        android:text="@string/common_signin_button_text_long"
+        android:textColor="@color/secondary_text_black"
+        android:textAllCaps="false"
+        android:layout_centerHorizontal="true"
+        android:onClick="onClick"
+        android:textSize="15sp"
+        android:paddingEnd="16dp"
+        android:paddingStart="40dp"/>
+
+    <com.facebook.login.widget.LoginButton
+        xmlns:facebook="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/login_button"
+        android:layout_width="213dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/sign_in_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="10dp"
+        android:elevation="2dp"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp"
+        android:paddingLeft="16dp"
+        android:textSize="15sp"
+        facebook:com_facebook_login_text="@string/sign_in_with_facebook" />
 
     <TextView
         android:id="@+id/no_login"
-        android:layout_width="84dp"
-        android:layout_height="51dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="@string/no_login_text"
         android:clickable="true"
         android:onClick="onClick"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.595" />
+        android:textColor="@color/white"
+        android:layout_marginTop="20dp"
+        android:layout_below="@id/login_button"
+        android:layout_centerHorizontal="true"/>
 
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>

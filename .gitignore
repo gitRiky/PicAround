@@ -4,7 +4,10 @@
 /.idea/workspace.xml
 /.idea/libraries
 /.idea/vcs.xml
+.idea/runConfigurations.xml
+.idea/
 .DS_Store
 /build
 /captures
 .externalNativeBuild
+functions/node_modules/

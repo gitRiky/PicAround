@@ -5,11 +5,15 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -64,7 +68,6 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final String USERS = "users";
     private static final String USERNAME = "username";
-    
     private static final String AGE = "age";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
@@ -85,6 +88,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
         if (!ApplicationClass.alreadyEnabledPersistence()){
             Log.i(TAG, "Enabling database persistence");
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
@@ -152,9 +156,9 @@ public class LoginActivity extends AppCompatActivity {
     public void onClick(View view){
         int id = view.getId();
         switch (id){
-            case R.id.fb_fake:
-                loginButton.performClick();
-                break;
+//            case R.id.fb_fake:
+//                loginButton.performClick();
+//                break;
             case R.id.no_login:
                 setLogged(Config.NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
@@ -182,7 +186,7 @@ public class LoginActivity extends AppCompatActivity {
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
 
-        SignInButton signInButton = (SignInButton) findViewById(R.id.sign_in_button);
+        Button signInButton = (Button) findViewById(R.id.sign_in_button);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             //start the authentication intent
@@ -258,7 +262,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setUpFbLogin(){
-        loginButton = (LoginButton) findViewById(R.id.fb_login_button);
+        loginButton = (LoginButton) findViewById(R.id.login_button);
         //email requires explicit permission
         loginButton.setReadPermissions(EMAIL);
         callbackManager = CallbackManager.Factory.create();
@@ -352,7 +356,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void checkEmailGoogle(final GoogleSignInAccount acct){
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
         databaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -424,7 +427,8 @@ public class LoginActivity extends AppCompatActivity {
                                 Profile profile = Profile.getCurrentProfile();
                                 newUser = new User(username, facebookEmail, profile.getFirstName(),
                                         profile.getLastName(), Integer.parseInt(age),
-                                        profile.getProfilePictureUri(10,10).toString());
+                                        profile.getProfilePictureUri(100,100).toString(),
+                                        mAuth.getCurrentUser().getUid());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");
@@ -507,7 +511,8 @@ public class LoginActivity extends AppCompatActivity {
                                 Log.i(TAG, "First usage for the user");
                                 newUser = new User(username, acct.getEmail(), acct.getGivenName(),
                                         acct.getFamilyName(), Integer.parseInt(age),
-                                        acct.getPhotoUrl().toString());
+                                        acct.getPhotoUrl().toString(),
+                                        mAuth.getCurrentUser().getUid());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");

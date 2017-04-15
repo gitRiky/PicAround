@@ -35,14 +35,6 @@
                 map:useCompatPadding="true"
                 android:src="@drawable/ic_photo_camera_white_24dp"/>
 
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="106dp"
-                android:layout_height="86dp"
-                android:layout_gravity="bottom|right"
-                android:visibility="visible"
-                map:layout_anchor="@+id/map"
-                map:layout_anchorGravity="top|left" />
 
         </android.support.design.widget.CoordinatorLayout>
 

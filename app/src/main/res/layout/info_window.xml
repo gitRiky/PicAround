@@ -3,58 +3,21 @@
     android:layout_height="wrap_content">
 
     <RelativeLayout
-        android:layout_width="320dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:paddingTop="10dp">
-
-        <ImageView
-            android:id="@+id/info_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"/>
-
-        <TextView
-            android:id="@+id/info_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/info_icon"
-            android:paddingLeft="10dp"
-            android:textColor="@color/primary_text_black"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/info_category"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/info_title"
-            android:layout_toRightOf="@id/info_icon"
-            android:paddingLeft="10dp"
-            android:textColor="@color/secondary_text_black"
-            android:textSize="16sp" />
+        android:paddingTop="5dp">
 
         <GridLayout
             android:id="@+id/info_pictures"
             android:layout_width="match_parent"
-            android:layout_height="140dp"
-            android:layout_below="@id/info_icon"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
+            android:layout_height="125dp"
             android:columnCount="3">
         </GridLayout>
-
-        <TextView
-            android:id="@+id/info_description"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="3"
-            android:ellipsize="end"
-            android:layout_below="@id/info_pictures" />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/info_description"
+            android:layout_below="@+id/info_pictures"
             android:layout_alignParentRight="true"
             android:text="@string/open"
             android:backgroundTint="@color/transparent"
