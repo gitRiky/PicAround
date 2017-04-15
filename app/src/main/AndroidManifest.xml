@@ -72,7 +72,7 @@
         <activity android:name=".UploadPhotoActivity" />
         <activity
             android:name=".PictureActivity"
-            android:parentActivityName=".MapsActivity"></activity>
+            android:parentActivityName=".PointActivity"></activity>
     </application>
 
 </manifest>

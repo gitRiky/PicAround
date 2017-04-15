@@ -30,7 +30,6 @@ import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
-import java.util.List;
 
 public class PictureActivity extends AppCompatActivity {
 
@@ -41,10 +40,12 @@ public class PictureActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference mDatabaseRef = null;
     private Picture mPicture;
+    private String mPictureId;
     private boolean mLike = false;
-    private int mLikesNumber;
     private HashMap<String,String> mLikesList;
     private HashMap<String,String> mViewsList;
+    private int mViewsNumber;
+    private int mLikesNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,9 +84,9 @@ public class PictureActivity extends AppCompatActivity {
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
         final TextView username = (TextView) findViewById(R.id.username);
         final TextView description = (TextView) findViewById(R.id.description);
-        final TextView views = (TextView) findViewById(R.id.views);
-        final TextView likes = (TextView) findViewById(R.id.likes);
-        final TextView popularity = (TextView) findViewById(R.id.popularity);
+        final TextView viewsTextView = (TextView) findViewById(R.id.views);
+        final TextView likesTextView = (TextView) findViewById(R.id.likes);
+        final TextView popularityTextView = (TextView) findViewById(R.id.popularity);
         final ImageButton likeButton = (ImageButton) findViewById(R.id.like_button);
 
         mUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -98,11 +99,11 @@ public class PictureActivity extends AppCompatActivity {
         }
 
         Intent intent = getIntent();
-        final String pictureId = intent.getStringExtra(PICTURE_ID);
+        mPictureId = intent.getStringExtra(PICTURE_ID);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child("pictures").keepSynced(true);
-        mDatabaseRef.child("pictures").orderByKey().equalTo(pictureId)
+        mDatabaseRef.child("pictures").orderByKey().equalTo(mPictureId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -111,20 +112,25 @@ public class PictureActivity extends AppCompatActivity {
                             mPicture = pictureSnap.getValue(Picture.class);
                             username.setText(mPicture.getUsername());
                             description.setText(mPicture.getDescription());
-                            String viewsString = getString(R.string.views);
-                            String likesString = getString(R.string.likes);
-                            String popularityString = getString(R.string.popularity);
-                            views.setText(mPicture.getViews() + " " + viewsString);
-                            mLikesNumber = mPicture.getLikes();
-                            likes.setText(mLikesNumber + " " + likesString);
-                            popularity.setText(mPicture.getPopularity()*100 + "% " + popularityString);
 
-                            mLikesList = mPicture.getLikesList();
+                            mLikesNumber = mPicture.getLikes();
+                            mViewsNumber = mPicture.getViews();
+                            setTextView(mLikesNumber,likesTextView);
+                            setTextView(mViewsNumber,viewsTextView);
+
+                            setPopularity(popularityTextView);
+
                             mViewsList = mPicture.getViewsList();
+                            mLikesList = mPicture.getLikesList();
+
+                            if (mViewsList == null)
+                                mViewsList = new HashMap<>();
+                            if (mLikesList == null)
+                                mLikesList = new HashMap<>();
 
                             if (mUser != null){
                                 if(!mViewsList.containsValue(mUser.getUid()))
-                                    mDatabaseRef.child("pictures").child(pictureId).child("viewsList").push().setValue(mUser.getUid());
+                                    mDatabaseRef.child("pictures").child(mPictureId).child("viewsList").push().setValue(mUser.getUid());
                                 if(mLikesList.containsValue(mUser.getUid()))
                                     mLike = true;
                             }
@@ -133,8 +139,6 @@ public class PictureActivity extends AppCompatActivity {
                                 likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.colorAccent));
                             else
                                 likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.secondary_text_black));
-
-                            Log.i(TAG, mPicture.getUserIcon());
 
                             Picasso.with(PictureActivity.this)
                                     .load(mPicture.getUserIcon())
@@ -160,9 +164,7 @@ public class PictureActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (mLike) {
                     mLike = false;
-                    mLikesNumber--;
-                    mDatabaseRef.child("pictures").child(pictureId).child("likes").setValue(mLikesNumber);
-                    mDatabaseRef.child("pictures").child(pictureId).child("likesList")
+                    mDatabaseRef.child("pictures").child(mPictureId).child("likesList")
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -174,23 +176,52 @@ public class PictureActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onCancelled(DatabaseError databaseError) {
-                                    //database error, e.g. permission denied (not logged with Firebase)
                                     Log.e(TAG, databaseError.toString());
                                 }
                             });
 
                     ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.secondary_text_black));
+                    mLikesNumber--;
+                    setTextView(mLikesNumber, likesTextView);
+                    setPopularity(popularityTextView);
                 }
                 else {
                     mLike = true;
-                    mLikesNumber++;
-                    mDatabaseRef.child("pictures").child(pictureId).child("likes").setValue(mLikesNumber);
-                    mDatabaseRef.child("pictures").child(pictureId).child("likesList").push().setValue(mUser.getUid());
+                    mDatabaseRef.child("pictures").child(mPictureId).child("likesList").push().setValue(mUser.getUid());
                     ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.colorAccent));
+                    mLikesNumber++;
+                    setTextView(mLikesNumber, likesTextView);
+                    setPopularity(popularityTextView);
                 }
 
             }
         });
+    }
+
+    private void setPopularity(TextView popularityTextView) {
+        String popularityString = getString(R.string.popularity);
+        int popularity;
+        if (mViewsNumber != 0)
+            popularity = (mLikesNumber/mViewsNumber);
+        else
+            popularity = 0;
+        popularityTextView.setText(popularity*100 + "% " + popularityString);
+        mDatabaseRef.child("pictures").child(mPictureId).child("popularity").setValue(1-popularity);
+    }
+
+    private void setTextView(int number, TextView textView){
+        if (textView.getId() == R.id.likes) {
+            String likesString;
+            if (number == 1) likesString = getString(R.string.like);
+            else likesString = getString(R.string.likes);
+            textView.setText(number + " " + likesString);
+        }
+        else {
+            String viewsString;
+            if (number == 1) viewsString = getString(R.string.view);
+            else viewsString = getString(R.string.views);
+            textView.setText(number + " " + viewsString);
+        }
     }
 
     @Override
@@ -254,5 +285,47 @@ public class PictureActivity extends AppCompatActivity {
             default:
                 return true;
         }
+    }
+
+    private HashMap<String,String> getViewsList(Picture picture){
+        final HashMap<String,String> result = new HashMap<>();
+        mDatabaseRef.child("pictures").child(picture.getId()).child("viewsList")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            result.put(child.getKey(), child.getValue().toString());
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
+        return result;
+    }
+
+    private HashMap<String,String> getLikesList(Picture picture){
+        final HashMap<String,String> result = new HashMap<>();
+        mDatabaseRef.child("pictures").child(picture.getId()).child("likesList")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            result.put(child.getKey(), child.getValue().toString());
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
+        return result;
     }
 }

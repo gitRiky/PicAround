@@ -36,6 +36,7 @@ import com.project.pervsys.picaround.utility.Config;
 import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class PointActivity extends AppCompatActivity {
@@ -86,18 +87,14 @@ public class PointActivity extends AppCompatActivity {
 
         final GridView pointPictures = (GridView) findViewById(R.id.point_pictures);
 
-        final HashMap<String, Picture> pictures = new HashMap<>();
+        final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
-        mDatabaseRef.child("points").orderByKey().equalTo(pointId)
+        mDatabaseRef.child("points").child(pointId).child("pictures").orderByChild("popularity")
             .addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-
-                    for(DataSnapshot point : dataSnapshot.getChildren()){
-                        DataSnapshot picturesSnap = point.child("pictures");
-
-                        for(DataSnapshot picture : picturesSnap.getChildren()) {
+                        for(DataSnapshot picture : dataSnapshot.getChildren()) {
                             Picture pic = picture.getValue(Picture.class);
                             pictures.put(picture.getKey(),pic);
                         }
@@ -109,14 +106,14 @@ public class PointActivity extends AppCompatActivity {
                             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                                 Picture picture = (Picture) adapterView.getItemAtPosition(position);
 
+                                Log.i(TAG, "Picture: " + picture);
+
                                 // Start PictureActivity
                                 Intent i = new Intent(PointActivity.this, PictureActivity.class);
                                 i.putExtra(PICTURE_ID, picture.getId());
                                 startActivity(i);
                             }
                         });
-                    }
-
                 }
 
                 @Override

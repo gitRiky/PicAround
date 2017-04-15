@@ -43,10 +43,13 @@ public class Picture {
 
     //TODO: remove this constructor
     // temp constructor for simulating the upload of a picture
-    public Picture(String name, String description, String path){
+    public Picture(String name, String description, String path, String userId, String username, String userIcon){
         this.name = name;
         this.description = description;
         this.path = path;
+        this.userId = userId;
+        this.username = username;
+        this.userIcon = userIcon;
     }
 
     public String getId() {

@@ -10,3 +10,4 @@
 /build
 /captures
 .externalNativeBuild
+functions/node_modules/

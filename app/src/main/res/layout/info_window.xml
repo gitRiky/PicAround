@@ -3,18 +3,14 @@
     android:layout_height="wrap_content">
 
     <RelativeLayout
-        android:layout_width="320dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:paddingTop="10dp">
+        android:paddingTop="5dp">
 
         <GridLayout
             android:id="@+id/info_pictures"
             android:layout_width="match_parent"
-            android:layout_height="140dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
+            android:layout_height="125dp"
             android:columnCount="3">
         </GridLayout>
 

@@ -427,7 +427,8 @@ public class LoginActivity extends AppCompatActivity {
                                 Profile profile = Profile.getCurrentProfile();
                                 newUser = new User(username, facebookEmail, profile.getFirstName(),
                                         profile.getLastName(), Integer.parseInt(age),
-                                        profile.getProfilePictureUri(10,10).toString());
+                                        profile.getProfilePictureUri(100,100).toString(),
+                                        mAuth.getCurrentUser().getUid());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");
@@ -510,7 +511,8 @@ public class LoginActivity extends AppCompatActivity {
                                 Log.i(TAG, "First usage for the user");
                                 newUser = new User(username, acct.getEmail(), acct.getGivenName(),
                                         acct.getFamilyName(), Integer.parseInt(age),
-                                        acct.getPhotoUrl().toString());
+                                        acct.getPhotoUrl().toString(),
+                                        mAuth.getCurrentUser().getUid());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");

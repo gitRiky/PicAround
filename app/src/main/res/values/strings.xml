@@ -57,4 +57,7 @@
     <string name="views">views</string>
     <string name="likes">likes</string>
     <string name="popularity">popularity</string>
+    <string name="confirm">continue</string>
+    <string name="view">view</string>
+    <string name="like">like</string>
 </resources>
