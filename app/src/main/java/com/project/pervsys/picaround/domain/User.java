@@ -10,14 +10,14 @@ public class User {
     private String email;
     private String name;
     private String surname;
-    private int age;
+    private String age;
     private String profile_picture;
 
     public User(){
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
-    public User(String username, String email, String name, String surname, int age, String profile_picture) {
+    public User(String username, String email, String name, String surname, String age, String profile_picture) {
         this.username = username;
         this.email = email;
         this.name = name;
@@ -58,11 +58,11 @@ public class User {
         this.surname = surname;
     }
 
-    public int getAge() {
+    public String getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(String age) {
         this.age = age;
     }
 
@@ -96,7 +96,7 @@ public class User {
         result = 31 * result + email.hashCode();
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (surname != null ? surname.hashCode() : 0);
-        result = 31 * result + age;
+        result = 31 * result + age.hashCode();
         result = 31 * result + (profile_picture != null ? profile_picture.hashCode() : 0);
         return result;
     }

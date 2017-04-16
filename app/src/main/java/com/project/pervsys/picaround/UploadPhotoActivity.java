@@ -91,6 +91,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private long transferredBytes;
     private long totalBytes;
     private boolean inUpload = false;
+    private boolean uploadError = false;
 
 
 
@@ -259,6 +260,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                     Toast.makeText(getApplicationContext(),
                                             R.string.upload_failed,
                                             Toast.LENGTH_SHORT).show();
+                                    uploadError = true;
+                                    inUpload = false;
                                 }
                             })
                         .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
@@ -304,8 +307,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mNotifyManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(this);
-        mBuilder.setContentTitle("Picture Upload")
-                .setContentText("Upload in progress")           //TODO: change the icon
+        mBuilder.setContentTitle(getString(R.string.upload_prog_bar_title))
+                .setContentText(getString(R.string.upload_prog_bar_text))           //TODO: change the icon
                 .setSmallIcon(R.drawable.btn_google_signin_light_normal_xxxhdpi)
                 .setAutoCancel(true);
         new Thread(
@@ -332,13 +335,20 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 Log.d(TAG, "sleep failure");
                             }
                         }
-
-                        // When the loop is finished, updates the notification
-                        mBuilder.setProgress(0,0,false);
-                        mBuilder.setContentText("Upload complete")
-                                // Removes the progress bar
-                                .setProgress(0,0,false);
-                        mNotifyManager.notify(id, mBuilder.build());
+                        if (uploadError){
+                            uploadError = false;
+                            mBuilder.setProgress(0,0,false);
+                            mBuilder.setContentText(getString(R.string.upload_prog_bar_fail))
+                                    .setProgress(0,0,false);
+                            mNotifyManager.notify(id, mBuilder.build());
+                        }
+                        else {
+                            // When the loop is finished, updates the notification
+                            mBuilder.setProgress(0, 0, false);
+                            mBuilder.setContentText(getString(R.string.upload_prog_bar_ok))
+                                    .setProgress(0, 0, false);
+                            mNotifyManager.notify(id, mBuilder.build());
+                        }
                     }
                 }
         ).start();
