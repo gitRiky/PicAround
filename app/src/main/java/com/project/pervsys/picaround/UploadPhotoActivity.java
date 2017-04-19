@@ -6,10 +6,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-
 import com.google.firebase.storage.OnProgressListener;
-import com.project.pervsys.picaround.domain.Picture;
-
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
@@ -38,8 +35,11 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -52,12 +52,14 @@ import java.util.Locale;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
 import id.zelory.compressor.Compressor;
+import com.project.pervsys.picaround.domain.Picture;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
     private static final String PHOTO_PATH = "photoPath";
     private static final String USER_PICTURE = "pictures";
-    private static final String USERNAME = "mUsername";
+    private static final String USERNAME = "username";
+    private static final String PROFILE_PICTURE = "profilePicture";
     private static final String SEPARATOR = "_";
     private static final int PIC_HOR_RIGHT = 1;
     private static final int PIC_HOR_LEFT = 3;
@@ -69,6 +71,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int REQUEST_PICK_LOCATION = 1;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private FirebaseUser mUser;
     private StorageReference mStorageRef;
     private ImageView mImageView;
     private EditText mNameField;
@@ -80,8 +83,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String mPhotoId;
     private String mTimestamp;
     private String mLatitude;
+    private String profilePicture;
     private String mLongitude;
-    private com.project.pervsys.picaround.domain.Picture picture;
     private NotificationManager mNotifyManager;
     private NotificationCompat.Builder mBuilder;
     private int orientation;
@@ -94,6 +97,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private long totalBytes;
     private boolean inUpload = false;
     private boolean uploadError = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,9 +130,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
             }
         };
+        mUser = mAuth.getCurrentUser();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         mUsername = getIntent().getStringExtra(USERNAME);
+        profilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         mNameField = (EditText) findViewById(R.id.photo_name);
@@ -264,8 +270,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     totalBytes = compressedFile.length();
 
                     //save the image as username_timestamp
-                    photoId = username + SEPARATOR + timestamp;
-                    StorageReference riversRef = mStorageRef.child(photoId);
+                    mPhotoId = mUsername + SEPARATOR + mTimestamp;
+                    StorageReference riversRef = mStorageRef.child(mPhotoId);
                     inUpload = true;
                     showProgressBar();
 
@@ -454,16 +460,18 @@ public class UploadPhotoActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink:  " + uri);
-
-                picture = new Picture(mName, mDescription, uri.toString());
+                picture = new Picture(mPhotoId, mDescription, uri.toString(),
+                        mUser.getUid(), mUsername, profilePicture);
                 picture.setTimestamp(mTimestamp);
-
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                databaseReference.child(USER_PICTURE).push().setValue(picture);
+                DatabaseReference pushReference = databaseReference.child(USER_PICTURE).push();
+                String id = pushReference.getKey();
+                picture.setId(id);
+                pushReference.setValue(picture);
                 /*TODO: the picture has to be sent to pictures and
                   to the point associated with the position,
                   for now always the same point    */
-                databaseReference.child("points/KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
+                databaseReference.child("points/-KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,

@@ -63,7 +63,9 @@
         <activity
             android:name=".MapsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:label="@string/title_activity_maps" />
+            android:label="@string/title_activity_maps"
+            android:launchMode="singleTop"/>
+
         <activity android:name=".GetBasicInfoActivity" />
         <activity
             android:name=".PointActivity"
@@ -73,6 +75,11 @@
         <activity
             android:name=".PickLocationActivity"
             android:label="@string/title_activity_pick_location"></activity>
+
+        
+        <activity
+            android:name=".PictureActivity"
+            android:parentActivityName=".PointActivity"></activity>
     </application>
 
 </manifest>

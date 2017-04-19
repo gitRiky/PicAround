@@ -44,30 +44,6 @@
 
         </android.support.design.widget.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
-            android:id="@+id/input_layout_age"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/input_layout_username"
-            android:layout_centerHorizontal="true"
-            android:visibility="invisible">
-
-
-            <EditText
-                android:id="@+id/age"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/username"
-                android:layout_centerHorizontal="true"
-                android:layout_marginBottom="@dimen/activity_vertical_margin"
-                android:layout_marginTop="44dp"
-                android:ems="10"
-                android:hint="@string/age"
-                android:inputType="number"
-                android:maxLines="1" />
-        </android.support.design.widget.TextInputLayout>
-
-
 
     <TableLayout
         android:id="@+id/tl"
@@ -104,18 +80,6 @@
         </TableRow>
 
     </TableLayout>
-        <Button
-            android:id="@+id/button3"
-            style="@style/Widget.AppCompat.Button.Colored"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="@dimen/activity_vertical_margin"
-            android:layout_marginTop="20dp"
-            android:background="#4caf50"
-            android:layout_below="@+id/tl"
-            android:onClick="onClick"
-            android:text="@string/continue_mex" />
     </RelativeLayout>
 
 

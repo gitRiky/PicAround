@@ -74,4 +74,10 @@
         <item>December</item>
     </string-array>
     <string name="invalid_date">Invalid date</string>
+    <string name="views">views</string>
+    <string name="likes">likes</string>
+    <string name="popularity">popularity</string>
+    <string name="confirm">continue</string>
+    <string name="view">view</string>
+    <string name="like">like</string>
 </resources>
