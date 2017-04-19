@@ -3,5 +3,5 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="map_dx">0dp</dimen>
-    <dimen name="map_dy">-150dp</dimen>
+    <dimen name="map_dy">-100dp</dimen>
 </resources>

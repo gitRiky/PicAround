@@ -10,20 +10,23 @@ public class User {
     private String email;
     private String name;
     private String surname;
-    private String age;
-    private String profile_picture;
+    private String date;
+    private String profilePicture;
+    private String id;
 
     public User(){
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
-    public User(String username, String email, String name, String surname, String age, String profile_picture) {
+
+    public User(String username, String email, String name, String surname, String date, String profilePicture, String id) {
         this.username = username;
         this.email = email;
         this.name = name;
         this.surname = surname;
-        this.age = age;
-        this.profile_picture = profile_picture;
+        this.date = date;
+        this.profilePicture = profilePicture;
+        this.id = id;
     }
 
     public String getUsername() {
@@ -58,20 +61,28 @@ public class User {
         this.surname = surname;
     }
 
-    public String getAge() {
-        return age;
+    public String getDate() {
+        return date;
     }
 
-    public void setAge(String age) {
-        this.age = age;
+    public void setDate(String date) {
+        this.date = date;
     }
 
-    public String getProfile_picture() {
-        return profile_picture;
+    public String getProfilePicture() {
+        return profilePicture;
     }
 
-    public void setProfile_picture(String profile_picture) {
-        this.profile_picture = profile_picture;
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override
@@ -81,12 +92,12 @@ public class User {
 
         User user = (User) o;
 
-        if (age != user.age) return false;
+        if (date != user.date) return false;
         if (!username.equals(user.username)) return false;
         if (!email.equals(user.email)) return false;
         if (name != null ? !name.equals(user.name) : user.name != null) return false;
         if (surname != null ? !surname.equals(user.surname) : user.surname != null) return false;
-        return profile_picture != null ? profile_picture.equals(user.profile_picture) : user.profile_picture == null;
+        return profilePicture != null ? profilePicture.equals(user.profilePicture) : user.profilePicture == null;
 
     }
 
@@ -96,13 +107,13 @@ public class User {
         result = 31 * result + email.hashCode();
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (surname != null ? surname.hashCode() : 0);
-        result = 31 * result + age.hashCode();
-        result = 31 * result + (profile_picture != null ? profile_picture.hashCode() : 0);
+        result = 31 * result + date.hashCode();
+        result = 31 * result + (profilePicture != null ? profilePicture.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString(){
-        return name + ", " + surname + ", " + email + "\n" + username + ", " + age;
+        return name + ", " + surname + ", " + email + "\n" + username + ", " + date;
     }
 }

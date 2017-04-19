@@ -89,14 +89,6 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Set status bar color
-        if (android.os.Build.VERSION.SDK_INT >= 21) {
-            Window window = this.getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
-        }
-
         if (!ApplicationClass.alreadyEnabledPersistence()){
             Log.i(TAG, "Enabling database persistence");
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
@@ -433,7 +425,8 @@ public class LoginActivity extends AppCompatActivity {
                                 Profile profile = Profile.getCurrentProfile();
                                 newUser = new User(username, facebookEmail, profile.getFirstName(),
                                         profile.getLastName(), date,
-                                        profile.getProfilePictureUri(10,10).toString());
+                                        profile.getProfilePictureUri(100,100).toString(),
+                                        mAuth.getCurrentUser().getUid());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");
@@ -516,7 +509,8 @@ public class LoginActivity extends AppCompatActivity {
                                 Log.i(TAG, "First usage for the user");
                                 newUser = new User(username, acct.getEmail(), acct.getGivenName(),
                                         acct.getFamilyName(), date,
-                                        acct.getPhotoUrl().toString());
+                                        acct.getPhotoUrl().toString(),
+                                        mAuth.getCurrentUser().getUid());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");
