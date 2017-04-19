@@ -72,8 +72,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private ImageView mImageView;
     private EditText nameField;
     private EditText descriptionField;
-    private String mPhotoPath;
     private NotificationManager mNotifyManager;
+    private String mPhotoPath;
     private NotificationCompat.Builder mBuilder;
     private String name;
     private String description;
@@ -131,7 +131,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         username = getIntent().getStringExtra(USERNAME);
-        Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         nameField = (EditText) findViewById(R.id.photo_name);
         descriptionField = (EditText) findViewById(R.id.photo_description);
@@ -157,8 +156,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
             geocoder = new Geocoder(this, Locale.getDefault());
             try {
                 // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                latitude = "41.890638";
-                longitude = "12.49075";
                 addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
                         Double.parseDouble(longitude), 1);
                 String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
@@ -222,10 +219,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 if(checkName() && checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
-                    /*Uri file2 =  Uri.fromFile(Compressor         //from 4 MB to 30 KB
-                            .getDefault(this)
-                            .compressToFile(new File(mPhotoPath)));*/
-                    //Uri file2 = Uri.fromFile(new File(mPhotoPath));
                     File compressedFile = new Compressor.Builder(this)
                             .setMaxHeight(photoW)
                             .setMaxWidth(photoW)
@@ -235,9 +228,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                             .compressToFile(new File(mPhotoPath));
                     Uri file = Uri.fromFile(compressedFile);
                     totalBytes = compressedFile.length();
-                    Log.d(TAG, "total bytes = " + totalBytes);
-                    //save the image as username_timestamp
 
+                    //save the image as username_timestamp
                     photoId = username + SEPARATOR + timestamp;
                     StorageReference riversRef = mStorageRef.child(photoId);
                     inUpload = true;
@@ -247,7 +239,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     // Get a URL to the uploaded content
-                                    Log.d(TAG, "OnSuccess");
                                     getPath();
                                 }
                             })
@@ -272,28 +263,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 Log.d(TAG, "TransferredBytes " + transferredBytes);
                             }
                         });
-                    /*final String photoId2 = username + SEPARATOR + timestamp + "_compressed" ;
-                    StorageReference riversRef2 = mStorageRef.child(photoId2);
-                    riversRef2.putFile(file)
-                            .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                                @Override
-                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                    // Get a URL to the uploaded content
-                                    Log.d(TAG, "OnSuccess");
-                                    getPath2(photoId2);
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception exception) {
-                                    // Handle unsuccessful uploads
-                                    // ...
-                                    Log.e(TAG, "Error during the upload, " + exception.toString());
-                                    Toast.makeText(getApplicationContext(),
-                                            R.string.upload_failed,
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            });*/
                     Intent i = getIntent();
                     setResult(RESULT_OK, i);
                     finish();
@@ -353,40 +322,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
         ).start();
     }
-
-    /*private void getPath2(String photoId2){
-        StorageReference pathRef = mStorageRef.child(photoId2);
-        pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-            @Override
-            public void onSuccess(Uri uri) {
-                Log.d(TAG, "MyDownloadLink:  " + uri);
-                picture = new com.project.pervsys.picaround.domain.Picture(name, description, uri.toString());
-                picture.setTimestamp(timestamp);
-                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                databaseReference.child(USER_PICTURE).push().setValue(picture);
-                /*TODO: the picture has to be sent to pictures and
-                  to the point associated with the position,
-                  for now always the same point
-                databaseReference.child("points/KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
-                Log.i(TAG, "Picture's path sent to db");
-                Toast.makeText(getApplicationContext(),
-                        R.string.upload_ok,
-                        Toast.LENGTH_SHORT)
-                        .show();
-            }
-        })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception exception) {
-                        // Handle unsuccessful uploads
-                        // ...
-                        Log.e(TAG, "Error during the upload, " + exception.toString());
-                        Toast.makeText(getApplicationContext(),
-                                R.string.upload_failed,
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }*/
 
 
     private void setPic() {
@@ -476,7 +411,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
 
     private void getPath(){
-        Log.d(TAG, "getPath");
         StorageReference pathRef = mStorageRef.child(photoId);
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override

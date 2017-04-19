@@ -93,10 +93,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
 
     private String[] createDayArray(){
         String[] days = new String[31];
-        for (int i = 0; i < 31; i++){
+        for (int i = 0; i < 31; i++)
             days[i] = "" + (i + 1);
-            Log.d(TAG, days[i]);
-        }
         return days;
     }
 
@@ -121,7 +119,6 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     public void onClick(View w){
         EditText usernameField = (EditText) findViewById(R.id.username);
         String username = usernameField.getText().toString();
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");
         Spinner daySpin = (Spinner) findViewById(R.id.spinner);
         Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
         String day = daySpin.getSelectedItem().toString();
@@ -138,14 +135,15 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         }
         else
             Toast.makeText(this, R.string.invalid_date, Toast.LENGTH_SHORT).show();
-        Log.d(TAG, date);
     }
 
     private boolean checkDate(int d, int m, int y){
         if (d == 31 && (m == 2 || m == 4 || m == 6 || m == 9 || m == 11))
             return false;
         if (m == 2 && d >= 29)
-            if (d == 29 && !((y % 4 == 0 && y%100 != 0) || (y%400 == 0)))
+            if (d == 29 && ((y%4 == 0 && y%100 != 0) || (y%400 == 0)))
+                return true;
+            else
                 return false;
         return true;
     }
