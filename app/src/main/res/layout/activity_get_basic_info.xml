@@ -65,18 +65,18 @@
                 android:maxLines="1" />
         </android.support.design.widget.TextInputLayout>
 
-        <Button
-            android:id="@+id/button3"
-            style="@style/Widget.AppCompat.Button.Colored"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_below="@+id/input_layout_age"
-            android:layout_marginTop="@dimen/activity_horizontal_margin"
-            android:layout_marginBottom="@dimen/activity_vertical_margin"
-            android:background="#4caf50"
-            android:onClick="onClick"
-            android:text="@string/continue_mex" />
+        <!--<Button-->
+            <!--android:id="@+id/button3"-->
+            <!--style="@style/Widget.AppCompat.Button.Colored"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_below="@+id/input_layout_age"-->
+            <!--android:layout_marginTop="@dimen/activity_horizontal_margin"-->
+            <!--android:layout_marginBottom="@dimen/activity_vertical_margin"-->
+            <!--android:background="#4caf50"-->
+            <!--android:onClick="onClick"-->
+            <!--android:text="@string/continue_mex" />-->
     </RelativeLayout>
 
 

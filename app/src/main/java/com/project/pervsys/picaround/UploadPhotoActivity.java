@@ -3,7 +3,6 @@ package com.project.pervsys.picaround;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Picture;
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
@@ -28,28 +27,34 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.squareup.picasso.Picasso;
+import com.project.pervsys.picaround.domain.User;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.Timestamp;
 import java.util.List;
 import java.util.Locale;
+
+import com.project.pervsys.picaround.domain.Picture;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
     private static final String PHOTO_PATH = "photoPath";
     private static final String USER_PICTURE = "pictures";
     private static final String USERNAME = "username";
+    private static final String PROFILE_PICTURE = "profilePicture";
     private static final String SEPARATOR = "_";
     private static final String POINT_PICTURE = "points/pictures";
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private FirebaseUser mUser;
     private StorageReference mStorageRef;
     private ImageView mImageView;
     private EditText nameField;
@@ -58,12 +63,12 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String name;
     private String description;
     private String username;
+    private String profilePicture;
     private String photoId;
     private String timestamp;
     private String latitude;
     private String longitude;
-    private com.project.pervsys.picaround.domain.Picture picture;
-
+    private Picture picture;
 
 
     @Override
@@ -98,9 +103,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
             }
         };
+        mUser = mAuth.getCurrentUser();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         username = getIntent().getStringExtra(USERNAME);
+        profilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         nameField = (EditText) findViewById(R.id.photo_name);
@@ -121,16 +128,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
             Geocoder geocoder;
             List<Address> addresses;
             geocoder = new Geocoder(this, Locale.getDefault());
-            try {
-                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
-                        Double.parseDouble(longitude), 1);
-                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-                String city = addresses.get(0).getLocality();
-                Log.d(TAG, "address = " + address + " city = " + city);
-            } catch (IOException e) {
-                Log.e(TAG, "IOException " + e.toString());
-            }
+//            try {
+//                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+//                addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
+//                        Double.parseDouble(longitude), 1);
+//                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+//                String city = addresses.get(0).getLocality();
+//                Log.d(TAG, "address = " + address + " city = " + city);
+//            } catch (IOException e) {
+//                Log.e(TAG, "IOException " + e.toString());
+//            }
         }
         Log.i(TAG, "Photo put into the imageView");
     }
@@ -282,14 +289,19 @@ public class UploadPhotoActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink:  " + uri);
-                picture = new com.project.pervsys.picaround.domain.Picture(name, description, uri.toString());
+
+                picture = new Picture(photoId, description, uri.toString(),
+                        mUser.getUid(), username, profilePicture);
                 picture.setTimestamp(timestamp);
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                databaseReference.child(USER_PICTURE).push().setValue(picture);
+                DatabaseReference pushReference = databaseReference.child(USER_PICTURE).push();
+                String id = pushReference.getKey();
+                picture.setId(id);
+                pushReference.setValue(picture);
                 /*TODO: the picture has to be sent to pictures and
                   to the point associated with the position,
                   for now always the same point    */
-                databaseReference.child("points/KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
+                databaseReference.child("points/-KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,

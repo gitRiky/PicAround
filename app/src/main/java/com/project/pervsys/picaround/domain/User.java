@@ -11,19 +11,21 @@ public class User {
     private String name;
     private String surname;
     private int age;
-    private String profile_picture;
+    private String profilePicture;
+    private String id;
 
     public User(){
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
-    public User(String username, String email, String name, String surname, int age, String profile_picture) {
+    public User(String username, String email, String name, String surname, int age, String profilePicture, String id) {
         this.username = username;
         this.email = email;
         this.name = name;
         this.surname = surname;
         this.age = age;
-        this.profile_picture = profile_picture;
+        this.profilePicture = profilePicture;
+        this.id = id;
     }
 
     public String getUsername() {
@@ -66,12 +68,20 @@ public class User {
         this.age = age;
     }
 
-    public String getProfile_picture() {
-        return profile_picture;
+    public String getProfilePicture() {
+        return profilePicture;
     }
 
-    public void setProfile_picture(String profile_picture) {
-        this.profile_picture = profile_picture;
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override
@@ -86,7 +96,7 @@ public class User {
         if (!email.equals(user.email)) return false;
         if (name != null ? !name.equals(user.name) : user.name != null) return false;
         if (surname != null ? !surname.equals(user.surname) : user.surname != null) return false;
-        return profile_picture != null ? profile_picture.equals(user.profile_picture) : user.profile_picture == null;
+        return profilePicture != null ? profilePicture.equals(user.profilePicture) : user.profilePicture == null;
 
     }
 
@@ -97,7 +107,7 @@ public class User {
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (surname != null ? surname.hashCode() : 0);
         result = 31 * result + age;
-        result = 31 * result + (profile_picture != null ? profile_picture.hashCode() : 0);
+        result = 31 * result + (profilePicture != null ? profilePicture.hashCode() : 0);
         return result;
     }
 

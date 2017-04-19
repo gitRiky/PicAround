@@ -63,8 +63,12 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
@@ -86,6 +90,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -107,12 +112,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String PHOTO_PATH = "photoPath";
     private static final String USERS = "users";
     private static final String USERNAME = "username";
+    private static final String PROFILE_PICTURE = "profilePicture";
     private static final String EMAIL = "email";
+    public static final int THUMBNAILS_NUMBER = 6;
+    public static final String THUMB_PREFIX = "thumb_";
 
     private ProgressDialog progress;
     private GoogleMap mMap;
-    private Marker mRome;
-    private Marker mPerth;
     private ImageView mImageView;
 
     private String mCurrentPhotoPath;
@@ -123,6 +129,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String mProvider;
 
     private String username;
+    private String profilePicture;
+    private List<String> thumbnails;
 
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -222,6 +230,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
             Log.d(TAG, "Username " + username);
             i.putExtra(USERNAME, username);
+            i.putExtra(PROFILE_PICTURE, profilePicture);
             Log.i(TAG, "Starting Upload activity");
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
             mCurrentPhotoPath = null;
@@ -301,36 +310,38 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
-        //Obtain the username
-        startProgressBar();
 
-        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        Log.d(TAG, "Email = " + email);
-        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for(DataSnapshot child : dataSnapshot.getChildren()) {
-                            if (child != null) {
-                                Log.i(TAG, "Username obtained");
-                                User user = child.getValue(User.class);
-                                Log.e(TAG, user.toString());
-                                username = user.getUsername();
-                                if (progress != null)
-                                    progress.dismiss();
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            //Obtain the username
+            startProgressBar();
+            String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+            Log.d(TAG, "Email = " + email);
+            mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                if (child != null) {
+                                    Log.i(TAG, "Username obtained");
+                                    User user = child.getValue(User.class);
+                                    Log.e(TAG, user.toString());
+                                    username = user.getUsername();
+                                    profilePicture = user.getProfilePicture();
+                                    if (progress != null)
+                                        progress.dismiss();
+                                } else
+                                    Log.e(TAG, "Cannot obtain the username");
                             }
-                            else
-                                Log.e(TAG, "Cannot obtain the username");
+
                         }
 
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //database error, e.g. permission denied (not logged with Firebase)
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
+        }
 
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -492,7 +503,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
                             mMap.addMarker(new MarkerOptions()
-//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
                                     .position(new LatLng(p.getLat(), p.getLon())))
                                     .setTag(p);
                             }
@@ -568,8 +579,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
         marker.showInfoWindow();
-        Point p = (Point) marker.getTag();
-        Log.i(TAG, p.toString());
 
         return true;
     }
@@ -577,8 +586,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onInfoWindowClick(Marker marker) {
         // Start PointActivity
-//        String toShow = marker.getPosition().toString();
-//        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
         Point point = (Point) marker.getTag();
         Intent i = new Intent(this, PointActivity.class);
         i.putExtra(POINT_ID, point.getId());
@@ -592,69 +599,91 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-        // First opening the infoWindow: loading
-        if (marker.getSnippet() != null) {
-            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
-
+        // First opening the infoWindow: show loading
+//        if (marker.getSnippet() != null) {
+//            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
+//            View v = getLayoutInflater().inflate(R.layout.info_window, null);
+//            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
+//            Point point = (Point) marker.getTag();
+//            addPictures(marker, point, gridLayout);
+//            return loadingView;
+//        }
+//        // Second opening of the infoWindow: show info window
+//        else {
             View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
             GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-
             Point point = (Point) marker.getTag();
-
-            Picasso.with(this)
-                    .load(point.getIcon())
-                    .into(icon, new MarkerCallback(marker));
-
-            addPictures(marker, point, gridLayout);
-
-            return loadingView;
-        }
-        // Second opening of the infoWindow: show info window
-        else {
-            View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
-            TextView title = (TextView) v.findViewById(R.id.info_title);
-            TextView category = (TextView) v.findViewById(R.id.info_category);
-            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-            TextView description = (TextView) v.findViewById(R.id.info_description);
-
-            Point point = (Point) marker.getTag();
-
-            title.setText(point.getName());
-            category.setText(point.getCategory());
-            description.setText(point.getDescription());
-
-            String iconPath = point.getIcon();
-            Picasso.with(this)
-                    .load(iconPath)
-                    .into(icon, new MarkerCallback(marker));
 
             addPictures(marker, point, gridLayout);
 
             return v;
-        }
+//        }
     }
 
-    private void addPictures(Marker marker, Point point, GridLayout gridLayout) {
+    private void addPictures(final Marker marker, Point point, final GridLayout gridLayout) {
         int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, this.getResources().getDisplayMetrics());
         int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
+        final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
 
-        HashMap<String,Picture> pictures = point.getPictures();
-        for (Picture pic : pictures.values()) {
-            ImageView imageView = new ImageView(this);
-            imageView.setLayoutParams(layoutParams);
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            gridLayout.addView(imageView);
+        if (thumbnails != null){
+            for (String thumbnailPath : thumbnails) {
+                ImageView imageView = new ImageView(MapsActivity.this);
+                imageView.setLayoutParams(layoutParams);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                gridLayout.addView(imageView);
+                Picasso.with(MapsActivity.this)
+                        .load(thumbnailPath)
+                        .into(imageView, new MarkerCallback(marker));
+            }
+        }
+        else {
+            DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+            databaseRef.child("points").keepSynced(true);
+            databaseRef.child("points").child(point.getId()).child("pictures")
+                    .orderByChild("popularity").limitToFirst(THUMBNAILS_NUMBER)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            thumbnails = new LinkedList<>();
+                            Log.i(TAG, "Number of thumbnails: " + dataSnapshot.getChildrenCount());
+                            for (DataSnapshot pictureSnap : dataSnapshot.getChildren()) {
+                                Picture picture = pictureSnap.getValue(Picture.class);
+                                String pictureName = picture.getName();
+                                final String thumbnailName = THUMB_PREFIX + pictureName;
+                                FirebaseStorage storage = FirebaseStorage.getInstance();
+                                StorageReference pathReference = storage.getReference().child(thumbnailName);
+                                Log.i(TAG, "storageRef=" + pathReference);
+                                pathReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                    @Override
+                                    public void onSuccess(Uri uri) {
+                                        thumbnails.add(uri.toString());
 
-            String path = pic.getPath();
+                                        ImageView imageView = new ImageView(MapsActivity.this);
+                                        imageView.setLayoutParams(layoutParams);
+                                        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                                        gridLayout.addView(imageView);
 
-            Picasso.with(this)
-                    .load(path)
-                    .into(imageView, new MarkerCallback(marker));
+                                        Picasso.with(MapsActivity.this)
+                                                .load(uri)
+                                                .into(imageView, new MarkerCallback(marker));
+
+
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception exception) {
+                                        Log.e(TAG, exception.toString());
+                                    }
+                                });
+
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
         }
     }
 
@@ -822,15 +851,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         progress.show();
     }
 
-
 }
 
 class MarkerCallback implements Callback {
 
-    private static final int THUMBNAILS_NUMBER = 7;
+    private static final int THUMBNAILS_NUMBER = 6;
     private static int counter = 0;
 
-    Marker marker=null;
+    Marker marker = null;
 
     MarkerCallback(Marker marker) {
         this.marker=marker;
@@ -843,9 +871,10 @@ class MarkerCallback implements Callback {
 
     @Override
     public void onSuccess() {
-        counter++;
-        if (counter == THUMBNAILS_NUMBER && marker != null && marker.isInfoWindowShown()) {
-            marker.setSnippet(null);
+//        counter++;
+        if (marker != null && marker.isInfoWindowShown()) {
+//            counter = 0;
+//            marker.setSnippet(null);
             marker.hideInfoWindow();
             marker.showInfoWindow();
         }
