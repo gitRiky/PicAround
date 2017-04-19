@@ -9,6 +9,7 @@ import android.graphics.Matrix;
 
 import com.google.firebase.storage.OnProgressListener;
 import com.project.pervsys.picaround.domain.Picture;
+
 import android.location.Address;
 import android.location.Geocoder;
 import android.media.ExifInterface;
@@ -42,22 +43,21 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.security.Timestamp;
 import java.util.List;
 import java.util.Locale;
 
+import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
 import id.zelory.compressor.Compressor;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
     private static final String PHOTO_PATH = "photoPath";
     private static final String USER_PICTURE = "pictures";
-    private static final String USERNAME = "username";
+    private static final String USERNAME = "mUsername";
     private static final String SEPARATOR = "_";
     private static final int PIC_HOR_RIGHT = 1;
     private static final int PIC_HOR_LEFT = 3;
@@ -66,22 +66,24 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int COMPRESSION_QUALITY = 65;
     private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
     private static final String POINT_PICTURE = "points/pictures";
+    private static final int REQUEST_PICK_LOCATION = 1;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private StorageReference mStorageRef;
     private ImageView mImageView;
-    private EditText nameField;
-    private EditText descriptionField;
-    private NotificationManager mNotifyManager;
+    private EditText mNameField;
+    private EditText mDescriptionField;
     private String mPhotoPath;
+    private String mName;
+    private String mDescription;
+    private String mUsername;
+    private String mPhotoId;
+    private String mTimestamp;
+    private String mLatitude;
+    private String mLongitude;
+    private com.project.pervsys.picaround.domain.Picture picture;
+    private NotificationManager mNotifyManager;
     private NotificationCompat.Builder mBuilder;
-    private String name;
-    private String description;
-    private String username;
-    private String photoId;
-    private String timestamp;
-    private String latitude;
-    private String longitude;
     private int orientation;
     private Picture picture;
     private int photoW;
@@ -92,10 +94,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private long totalBytes;
     private boolean inUpload = false;
     private boolean uploadError = false;
-
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,24 +128,27 @@ public class UploadPhotoActivity extends AppCompatActivity {
         };
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
-        username = getIntent().getStringExtra(USERNAME);
+        mUsername = getIntent().getStringExtra(USERNAME);
+        Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
-        nameField = (EditText) findViewById(R.id.photo_name);
-        descriptionField = (EditText) findViewById(R.id.photo_description);
-        //take metadata from the picture
+        mNameField = (EditText) findViewById(R.id.photo_name);
+        mDescriptionField = (EditText) findViewById(R.id.photo_description);
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
+            Log.i(TAG, "The path of the photo is: " + mPhotoPath);
             takeExifInfo(exif);
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
         }
-        //set the image into imageView
-        setPic();
 
-       if (latitude == null || longitude == null){
+      //set the image into imageView
+        setPic();
+      
+        if (mLatitude == null || mLongitude == null){
             Log.d(TAG, "Position not available in the metadata");
-            // TODO: start a new activity that allows the user to select a place;
+            Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
+            startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
         }
         else{
             //take the address once we got latitude and longitude
@@ -156,8 +157,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
             geocoder = new Geocoder(this, Locale.getDefault());
             try {
                 // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                addresses = geocoder.getFromLocation(Double.parseDouble(latitude),
-                        Double.parseDouble(longitude), 1);
+                addresses = geocoder.getFromLocation(Double.parseDouble(mLatitude),
+                        Double.parseDouble(mLongitude), 1);
                 String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
                 String city = addresses.get(0).getLocality();
                 Log.d(TAG, "address = " + address + " city = " + city);
@@ -168,12 +169,44 @@ public class UploadPhotoActivity extends AppCompatActivity {
         Log.i(TAG, "Photo put into the imageView");
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        switch (requestCode){
+            case REQUEST_PICK_LOCATION:
+                if(resultCode == RESULT_OK) {
+                    String[] latlong = data.getStringExtra(LOCATION_EXTRA).split(",");
+                    mLatitude = latlong[0].substring(10);
+                    mLongitude = latlong[1].replace(")","");
+                    Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
+                }
+                //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
+                break;
+        }
+    }
+
 
     private void takeExifInfo(ExifInterface exif) {
-        timestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
-        timestamp = timestamp.replace(" ", SEPARATOR);
-        latitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
-        longitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+        mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
+        if(mTimestamp == null)
+            mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL);
+        if(mTimestamp == null)
+            mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED);
+        if(mTimestamp == null)
+            mTimestamp = exif.getAttribute(ExifInterface.TAG_GPS_DATESTAMP);
+        if(mTimestamp == null)
+            mTimestamp = exif.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP);
+        if(mTimestamp != null)
+        mTimestamp = mTimestamp.replace(" ", SEPARATOR);
+
+        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+        //myAttribute += getTagString(ExifInterface.TAG_GPS_LATITUDE_REF, exif);
+        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+        //myAttribute += getTagString(ExifInterface.TAG_GPS_LONGITUDE_REF, exif);
+        //myAttribute += getTagString(ExifInterface.TAG_IMAGE_LENGTH, exif);
+        //myAttribute += getTagString(ExifInterface.TAG_IMAGE_WIDTH, exif);
+        //myAttribute += getTagString(ExifInterface.TAG_ORIENTATION, exif);
+        Log.d(TAG, "Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
+
         orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
     }
 
@@ -214,11 +247,12 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch(id){
             case R.id.upload:
                 Log.i(TAG, "Upload has been selected");
-                name = nameField.getText().toString();
-                description = descriptionField.getText().toString();
+                mName = mNameField.getText().toString();
+                mDescription = mDescriptionField.getText().toString();
                 if(checkName() && checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
+
                     File compressedFile = new Compressor.Builder(this)
                             .setMaxHeight(photoW)
                             .setMaxWidth(photoW)
@@ -234,6 +268,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     StorageReference riversRef = mStorageRef.child(photoId);
                     inUpload = true;
                     showProgressBar();
+
                     riversRef.putFile(file)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
@@ -380,9 +415,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
 
     private boolean checkName(){
-        if (name.replace(" ", "").equals("")){
+        if (mName.replace(" ", "").equals("")){
             Toast.makeText(this, R.string.name_missing, Toast.LENGTH_SHORT).show();
-            nameField.setText("");
+            mNameField.setText("");
             return false;
         }
         return true;
@@ -411,13 +446,18 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
 
     private void getPath(){
-        StorageReference pathRef = mStorageRef.child(photoId);
+
+        Log.d(TAG, "getPath");
+        StorageReference pathRef = mStorageRef.child(mPhotoId);
+
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink:  " + uri);
-                picture = new Picture(name, description, uri.toString());
-                picture.setTimestamp(timestamp);
+
+                picture = new Picture(mName, mDescription, uri.toString());
+                picture.setTimestamp(mTimestamp);
+
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
                 databaseReference.child(USER_PICTURE).push().setValue(picture);
                 /*TODO: the picture has to be sent to pictures and

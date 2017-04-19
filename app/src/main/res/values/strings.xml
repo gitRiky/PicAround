@@ -54,6 +54,7 @@
     <string name="name_too_long">Name is too long</string>
     <string name="upload_failed">Error during the upload of the photo</string>
     <string name="upload_ok">The photo has been uploaded!</string>
+    <string name="title_activity_pick_location">PickLocation</string>
     <string name="upload_prog_bar_title">Picture Upload</string>
     <string name="upload_prog_bar_text">Upload in progress</string>
     <string name="upload_prog_bar_fail">Upload failed</string>
