@@ -116,7 +116,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
         if (mLatitude == null || mLongitude == null){
             Log.d(TAG, "Position not available in the metadata");
-            // TODO: start a new activity that allows the user to select a place;
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
         }
@@ -148,6 +147,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     mLongitude = latlong[1].replace(")","");
                     Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
                 }
+                //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
                 break;
         }
     }
