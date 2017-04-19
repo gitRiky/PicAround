@@ -384,6 +384,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             return;
         }
         mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+        if(mMap != null)
+            populatePoints();
     }
 
     /* Remove the location listener updates when Activity is paused */

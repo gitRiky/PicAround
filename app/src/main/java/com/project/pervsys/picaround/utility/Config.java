@@ -11,4 +11,6 @@ public class Config {
     public static final String REGISTERED = "alreadyRegistered";
     public static final String LOCATION_EXTRA = "location";
     public static final String SHARED_MAP_POSITION = "sharedmapposition";
+    public static final String POINTS = "points";
+    public static final String PICTURES = "pictures";
 }
