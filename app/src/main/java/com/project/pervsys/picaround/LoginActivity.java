@@ -68,7 +68,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final String USERS = "users";
     private static final String USERNAME = "username";
-    private static final String AGE = "age";
+    private static final String DATE = "date";
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
@@ -81,7 +81,7 @@ public class LoginActivity extends AppCompatActivity {
     private boolean firstLog;
     private User newUser;
     private String username;
-    private String age;
+    private String date;
     private GoogleSignInAccount acct;
 
     @Override
@@ -226,8 +226,7 @@ public class LoginActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     startProgressBar();
                     username = data.getStringExtra(USERNAME);
-                    age = data.getStringExtra(AGE);
-                    Log.e(TAG, username + " " + age);
+                    date = data.getStringExtra(DATE);
                     if (loginRes != null)
                         handleFacebookAccessToken(loginRes.getAccessToken());
                     else
@@ -240,8 +239,7 @@ public class LoginActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK){
                     startProgressBar();
                     username = data.getStringExtra(USERNAME);
-                    age = data.getStringExtra(AGE);
-                    Log.e(TAG, username + " " + age);
+                    date = data.getStringExtra(DATE);
                     firebaseAuthWithGoogle(acct);
                 }
                 else
@@ -434,7 +432,7 @@ public class LoginActivity extends AppCompatActivity {
                                 Log.i(TAG, "First usage for the user");
                                 Profile profile = Profile.getCurrentProfile();
                                 newUser = new User(username, facebookEmail, profile.getFirstName(),
-                                        profile.getLastName(), Integer.parseInt(age),
+                                        profile.getLastName(), date,
                                         profile.getProfilePictureUri(10,10).toString());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
@@ -517,7 +515,7 @@ public class LoginActivity extends AppCompatActivity {
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
                                 newUser = new User(username, acct.getEmail(), acct.getGivenName(),
-                                        acct.getFamilyName(), Integer.parseInt(age),
+                                        acct.getFamilyName(), date,
                                         acct.getPhotoUrl().toString());
                                 DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
                                 databaseRef.child(USERS).push().setValue(newUser);
