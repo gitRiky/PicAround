@@ -45,6 +45,7 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
+
         <activity android:name=".LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -67,19 +68,22 @@
             android:launchMode="singleTop"/>
 
         <activity android:name=".GetBasicInfoActivity" />
+
         <activity
             android:name=".PointActivity"
-            android:parentActivityName=".MapsActivity"></activity>
+            android:parentActivityName=".MapsActivity"
+            android:launchMode="singleTop"/>
+
         <activity android:name=".UploadPhotoActivity" />
             
         <activity
             android:name=".PickLocationActivity"
-            android:label="@string/title_activity_pick_location"></activity>
+            android:label="@string/title_activity_pick_location"/>
 
-        
         <activity
             android:name=".PictureActivity"
-            android:parentActivityName=".PointActivity"></activity>
+            android:parentActivityName=".PointActivity"/>
+
     </application>
 
 </manifest>

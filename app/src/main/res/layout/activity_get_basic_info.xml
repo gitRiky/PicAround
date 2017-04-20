@@ -62,21 +62,17 @@
             <Spinner
                 android:id="@+id/spinner"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.2"
-                />
+                android:layout_height="wrap_content"/>
 
             <Spinner
                 android:id="@+id/spinner2"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.4"/>
+                android:layout_height="wrap_content"/>
 
             <Spinner
                 android:id="@+id/spinner3"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.4"/>
+                android:layout_height="wrap_content"/>
         </TableRow>
 
     </TableLayout>

@@ -77,7 +77,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private EditText mNameField;
     private EditText mDescriptionField;
     private String mPhotoPath;
-    private String mName;
     private String mDescription;
     private String mUsername;
     private String mPhotoId;
@@ -137,7 +136,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         profilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
-        mNameField = (EditText) findViewById(R.id.photo_name);
         mDescriptionField = (EditText) findViewById(R.id.photo_description);
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
@@ -156,22 +154,23 @@ public class UploadPhotoActivity extends AppCompatActivity {
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
         }
-        else{
-            //take the address once we got latitude and longitude
-            Geocoder geocoder;
-            List<Address> addresses;
-            geocoder = new Geocoder(this, Locale.getDefault());
-            try {
-                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                addresses = geocoder.getFromLocation(Double.parseDouble(mLatitude),
-                        Double.parseDouble(mLongitude), 1);
-                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-                String city = addresses.get(0).getLocality();
-                Log.d(TAG, "address = " + address + " city = " + city);
-            } catch (IOException e) {
-                Log.e(TAG, "IOException " + e.toString());
-            }
-        }
+//        else{
+//            //take the address once we got latitude and longitude
+//            Geocoder geocoder;
+//            List<Address> addresses;
+//            geocoder = new Geocoder(this, Locale.getDefault());
+//            try {
+//                Log.d(TAG, "lat: " + mLatitude + ", lon:" + mLongitude);
+//                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+//                addresses = geocoder.getFromLocation(Double.parseDouble(mLatitude),
+//                        Double.parseDouble(mLongitude), 1);
+//                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+//                String city = addresses.get(0).getLocality();
+//                Log.d(TAG, "address = " + address + " city = " + city);
+//            } catch (IOException e) {
+//                Log.e(TAG, "IOException " + e.toString());
+//            }
+//        }
         Log.i(TAG, "Photo put into the imageView");
     }
 
@@ -253,9 +252,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch(id){
             case R.id.upload:
                 Log.i(TAG, "Upload has been selected");
-                mName = mNameField.getText().toString();
                 mDescription = mDescriptionField.getText().toString();
-                if(checkName() && checkDescription()) {
+                if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
 
@@ -418,17 +416,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mImageView.setImageBitmap(rotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
-
-
-    private boolean checkName(){
-        if (mName.replace(" ", "").equals("")){
-            Toast.makeText(this, R.string.name_missing, Toast.LENGTH_SHORT).show();
-            mNameField.setText("");
-            return false;
-        }
-        return true;
-    }
-
 
     private int getRotation(){
         switch(orientation){
