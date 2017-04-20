@@ -193,7 +193,6 @@ public class GetBasicInfoActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.username_with_spaces,Toast.LENGTH_SHORT).show();
             return false;
         }
-
         String lowUsername = username.toLowerCase();
 
         //query to database

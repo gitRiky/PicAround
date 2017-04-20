@@ -156,22 +156,22 @@ public class UploadPhotoActivity extends AppCompatActivity {
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
         }
-        else{
-            //take the address once we got latitude and longitude
-            Geocoder geocoder;
-            List<Address> addresses;
-            geocoder = new Geocoder(this, Locale.getDefault());
-            try {
-                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                addresses = geocoder.getFromLocation(Double.parseDouble(mLatitude),
-                        Double.parseDouble(mLongitude), 1);
-                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-                String city = addresses.get(0).getLocality();
-                Log.d(TAG, "address = " + address + " city = " + city);
-            } catch (IOException e) {
-                Log.e(TAG, "IOException " + e.toString());
-            }
-        }
+//        else{
+//            //take the address once we got latitude and longitude
+//            Geocoder geocoder;
+//            List<Address> addresses;
+//            geocoder = new Geocoder(this, Locale.getDefault());
+//            try {
+//                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+//                addresses = geocoder.getFromLocation(Double.parseDouble(mLatitude),
+//                        Double.parseDouble(mLongitude), 1);
+//                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+//                String city = addresses.get(0).getLocality();
+//                Log.d(TAG, "address = " + address + " city = " + city);
+//            } catch (IOException e) {
+//                Log.e(TAG, "IOException " + e.toString());
+//            }
+//        }
         Log.i(TAG, "Photo put into the imageView");
     }
 
