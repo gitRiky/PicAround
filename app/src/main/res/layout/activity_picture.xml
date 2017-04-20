@@ -100,7 +100,8 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/views_likes"
             android:gravity="center"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:visibility="invisible"/>
 
         <ImageButton
             android:id="@+id/like_button"

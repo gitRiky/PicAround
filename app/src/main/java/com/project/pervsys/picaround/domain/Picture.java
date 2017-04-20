@@ -164,6 +164,16 @@ public class Picture {
         this.likesList = likesList;
     }
 
+   public void addLike(String id){
+       if (likesList == null)
+           likesList = new HashMap<>();
+       likesList.put(id, id);
+   }
+
+   public void removeLike(String id){
+       likesList.remove(id);
+   }
+
     public HashMap<String, String> getViewsList() {
         return viewsList;
     }

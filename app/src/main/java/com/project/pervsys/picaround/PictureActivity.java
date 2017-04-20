@@ -55,6 +55,7 @@ public class PictureActivity extends AppCompatActivity {
     private int mViewsNumber;
     private int mLikesNumber;
     private TextView mViewsTextView;
+    private boolean localLike;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,8 +142,8 @@ public class PictureActivity extends AppCompatActivity {
                                 }
                                 if(mLikesList.containsValue(mUser.getUid()))
                                     mLike = true;
+                                localLike = mLike;
                             }
-
                             if (mLike)
                                 likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
                                         R.color.colorAccent));
@@ -175,41 +176,62 @@ public class PictureActivity extends AppCompatActivity {
         likeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mLike) {
-                    mLike = false;
-                    mDatabaseRef.child(PICTURES).child(mPictureId).child(LIKES_LIST)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                        if (child.getValue().equals(mUser.getUid()))
-                                            child.getRef().removeValue();
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-                                    Log.e(TAG, databaseError.toString());
-                                }
-                            });
-
-                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this,
-                            R.color.secondary_text_black));
-                    mLikesNumber--;
-                    setTextView(mLikesNumber, likesTextView);
-                    setPopularity(popularityTextView);
-                }
-                else {
-                    mLike = true;
-                    mDatabaseRef.child(PICTURES).child(mPictureId).child(LIKES_LIST).push().setValue(mUser.getUid());
-                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this,
+                //local update of like
+                if (!localLike){
+                    Log.d(TAG, "local like is false, we are putting a like");
+                    //set colour
+                    likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
                             R.color.colorAccent));
+                    localLike = true;
                     mLikesNumber++;
-                    setTextView(mLikesNumber, likesTextView);
-                    setPopularity(popularityTextView);
+                    Log.d(TAG, "likes number = " + mLikesNumber);
                 }
+                else{
+                    Log.d(TAG, "local like is true, we are removing a like");
+                    likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
+                            R.color.secondary_text_black));
+                    localLike = false;
+                    mLikesNumber--;
+                    Log.d(TAG, "likes number = " + mLikesNumber);
+                }
+                setTextView(mLikesNumber, likesTextView);
+                setPopularity(popularityTextView);
 
-            }
+//                if (mLike) {
+//                    mLike = false;
+//                    mDatabaseRef.child(PICTURES).child(mPictureId).child(LIKES_LIST)
+//                            .addListenerForSingleValueEvent(new ValueEventListener() {
+//                                @Override
+//                                public void onDataChange(DataSnapshot dataSnapshot) {
+//                                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+//                                        if (child.getValue().equals(mUser.getUid()))
+//                                            child.getRef().removeValue();
+//                                    }
+//                                }
+//
+//                                @Override
+//                                public void onCancelled(DatabaseError databaseError) {
+//                                    Log.e(TAG, databaseError.toString());
+//                                }
+//                            });
+//
+//                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this,
+//                            R.color.secondary_text_black));
+//                    mLikesNumber--;
+//                    setTextView(mLikesNumber, likesTextView);
+//                    setPopularity(popularityTextView);
+//                }
+//                else {
+//                    mLike = true;
+//                    mDatabaseRef.child(PICTURES).child(mPictureId).child(LIKES_LIST).push().setValue(mUser.getUid());
+//                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this,
+//                            R.color.colorAccent));
+//                    mLikesNumber++;
+//                    setTextView(mLikesNumber, likesTextView);
+//                    setPopularity(popularityTextView);
+//                }
+//
+          }
         });
     }
 
@@ -397,5 +419,42 @@ public class PictureActivity extends AppCompatActivity {
                 });
 
         return result;
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        //if the like has been locally updated
+        if (mLike != localLike){
+            Log.d(TAG, "Like value has been changed");
+            //start likes transaction
+            mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+                @Override
+                public Transaction.Result doTransaction(MutableData mutableData) {
+                    Picture picture = mutableData.getValue(Picture.class);
+                    if (picture == null)
+                        return Transaction.success(mutableData);
+                    //get the number of likes
+                    mLikesNumber = picture.getLikes();
+                    if(localLike) {
+                        //add the new like
+                        picture.setLikes(mLikesNumber + 1);
+                        picture.addLike(mUser.getUid());
+                    }
+                    else {
+                        //remove one like
+                        picture.setLikes(mLikesNumber - 1);
+                        picture.removeLike(mUser.getUid());
+                    }
+                    mutableData.setValue(picture);
+                    return Transaction.success(mutableData);
+                }
+
+                @Override
+                public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
+                    Log.d(TAG, "postTransaction:onComplete:" + databaseError);
+                }
+            });
+        }
     }
 }
