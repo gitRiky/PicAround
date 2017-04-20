@@ -109,7 +109,6 @@ public class PictureActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         mPictureId = intent.getStringExtra(PICTURE_ID);
-        manageViews();
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(PICTURES).keepSynced(true);
         mDatabaseRef.child(PICTURES).orderByKey().equalTo(mPictureId)
@@ -139,6 +138,7 @@ public class PictureActivity extends AppCompatActivity {
                                 if(!mViewsList.containsValue(mUser.getUid())) {
                                     mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST).push().setValue(mUser.getUid());
                                     mViewsNumber++;
+                                    increaseViews();
                                 }
                                 if(mLikesList.containsValue(mUser.getUid()))
                                     mLike = true;
