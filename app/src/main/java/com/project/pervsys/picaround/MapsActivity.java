@@ -315,7 +315,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         //Obtain the username
         if (user != null) {
-            startProgressBar();
+            //startProgressBar();
+            //TODO: if it is the first access for the user, the query is not performed;
             String email = user.getEmail();
             Log.d(TAG, "Email = " + email);
             mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)

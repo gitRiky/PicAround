@@ -9,13 +9,15 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        >
 
         <ImageView
             android:id="@+id/picture"
             android:layout_width="match_parent"
             android:layout_height="240dp"
-            android:scaleType="fitStart"/>
+            android:scaleType="fitCenter"
+            android:background="@color/cardview_dark_background"/>
 
         <RelativeLayout
             android:id="@+id/user"
@@ -98,7 +100,8 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/views_likes"
             android:gravity="center"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:visibility="invisible"/>
 
         <ImageButton
             android:id="@+id/like_button"
