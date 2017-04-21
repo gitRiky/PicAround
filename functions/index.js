@@ -9,49 +9,49 @@ admin.initializeApp(functions.config().firebase);
 // [END import]
 
 // Keeps track of the length of the 'likes' child list
-exports.countLikes = functions.database.ref('/pictures/{pictureId}/likesList/{likeId}').onWrite(event => {
-  const collectionRef = event.data.ref.parent;
-  const countRef = collectionRef.parent.child('likes');
-
-  // event.data.ref.parent.parent.child('likes').once("value", function(snapshot) {
-  //   console.log("Likes1:",snapshot.val());
-  // }, function (errorObject) {
-  //   console.log("The read failed: " + errorObject.code);
-  // });
-  // 
-  // event.data.ref.parent.parent.child('likes').once('value').then(snapshot => {
-  //   console.log("Likes2:",snapshot.val());
-  // });
-
-
-  // Return the promise from countRef.transaction() so our function
-  // waits for this async event to complete before it exits.
-  return countRef.transaction(current => {
-    if (event.data.exists() && !event.data.previous.exists()) {
-      return (current || 0) + 1;
-    }
-    else if (!event.data.exists() && event.data.previous.exists()) {
-      return (current || 0) - 1;
-    }
-  });
-});
-
-// Keeps track of the length of the 'views' child list
-exports.countViews = functions.database.ref('/pictures/{pictureId}/viewsList/{viewId}').onWrite(event => {
-  const collectionRef = event.data.ref.parent;
-  const countRef = collectionRef.parent.child('views');
-
-  // Return the promise from countRef.transaction() so our function
-  // waits for this async event to complete before it exits.
-  return countRef.transaction(current => {
-    if (event.data.exists() && !event.data.previous.exists()) {
-      return (current || 0) + 1;
-    }
-    else if (!event.data.exists() && event.data.previous.exists()) {
-      return (current || 0) - 1;
-    }
-  });
-});
+// exports.countLikes = functions.database.ref('/pictures/{pictureId}/likesList/{likeId}').onWrite(event => {
+//   const collectionRef = event.data.ref.parent;
+//   const countRef = collectionRef.parent.child('likes');
+//
+//   // event.data.ref.parent.parent.child('likes').once("value", function(snapshot) {
+//   //   console.log("Likes1:",snapshot.val());
+//   // }, function (errorObject) {
+//   //   console.log("The read failed: " + errorObject.code);
+//   // });
+//   //
+//   // event.data.ref.parent.parent.child('likes').once('value').then(snapshot => {
+//   //   console.log("Likes2:",snapshot.val());
+//   // });
+//
+//
+//   // Return the promise from countRef.transaction() so our function
+//   // waits for this async event to complete before it exits.
+//   return countRef.transaction(current => {
+//     if (event.data.exists() && !event.data.previous.exists()) {
+//       return (current || 0) + 1;
+//     }
+//     else if (!event.data.exists() && event.data.previous.exists()) {
+//       return (current || 0) - 1;
+//     }
+//   });
+// });
+//
+// // Keeps track of the length of the 'views' child list
+// exports.countViews = functions.database.ref('/pictures/{pictureId}/viewsList/{viewId}').onWrite(event => {
+//   const collectionRef = event.data.ref.parent;
+//   const countRef = collectionRef.parent.child('views');
+//
+//   // Return the promise from countRef.transaction() so our function
+//   // waits for this async event to complete before it exits.
+//   return countRef.transaction(current => {
+//     if (event.data.exists() && !event.data.previous.exists()) {
+//       return (current || 0) + 1;
+//     }
+//     else if (!event.data.exists() && event.data.previous.exists()) {
+//       return (current || 0) - 1;
+//     }
+//   });
+// });
 
 
 

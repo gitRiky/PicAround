@@ -82,7 +82,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private EditText mNameField;
     private EditText mDescriptionField;
     private String mPhotoPath;
-    private String mName;
     private String mDescription;
     private String mUsername;
     private String mPhotoId;
@@ -143,7 +142,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         profilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
-        mNameField = (EditText) findViewById(R.id.photo_name);
         mDescriptionField = (EditText) findViewById(R.id.photo_description);
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
@@ -162,6 +160,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
         }
+
         Log.i(TAG, "Photo put into the imageView");
     }
 
@@ -254,9 +253,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch(id){
             case R.id.upload:
                 Log.i(TAG, "Upload has been selected");
-                mName = mNameField.getText().toString();
                 mDescription = mDescriptionField.getText().toString();
-                if(checkName() && checkDescription()) {
+                if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
 
@@ -429,17 +427,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mImageView.setImageBitmap(rotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
-
-
-    private boolean checkName(){
-        if (mName.replace(" ", "").equals("")){
-            Toast.makeText(this, R.string.name_missing, Toast.LENGTH_SHORT).show();
-            mNameField.setText("");
-            return false;
-        }
-        return true;
-    }
-
 
     private int getRotation(){
         switch(orientation){
