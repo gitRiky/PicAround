@@ -29,6 +29,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -51,8 +52,12 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.POINTS;
+
 import id.zelory.compressor.Compressor;
 import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Point;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
@@ -84,6 +89,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String mLatitude;
     private String profilePicture;
     private String mLongitude;
+    private String mPointId;
     private NotificationManager mNotifyManager;
     private NotificationCompat.Builder mBuilder;
     private int orientation;
@@ -149,28 +155,12 @@ public class UploadPhotoActivity extends AppCompatActivity {
       //set the image into imageView
         setPic();
       
-        if (mLatitude == null || mLongitude == null){
+        if (mLatitude == null || mLongitude == null) {
             Log.d(TAG, "Position not available in the metadata");
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
         }
-//        else{
-//            //take the address once we got latitude and longitude
-//            Geocoder geocoder;
-//            List<Address> addresses;
-//            geocoder = new Geocoder(this, Locale.getDefault());
-//            try {
-//                Log.d(TAG, "lat: " + mLatitude + ", lon:" + mLongitude);
-//                // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-//                addresses = geocoder.getFromLocation(Double.parseDouble(mLatitude),
-//                        Double.parseDouble(mLongitude), 1);
-//                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-//                String city = addresses.get(0).getLocality();
-//                Log.d(TAG, "address = " + address + " city = " + city);
-//            } catch (IOException e) {
-//                Log.e(TAG, "IOException " + e.toString());
-//            }
-//        }
+
         Log.i(TAG, "Photo put into the imageView");
     }
 
@@ -180,11 +170,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
             case REQUEST_PICK_LOCATION:
                 if(resultCode == RESULT_OK) {
                     String[] latlong = data.getStringExtra(LOCATION_EXTRA).split(",");
-                    mLatitude = latlong[0].substring(10);
-                    mLongitude = latlong[1].replace(")","");
-                    Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
+                    if (mLatitude == null && mLongitude == null) {
+                        mLatitude = latlong[0].substring(10);
+                        mLongitude = latlong[1].replace(")", "");
+                        Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
+                    }
                 }
                 //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
+                else{
+                    finish();
+                }
                 break;
         }
     }
@@ -201,11 +196,17 @@ public class UploadPhotoActivity extends AppCompatActivity {
         if(mTimestamp == null)
             mTimestamp = exif.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP);
         if(mTimestamp != null)
-        mTimestamp = mTimestamp.replace(" ", SEPARATOR);
+            mTimestamp = mTimestamp.replace(" ", SEPARATOR);
+        else{
+            TimePicker tp = new TimePicker(this);
+            String h = tp.getCurrentHour() + "";
+            String m = tp.getCurrentMinute() + "";
+            mTimestamp = h + ":" + m;
+        }
 
-        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
         //myAttribute += getTagString(ExifInterface.TAG_GPS_LATITUDE_REF, exif);
-        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
         //myAttribute += getTagString(ExifInterface.TAG_GPS_LONGITUDE_REF, exif);
         //myAttribute += getTagString(ExifInterface.TAG_IMAGE_LENGTH, exif);
         //myAttribute += getTagString(ExifInterface.TAG_IMAGE_WIDTH, exif);
@@ -256,6 +257,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
+
+                    Point toPut = new Point();
+                    toPut.setLat(Double.parseDouble(mLatitude));
+                    toPut.setLon(Double.parseDouble(mLongitude));
+
+                    DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+                    DatabaseReference pushReference = databaseReference.child(POINTS).push();
+                    mPointId = pushReference.getKey();
+                    toPut.setId(mPointId);
+                    pushReference.setValue(toPut);
 
                     File compressedFile = new Compressor.Builder(this)
                             .setMaxHeight(photoW)
@@ -455,10 +466,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 String id = pushReference.getKey();
                 picture.setId(id);
                 pushReference.setValue(picture);
-                /*TODO: the picture has to be sent to pictures and
-                  to the point associated with the position,
-                  for now always the same point    */
-                databaseReference.child("points/-KgyIEDrixfImPdgKBaQ/pictures").push().setValue(picture);
+
+                databaseReference.child(POINTS).child(mPointId).child(PICTURES).push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,

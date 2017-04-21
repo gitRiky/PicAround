@@ -25,6 +25,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
@@ -35,6 +37,12 @@ public class PictureActivity extends AppCompatActivity {
 
     private static final String TAG = "PictureActivity";
     private static final String PICTURE_ID = "pictureId";
+    private static final String PICTURES = "pictures";
+    private static final String POPULARITY = "popularity";
+    private static final String LIKES_LIST = "likesList";
+    private static final String VIEWS_LIST = "viewsList";
+
+
     private FirebaseUser mUser;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -46,6 +54,8 @@ public class PictureActivity extends AppCompatActivity {
     private HashMap<String,String> mViewsList;
     private int mViewsNumber;
     private int mLikesNumber;
+    private TextView mViewsTextView;
+    private boolean localLike;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,12 +89,11 @@ public class PictureActivity extends AppCompatActivity {
                 }
             }
         };
-
         final ImageView pictureView = (ImageView) findViewById(R.id.picture);
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
         final TextView username = (TextView) findViewById(R.id.username);
         final TextView description = (TextView) findViewById(R.id.description);
-        final TextView viewsTextView = (TextView) findViewById(R.id.views);
+        mViewsTextView = (TextView) findViewById(R.id.views);
         final TextView likesTextView = (TextView) findViewById(R.id.likes);
         final TextView popularityTextView = (TextView) findViewById(R.id.popularity);
         final ImageButton likeButton = (ImageButton) findViewById(R.id.like_button);
@@ -100,10 +109,9 @@ public class PictureActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         mPictureId = intent.getStringExtra(PICTURE_ID);
-
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
-        mDatabaseRef.child("pictures").keepSynced(true);
-        mDatabaseRef.child("pictures").orderByKey().equalTo(mPictureId)
+        mDatabaseRef.child(PICTURES).keepSynced(true);
+        mDatabaseRef.child(PICTURES).orderByKey().equalTo(mPictureId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -115,8 +123,6 @@ public class PictureActivity extends AppCompatActivity {
 
                             mLikesNumber = mPicture.getLikes();
                             mViewsNumber = mPicture.getViews();
-                            setTextView(mLikesNumber,likesTextView);
-                            setTextView(mViewsNumber,viewsTextView);
 
                             setPopularity(popularityTextView);
 
@@ -129,27 +135,35 @@ public class PictureActivity extends AppCompatActivity {
                                 mLikesList = new HashMap<>();
 
                             if (mUser != null){
-                                if(!mViewsList.containsValue(mUser.getUid()))
-                                    mDatabaseRef.child("pictures").child(mPictureId).child("viewsList").push().setValue(mUser.getUid());
+                                if(!mViewsList.containsValue(mUser.getUid())) {
+                                    mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST).push().setValue(mUser.getUid());
+                                    mViewsNumber++;
+                                    increaseViews();
+                                }
                                 if(mLikesList.containsValue(mUser.getUid()))
                                     mLike = true;
+                                localLike = mLike;
                             }
-
                             if (mLike)
-                                likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.colorAccent));
+                                likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
+                                        R.color.colorAccent));
                             else
-                                likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.secondary_text_black));
+                                likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
+                                        R.color.secondary_text_black));
 
+                            setTextView(mLikesNumber,likesTextView);
+                            setTextView(mViewsNumber,mViewsTextView);
                             Picasso.with(PictureActivity.this)
                                     .load(mPicture.getUserIcon())
                                     .into(userIcon);
 
                             Picasso.with(PictureActivity.this)
                                     .load(mPicture.getPath())
+                                    .resize(getApplicationContext().getResources().getDisplayMetrics().widthPixels,
+                                            getApplicationContext().getResources().getDisplayMetrics().heightPixels)
+                                    .centerInside()
                                     .into(pictureView);
-
                         }
-
                     }
 
                     @Override
@@ -162,41 +176,94 @@ public class PictureActivity extends AppCompatActivity {
         likeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mLike) {
-                    mLike = false;
-                    mDatabaseRef.child("pictures").child(mPictureId).child("likesList")
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                        if (child.getValue().equals(mUser.getUid()))
-                                            child.getRef().removeValue();
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-                                    Log.e(TAG, databaseError.toString());
-                                }
-                            });
-
-                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.secondary_text_black));
-                    mLikesNumber--;
-                    setTextView(mLikesNumber, likesTextView);
-                    setPopularity(popularityTextView);
-                }
-                else {
-                    mLike = true;
-                    mDatabaseRef.child("pictures").child(mPictureId).child("likesList").push().setValue(mUser.getUid());
-                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this, R.color.colorAccent));
+                //local update of like
+                if (!localLike){
+                    Log.d(TAG, "local like is false, we are putting a like");
+                    //set colour
+                    likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
+                            R.color.colorAccent));
+                    localLike = true;
                     mLikesNumber++;
-                    setTextView(mLikesNumber, likesTextView);
-                    setPopularity(popularityTextView);
+                    Log.d(TAG, "likes number = " + mLikesNumber);
                 }
+                else{
+                    Log.d(TAG, "local like is true, we are removing a like");
+                    likeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
+                            R.color.secondary_text_black));
+                    localLike = false;
+                    mLikesNumber--;
+                    Log.d(TAG, "likes number = " + mLikesNumber);
+                }
+                setTextView(mLikesNumber, likesTextView);
+                setPopularity(popularityTextView);
 
+//                if (mLike) {
+//                    mLike = false;
+//                    mDatabaseRef.child(PICTURES).child(mPictureId).child(LIKES_LIST)
+//                            .addListenerForSingleValueEvent(new ValueEventListener() {
+//                                @Override
+//                                public void onDataChange(DataSnapshot dataSnapshot) {
+//                                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+//                                        if (child.getValue().equals(mUser.getUid()))
+//                                            child.getRef().removeValue();
+//                                    }
+//                                }
+//
+//                                @Override
+//                                public void onCancelled(DatabaseError databaseError) {
+//                                    Log.e(TAG, databaseError.toString());
+//                                }
+//                            });
+//
+//                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this,
+//                            R.color.secondary_text_black));
+//                    mLikesNumber--;
+//                    setTextView(mLikesNumber, likesTextView);
+//                    setPopularity(popularityTextView);
+//                }
+//                else {
+//                    mLike = true;
+//                    mDatabaseRef.child(PICTURES).child(mPictureId).child(LIKES_LIST).push().setValue(mUser.getUid());
+//                    ((ImageButton) v).setColorFilter(ContextCompat.getColor(PictureActivity.this,
+//                            R.color.colorAccent));
+//                    mLikesNumber++;
+//                    setTextView(mLikesNumber, likesTextView);
+//                    setPopularity(popularityTextView);
+//                }
+//
+          }
+        });
+    }
+
+
+    private void increaseViews(){
+        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+            @Override
+            public Transaction.Result doTransaction(final MutableData mutableData) {
+                Picture picture = mutableData.getValue(Picture.class);
+                Log.d(TAG, "Picture: " + picture);
+                if (picture == null)
+                    return Transaction.success(mutableData);
+                //take the number of views
+                int views = picture.getViews();
+                Log.d(TAG, "Views: " + views);
+                //increase it by one
+                picture.setViews(views + 1);
+                Log.d(TAG, "Updated views: " + picture.getViews());
+                //store the new views value to db
+                mutableData.setValue(picture);
+                //add the id to viewsList
+                //mutableData.child(VIEWS_LIST).setValue(mUser);
+                return Transaction.success(mutableData);
+            }
+
+            @Override
+            public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
+                Log.d(TAG, "postTransaction:onComplete:" + databaseError);
             }
         });
     }
+
 
     private void setPopularity(TextView popularityTextView) {
         String popularityString = getString(R.string.popularity);
@@ -206,7 +273,7 @@ public class PictureActivity extends AppCompatActivity {
         else
             popularity = 0;
         popularityTextView.setText(popularity*100 + "% " + popularityString);
-        mDatabaseRef.child("pictures").child(mPictureId).child("popularity").setValue(1-popularity);
+        mDatabaseRef.child(PICTURES).child(mPictureId).child(POPULARITY).setValue(1-popularity);
     }
 
     private void setTextView(int number, TextView textView){
@@ -289,7 +356,7 @@ public class PictureActivity extends AppCompatActivity {
 
     private HashMap<String,String> getViewsList(Picture picture){
         final HashMap<String,String> result = new HashMap<>();
-        mDatabaseRef.child("pictures").child(picture.getId()).child("viewsList")
+        mDatabaseRef.child(PICTURES).child(picture.getId()).child(VIEWS_LIST)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -310,7 +377,7 @@ public class PictureActivity extends AppCompatActivity {
 
     private HashMap<String,String> getLikesList(Picture picture){
         final HashMap<String,String> result = new HashMap<>();
-        mDatabaseRef.child("pictures").child(picture.getId()).child("likesList")
+        mDatabaseRef.child(PICTURES).child(picture.getId()).child(LIKES_LIST)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -327,5 +394,42 @@ public class PictureActivity extends AppCompatActivity {
                 });
 
         return result;
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        //if the like has been locally updated
+        if (mLike != localLike){
+            Log.d(TAG, "Like value has been changed");
+            //start likes transaction
+            mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+                @Override
+                public Transaction.Result doTransaction(MutableData mutableData) {
+                    Picture picture = mutableData.getValue(Picture.class);
+                    if (picture == null)
+                        return Transaction.success(mutableData);
+                    //get the number of likes
+                    mLikesNumber = picture.getLikes();
+                    if(localLike) {
+                        //add the new like
+                        picture.setLikes(mLikesNumber + 1);
+                        picture.addLike(mUser.getUid());
+                    }
+                    else {
+                        //remove one like
+                        picture.setLikes(mLikesNumber - 1);
+                        picture.removeLike(mUser.getUid());
+                    }
+                    mutableData.setValue(picture);
+                    return Transaction.success(mutableData);
+                }
+
+                @Override
+                public void onComplete(DatabaseError databaseError, boolean b, DataSnapshot dataSnapshot) {
+                    Log.d(TAG, "postTransaction:onComplete:" + databaseError);
+                }
+            });
+        }
     }
 }

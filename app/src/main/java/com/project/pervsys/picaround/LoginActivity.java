@@ -558,6 +558,8 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(LoginActivity.this, R.string.auth_error,
                                     Toast.LENGTH_SHORT).show();
                             Log.e(TAG, task.getException().toString());
+                            if (progress != null)
+                                progress.dismiss();
                         }
                         else {
                             Toast.makeText(LoginActivity.this, R.string.auth_ok_link,

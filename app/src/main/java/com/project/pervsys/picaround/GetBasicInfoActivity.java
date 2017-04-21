@@ -193,9 +193,11 @@ public class GetBasicInfoActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.username_with_spaces,Toast.LENGTH_SHORT).show();
             return false;
         }
+        String lowUsername = username.toLowerCase();
+
         //query to database
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(USERS).orderByChild(USERNAME).equalTo(username)
+        databaseRef.child(USERS).orderByChild(USERNAME).equalTo(lowUsername)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -209,7 +211,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                             //username not used
                             Log.i(TAG, "Username ok");
                             Intent i = getIntent();
-                            i.putExtra(USERNAME, username);
+                            i.putExtra(USERNAME, username.toLowerCase());
                             i.putExtra(DATE, date);
                             setResult(RESULT_OK, i);
                             Log.i(TAG, "Data sent to LoginActivity");
