@@ -15,10 +15,10 @@
         android:id="@+id/marker_centered"
         android:layout_width="40dp"
         android:layout_height="50dp"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
         android:layout_gravity="center"
-        android:src="@drawable/map_marker_bubble_green" />
+        android:src="@drawable/map_marker_bubble_green"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
 
     <Button
         android:id="@+id/pick_location_button"
