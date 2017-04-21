@@ -236,31 +236,6 @@ public class PictureActivity extends AppCompatActivity {
     }
 
 
-    private void manageViews(){
-        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
-        mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        boolean alreadySeen = false;
-                        for (DataSnapshot child : dataSnapshot.getChildren()) {
-                            if (child.getValue().equals(mUser.getUid())) {
-                                alreadySeen = true;
-                                Log.d(TAG, "Already seen");
-                            }
-                        }
-                        if (!alreadySeen) {
-                            increaseViews();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
-    }
-
     private void increaseViews(){
         mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
             @Override
