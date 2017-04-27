@@ -14,4 +14,6 @@ Here there is the presentation of our idea --->  https://www.slideshare.net/Ricc
 
 Here there is the presentation of user evaluation --->  https://www.slideshare.net/RiccardoDiStefano5/presentation-userevaluation
 
+Here there is the presentation of MVP ---> https://www.slideshare.net/RiccardoDiStefano5/presentation-mvp
+
 
