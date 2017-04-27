@@ -591,6 +591,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void startMain(){
         Intent i = new Intent(this, MapsActivity.class);
+        if (firstLog)
+            i.putExtra(USERNAME, username);
+        Log.d(TAG, "First log = " + firstLog);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
     }
