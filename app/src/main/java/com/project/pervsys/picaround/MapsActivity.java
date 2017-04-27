@@ -315,7 +315,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         //Obtain the username
         if (user != null) {
-            //startProgressBar();
             //first usage, not query the db
             String passedUsername = getIntent().getStringExtra(USERNAME);
             if (passedUsername != null){
