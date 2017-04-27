@@ -316,32 +316,40 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         //Obtain the username
         if (user != null) {
             //startProgressBar();
-            //TODO: if it is the first access for the user, the query is not performed;
-            String email = user.getEmail();
-            Log.d(TAG, "Email = " + email);
-            mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                if (child != null) {
-                                    Log.i(TAG, "Username obtained");
-                                    User user = child.getValue(User.class);
-                                    Log.d(TAG, user.toString());
-                                    username = user.getUsername();
-                                    profilePicture = user.getProfilePicture();
-                                    if (progress != null)
-                                        progress.dismiss();
-                                } else
-                                    Log.e(TAG, "Cannot obtain the username");
+            //first usage, not query the db
+            String passedUsername = getIntent().getStringExtra(USERNAME);
+            if (passedUsername != null){
+                username = passedUsername;
+                Log.d(TAG, "First usage, username = " + username);
+            }
+            else {
+                String email = user.getEmail();
+                Log.d(TAG, "Email = " + email);
+                mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                    if (child != null) {
+                                        Log.i(TAG, "Username obtained");
+                                        User user = child.getValue(User.class);
+                                        Log.d(TAG, user.toString());
+                                        username = user.getUsername();
+                                        profilePicture = user.getProfilePicture();
+                                        if (progress != null)
+                                            progress.dismiss();
+                                    } else
+                                        Log.e(TAG, "Cannot obtain the username");
+                                }
                             }
-                        }
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                            //database error, e.g. permission denied (not logged with Firebase)
-                            Log.e(TAG, databaseError.toString());
-                        }
-                    });
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+                                //database error, e.g. permission denied (not logged with Firebase)
+                                Log.e(TAG, databaseError.toString());
+                            }
+                        });
+            }
         }
 
         // Set the last Map configurations if available
