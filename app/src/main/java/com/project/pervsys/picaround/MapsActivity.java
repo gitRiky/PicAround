@@ -83,7 +83,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -105,25 +105,15 @@ import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
 
-    private static final int REQUEST_TAKE_PHOTO = 1;
-    private static final int REQUEST_CHECK_SETTINGS = 3;
-    private static final int REQUEST_UPLOAD_PHOTO = 2;
+
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
-
-    private static final String POINT_ID = "pointId";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
-    private static final String PHOTO_PATH = "photoPath";
-    private static final String USERS = "users";
-    private static final String USERNAME = "username";
-    private static final String PROFILE_PICTURE = "profilePicture";
-    private static final String EMAIL = "email";
-    public static final int THUMBNAILS_NUMBER = 6;
 
     private ProgressDialog progress;
     private GoogleMap mMap;
@@ -273,8 +263,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
 
         // Firebase authentication
-        final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
-                .getString(Config.LOG_PREF_INFO, null);
+        final String logged = getSharedPreferences(LOG_PREFERENCES, 0)
+                .getString(LOG_PREF_INFO, null);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             Log.i(TAG, "Logged with Firebase, UID: " + user.getUid());
@@ -434,8 +424,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         super.onDestroy();
 
         FirebaseAuth.getInstance().signOut();
-        getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
-                putString(Config.LOG_PREF_INFO, null).apply();
+        getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit().
+                putString(LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
         ApplicationClass.setGoogleSignInResult(null);
         Log.i(TAG, "onDestroy");
@@ -746,11 +736,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public boolean onCreateOptionsMenu(Menu menu){
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
-                .getString(Config.LOG_PREF_INFO, null);
+        String logged = getSharedPreferences(LOG_PREFERENCES, 0)
+                .getString(LOG_PREF_INFO, null);
         Log.i(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
-        if(logged != null && !logged.equals(Config.NOT_LOGGED))
+        if(logged != null && !logged.equals(NOT_LOGGED))
             menu.add(R.string.logout);
             //if the user is logged, then add logout to the menu
         else
@@ -797,8 +787,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 if (title.equals(getResources().getString(R.string.login))) {
                     Log.i(TAG, "Login has been selected");
                     Toast.makeText(this, "Selected login", Toast.LENGTH_SHORT).show();
-                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                     startLogin();
                     return true;
                 } else {
@@ -835,22 +825,22 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (Profile.getCurrentProfile() != null){
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
-            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
         }
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES,MODE_PRIVATE)
-                .getString(Config.LOG_PREF_INFO,null);
+        String logged = getSharedPreferences(LOG_PREFERENCES,MODE_PRIVATE)
+                .getString(LOG_PREF_INFO,null);
         //logout Google
         if (logged != null){
-            if (logged.equals(Config.GOOGLE_LOGGED)) {
+            if (logged.equals(GOOGLE_LOGGED)) {
                 Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
                         new ResultCallback<Status>() {
                             @Override
                             public void onResult(Status status) {
                                 if (status.isSuccess()) {
                                     Log.i(TAG, "Logout from Google");
-                                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                                     ApplicationClass.setGoogleApiClient(null);
                                     startLogin();
                                 } else

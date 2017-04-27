@@ -7,24 +7,20 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import com.google.firebase.storage.OnProgressListener;
-import android.location.Address;
-import android.location.Geocoder;
+
 import android.media.ExifInterface;
 import android.net.Uri;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -36,35 +32,26 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
-import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.PHOTO_PATH;
 import static com.project.pervsys.picaround.utility.Config.POINTS;
 
 import id.zelory.compressor.Compressor;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
+import static com.project.pervsys.picaround.utility.Config.*;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";
-    private static final String PHOTO_PATH = "photoPath";
-    private static final String USER_PICTURE = "pictures";
-    private static final String USERNAME = "username";
-    private static final String PROFILE_PICTURE = "profilePicture";
     private static final String SEPARATOR = "_";
     private static final int PIC_HOR_RIGHT = 1;
     private static final int PIC_HOR_LEFT = 3;
@@ -72,14 +59,13 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_VER_BOTTOM = 8;
     private static final int COMPRESSION_QUALITY = 65;
     private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
-    private static final String POINT_PICTURE = "points/pictures";
-    private static final int REQUEST_PICK_LOCATION = 1;
+
+
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private FirebaseUser mUser;
     private StorageReference mStorageRef;
     private ImageView mImageView;
-    private EditText mNameField;
     private EditText mDescriptionField;
     private String mPhotoPath;
     private String mDescription;
@@ -462,7 +448,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         mUser.getUid(), mUsername, profilePicture);
                 picture.setTimestamp(mTimestamp);
                 DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                DatabaseReference pushReference = databaseReference.child(USER_PICTURE).push();
+                DatabaseReference pushReference = databaseReference.child(PICTURES).push();
                 String id = pushReference.getKey();
                 picture.setId(id);
                 pushReference.setValue(picture);

@@ -42,7 +42,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
 
 import java.util.Calendar;
 
@@ -50,9 +50,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     private static final int MIN_AGE = 6;
     private final static int MAX_AGE = 95;
     private final static String TAG = "GetBasicInfoActivity";
-    private final static String USERS = "users";
-    private final static String USERNAME = "username";
-    private final static String DATE = "date";
+
     private GoogleApiClient mGoogleApiClient;
     private String month;
     private String date;
@@ -256,8 +254,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         if (Profile.getCurrentProfile() != null) {
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
-            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
             setResult(RESULT_CANCELED);
             finish();
         }
@@ -268,8 +266,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                     public void onResult(Status status) {
                         if (status.isSuccess()) {
                             Log.i(TAG, "Logout from Google");
-                            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                             ApplicationClass.setGoogleApiClient(null);
                             setResult(RESULT_CANCELED);
                             finish();

@@ -51,24 +51,19 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final int RC_SIGN_IN = 1;
-    private static final int RC_LINK = 2;
-    private static final int RC_GET_INFO_FB = 3;
-    private static final int RC_GET_INFO_GOOGLE = 4;
+
     private static final String EMAIL = "email";
     private static final String FIELDS = "fields";
     private static final String NEEDED_FB_INFO = "name,email";
     private static final String TAG = "LoginActivity";
-    private static final String USERS = "users";
-    private static final String USERNAME = "username";
-    private static final String DATE = "date";
+
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
@@ -102,7 +97,7 @@ public class LoginActivity extends AppCompatActivity {
         }
         //else we are logged with Facebook
         else {
-            setLogged(Config.FB_LOGGED);
+            setLogged(FB_LOGGED);
             Log.i(TAG, "Logged with Facebook");
             Intent i = new Intent(getApplicationContext(), MapsActivity.class);
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -133,8 +128,8 @@ public class LoginActivity extends AppCompatActivity {
 
         //silent Google sign-in
         mAuth.addAuthStateListener(mAuthListener);
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
-                .getString(Config.LOG_PREF_INFO,null);
+        String logged = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                .getString(LOG_PREF_INFO,null);
         if(logged == null){
             OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
                     .silentSignIn(mGoogleApiClient);
@@ -160,7 +155,7 @@ public class LoginActivity extends AppCompatActivity {
 //                loginButton.performClick();
 //                break;
             case R.id.no_login:
-                setLogged(Config.NOT_LOGGED);
+                setLogged(NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
                 Intent i = new Intent(getApplicationContext(), MapsActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -253,7 +248,7 @@ public class LoginActivity extends AppCompatActivity {
             acct = result.getSignInAccount();
             checkEmailGoogle(acct);
             Log.i(TAG, "Logged with Google");
-            setLogged(Config.GOOGLE_LOGGED);
+            setLogged(GOOGLE_LOGGED);
         } else {
             Toast.makeText(this, R.string.auth_error, Toast.LENGTH_LONG).show();
         }
@@ -280,7 +275,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 startProgressBar();
                 Log.i(TAG, "Logged with Facebook");
-                setLogged(Config.FB_LOGGED);
+                setLogged(FB_LOGGED);
                 loginRes = loginResult;
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
@@ -469,9 +464,9 @@ public class LoginActivity extends AppCompatActivity {
                             public void onResult(Status status) {
                                 if (status.isSuccess()) {
                                     Log.i(TAG, "Logout from the wrong Google account");
-                                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
+                                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
                                             .edit()
-                                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED)
+                                            .putString(LOG_PREF_INFO, NOT_LOGGED)
                                             .apply();
                                     ApplicationClass.setGoogleApiClient(null);
                                 } else
@@ -583,9 +578,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setLogged(String type){
-        SharedPreferences settings = getSharedPreferences(Config.LOG_PREFERENCES,0);
+        SharedPreferences settings = getSharedPreferences(LOG_PREFERENCES,0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putString(Config.LOG_PREF_INFO, type);
+        editor.putString(LOG_PREF_INFO, type);
         editor.apply();
     }
 
