@@ -80,4 +80,6 @@
     <string name="confirm">continue</string>
     <string name="view">view</string>
     <string name="like">like</string>
+    <string name="add_picture">Add picture</string>
+    <string name="start_gallery_intent_title">Select picture</string>
 </resources>

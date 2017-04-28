@@ -131,7 +131,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mDescriptionField = (EditText) findViewById(R.id.photo_description);
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
-            Log.i(TAG, "The path of the photo is: " + mPhotoPath);
             takeExifInfo(exif);
         } catch (IOException e) {
             e.printStackTrace();
