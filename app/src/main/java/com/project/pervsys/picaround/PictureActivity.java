@@ -87,6 +87,7 @@ public class PictureActivity extends AppCompatActivity {
                 }
             }
         };
+
         final ImageView pictureView = (ImageView) findViewById(R.id.picture);
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
         final TextView username = (TextView) findViewById(R.id.username);
