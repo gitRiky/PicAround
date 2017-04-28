@@ -32,7 +32,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
 import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
@@ -42,8 +42,7 @@ import java.util.List;
 public class PointActivity extends AppCompatActivity {
 
     private static final String TAG = "PointActivity";
-    private static final String POINT_ID = "pointId";
-    private static final String PICTURE_ID = "pictureId";
+
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference mDatabaseRef = null;

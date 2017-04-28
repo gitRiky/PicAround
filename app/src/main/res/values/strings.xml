@@ -22,7 +22,7 @@
     <string name="auth_ok_link">Accounts have been linked</string>
     <string name="username">Username</string>
     <string name="age">Age</string>
-    <string name="basic_info_text">Welcome to the PicAround world! \nPlease pick the username and type your age</string>
+    <string name="basic_info_text">Welcome to the PicAround world! \nPlease select a username and insert your date of birth</string>
     <string name="registration_needed">You have to complete the registration!</string>
     <string name="age_missing">Age is missing</string>
     <string name="age_not_in_range">Age not in range. Please put your real age</string>
