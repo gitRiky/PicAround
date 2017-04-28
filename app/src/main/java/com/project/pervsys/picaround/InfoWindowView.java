@@ -1,189 +1,147 @@
 package com.project.pervsys.picaround;
 
 import android.content.Context;
-import android.content.res.TypedArray;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
-import android.text.TextPaint;
-import android.util.AttributeSet;
-import android.view.View;
+import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.util.Log;
+import android.util.TypedValue;
+import android.widget.GridLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Point;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
+
+import static com.project.pervsys.picaround.utility.Config.NUM_COLUMN_INFOWINDOW;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.POINTS;
+import static com.project.pervsys.picaround.utility.Config.POPULARITY;
+import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
+import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
 /**
- * TODO: document your custom view class.
+ * Created by federico on 20/04/17.
  */
-public class InfoWindowView extends View {
-    private String mExampleString; // TODO: use a default from R.string...
-    private int mExampleColor = Color.RED; // TODO: use a default from R.color...
-    private float mExampleDimension = 0; // TODO: use a default from R.dimen...
-    private Drawable mExampleDrawable;
 
-    private TextPaint mTextPaint;
-    private float mTextWidth;
-    private float mTextHeight;
+public class InfoWindowView extends GridLayout {
 
-    public InfoWindowView(Context context) {
+    private static final String TAG = "InfoWindowView";
+
+    public InfoWindowView(Context context, Marker marker, Point point) {
         super(context);
-        init(null, 0);
+        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, this.getResources().getDisplayMetrics());
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
+        final LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
+        setColumnCount(NUM_COLUMN_INFOWINDOW);
+
+        addPictures(context,marker,point,layoutParams);
     }
 
-    public InfoWindowView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init(attrs, 0);
+    private void addPictures(final Context context, final Marker marker, Point point, final LinearLayout.LayoutParams layoutParams) {
+
+        final MarkerCallback mc = new MarkerCallback(marker, context);
+
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child(POINTS).keepSynced(true);
+
+        Query photos;
+        photos = databaseRef.child(POINTS).child(point.getId()).child(PICTURES)
+                .orderByChild(POPULARITY).limitToFirst(THUMBNAILS_NUMBER);
+
+        photos.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                int nThumb = (int) dataSnapshot.getChildrenCount();
+                int theCounter = THUMBNAILS_NUMBER;
+                if (nThumb < THUMBNAILS_NUMBER)
+                    theCounter = nThumb;
+                mc.setCounter(theCounter);
+
+                for(DataSnapshot photoSnap : dataSnapshot.getChildren()){
+                    Picture picture = photoSnap.getValue(Picture.class);
+                    String pictureName = picture.getName();
+                    // TODO: removed thumbnails feature
+                    String thumbnailName = /*THUMB_PREFIX +*/ pictureName;
+                    FirebaseStorage storage = FirebaseStorage.getInstance();
+                    StorageReference pathReference = storage.getReference().child(thumbnailName);
+                    Log.i(TAG, "storageRef=" + pathReference);
+
+                    pathReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                        @Override
+                        public void onSuccess(Uri uri) {
+                            Log.i(TAG, "onSuccess executed");
+                            ImageView iv = new ImageView(context);
+                            iv.setLayoutParams(layoutParams);
+                            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            addView(iv);
+
+                            Picasso.with(context)
+                                    .load(uri)
+                                    .into(iv, mc);
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            Log.i(TAG, "onFailure executed");
+                            Log.e(TAG, exception.toString());
+                            // TODO: very naive
+                            mc.onSuccess();
+                        }
+                    });
+
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // TODO: what to do if the call fails?
+            }
+        });
     }
+}
 
-    public InfoWindowView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        init(attrs, defStyle);
-    }
+class MarkerCallback implements Callback {
 
-    private void init(AttributeSet attrs, int defStyle) {
-        // Load attributes
-        final TypedArray a = getContext().obtainStyledAttributes(
-                attrs, R.styleable.InfoWindowView, defStyle, 0);
+    private Marker marker = null;
+    private int counter;
+    private Context context;
 
-        mExampleString = a.getString(
-                R.styleable.InfoWindowView_exampleString);
-        mExampleColor = a.getColor(
-                R.styleable.InfoWindowView_exampleColor,
-                mExampleColor);
-        // Use getDimensionPixelSize or getDimensionPixelOffset when dealing with
-        // values that should fall on pixel boundaries.
-        mExampleDimension = a.getDimension(
-                R.styleable.InfoWindowView_exampleDimension,
-                mExampleDimension);
-
-        if (a.hasValue(R.styleable.InfoWindowView_exampleDrawable)) {
-            mExampleDrawable = a.getDrawable(
-                    R.styleable.InfoWindowView_exampleDrawable);
-            mExampleDrawable.setCallback(this);
-        }
-
-        a.recycle();
-
-        // Set up a default TextPaint object
-        mTextPaint = new TextPaint();
-        mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
-        mTextPaint.setTextAlign(Paint.Align.LEFT);
-
-        // Update TextPaint and text measurements from attributes
-        invalidateTextPaintAndMeasurements();
-    }
-
-    private void invalidateTextPaintAndMeasurements() {
-        mTextPaint.setTextSize(mExampleDimension);
-        mTextPaint.setColor(mExampleColor);
-        mTextWidth = mTextPaint.measureText(mExampleString);
-
-        Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
-        mTextHeight = fontMetrics.bottom;
+    MarkerCallback(Marker marker, Context context) {
+        this.marker=marker;
+        this.counter = THUMBNAILS_NUMBER;
+        this.context = context;
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
+    public void onError() {
+        Log.e(getClass().getSimpleName(), "Error loading thumbnail!");
+    }
 
-        // TODO: consider storing these as member variables to reduce
-        // allocations per draw cycle.
-        int paddingLeft = getPaddingLeft();
-        int paddingTop = getPaddingTop();
-        int paddingRight = getPaddingRight();
-        int paddingBottom = getPaddingBottom();
-
-        int contentWidth = getWidth() - paddingLeft - paddingRight;
-        int contentHeight = getHeight() - paddingTop - paddingBottom;
-
-        // Draw the text.
-        canvas.drawText(mExampleString,
-                paddingLeft + (contentWidth - mTextWidth) / 2,
-                paddingTop + (contentHeight + mTextHeight) / 2,
-                mTextPaint);
-
-        // Draw the example drawable on top of the text.
-        if (mExampleDrawable != null) {
-            mExampleDrawable.setBounds(paddingLeft, paddingTop,
-                    paddingLeft + contentWidth, paddingTop + contentHeight);
-            mExampleDrawable.draw(canvas);
+    @Override
+    public void onSuccess() {
+        counter--;
+        //Toast.makeText(context, "The counter is: " + counter, Toast.LENGTH_SHORT).show();
+        if (counter == 0 && marker != null && marker.isInfoWindowShown()) {
+            //Toast.makeText(context, "Picasso callback done", Toast.LENGTH_SHORT).show();
+            marker.hideInfoWindow();
+            marker.showInfoWindow();
         }
     }
 
-    /**
-     * Gets the example string attribute value.
-     *
-     * @return The example string attribute value.
-     */
-    public String getExampleString() {
-        return mExampleString;
-    }
-
-    /**
-     * Sets the view's example string attribute value. In the example view, this string
-     * is the text to draw.
-     *
-     * @param exampleString The example string attribute value to use.
-     */
-    public void setExampleString(String exampleString) {
-        mExampleString = exampleString;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example color attribute value.
-     *
-     * @return The example color attribute value.
-     */
-    public int getExampleColor() {
-        return mExampleColor;
-    }
-
-    /**
-     * Sets the view's example color attribute value. In the example view, this color
-     * is the font color.
-     *
-     * @param exampleColor The example color attribute value to use.
-     */
-    public void setExampleColor(int exampleColor) {
-        mExampleColor = exampleColor;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example dimension attribute value.
-     *
-     * @return The example dimension attribute value.
-     */
-    public float getExampleDimension() {
-        return mExampleDimension;
-    }
-
-    /**
-     * Sets the view's example dimension attribute value. In the example view, this dimension
-     * is the font size.
-     *
-     * @param exampleDimension The example dimension attribute value to use.
-     */
-    public void setExampleDimension(float exampleDimension) {
-        mExampleDimension = exampleDimension;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example drawable attribute value.
-     *
-     * @return The example drawable attribute value.
-     */
-    public Drawable getExampleDrawable() {
-        return mExampleDrawable;
-    }
-
-    /**
-     * Sets the view's example drawable attribute value. In the example view, this drawable is
-     * drawn above the text.
-     *
-     * @param exampleDrawable The example drawable attribute value to use.
-     */
-    public void setExampleDrawable(Drawable exampleDrawable) {
-        mExampleDrawable = exampleDrawable;
+    void setCounter(int counter) {
+        this.counter = counter;
     }
 }

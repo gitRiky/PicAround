@@ -59,6 +59,8 @@ public class ImageAdapter extends BaseAdapter{
 
         Picasso.with(mContext)
                 .load(path)
+                .fit()
+                .centerInside()
                 .into(imageView);
 
         return imageView;

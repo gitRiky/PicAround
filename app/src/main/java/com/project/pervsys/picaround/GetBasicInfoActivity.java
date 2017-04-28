@@ -2,14 +2,24 @@ package com.project.pervsys.picaround;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.facebook.Profile;
@@ -20,6 +30,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -27,18 +39,22 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
+
+import java.util.Calendar;
 
 public class GetBasicInfoActivity extends AppCompatActivity {
     private static final int MIN_AGE = 6;
     private final static int MAX_AGE = 95;
     private final static String TAG = "GetBasicInfoActivity";
-    private final static String USERS = "users";
-    private final static String USERNAME = "username";
-    private final static String AGE = "age";
+
     private GoogleApiClient mGoogleApiClient;
-    private String age;
+    private String month;
+    private String date;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,43 +64,123 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.registration);
+
+        // Set status bar color
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            Window window = this.getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
+        }
+
+        String[] days = createDayArray();
+        String[] years = createYearArray();
+        Spinner daySpin = (Spinner) findViewById(R.id.spinner);
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter(this,
+                android.R.layout.simple_spinner_item, days);
+        // Apply the adapter to the spinner
+        daySpin.setAdapter(adapter);
+        Spinner monthSpin = (Spinner) findViewById(R.id.spinner2);
+        ArrayAdapter<CharSequence> adapter2 = ArrayAdapter.createFromResource(this,
+                R.array.months,
+                android.R.layout.simple_spinner_item);
+        adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        monthSpin.setAdapter(adapter2);
+        monthSpin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                month = "" + (position + 1);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                //do nothing
+            }
+        });
+        Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
+        ArrayAdapter<CharSequence> adapter3 = new ArrayAdapter(this,
+                android.R.layout.simple_spinner_item, years);
+        adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        yearSpin.setAdapter(adapter3);
+
     }
 
+
+    private String[] createDayArray(){
+        String[] days = new String[31];
+        for (int i = 0; i < 31; i++)
+            days[i] = "" + (i + 1);
+        return days;
+    }
+
+
+    private String[] createYearArray(){
+        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        int minYear = currentYear - MAX_AGE;
+        int maxYear = currentYear - MIN_AGE;
+        String[] years = new String[maxYear - minYear];
+        for (int i = maxYear, j = 0; i > minYear; i--, j++){
+            years[j] = "" + i;
+        }
+        return years;
+    }
 
     @Override
     public void onBackPressed(){
         prepareLogOut();
     }
 
-
-    public void onClick(View w){
-        EditText ageField = (EditText) findViewById(R.id.age);
-        age = ageField.getText().toString();
-        EditText usernameField = (EditText) findViewById(R.id.username);
-        String username = usernameField.getText().toString();
-        if (checkAge(age)){
-            //newUser.setAge(Integer.parseInt(age));
-            if (!checkUsername(username)) {
-                usernameField.setText("");
-            }
-        }
-        else{
-            ageField.setText("");
-        }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.registration_menu, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
-    private boolean checkAge(String age){
-        if (age.equals("")) {
-            Toast.makeText(this, R.string.age_missing, Toast.LENGTH_SHORT).show();
+
+
+    private boolean checkDate(int d, int m, int y){
+        if (d == 31 && (m == 2 || m == 4 || m == 6 || m == 9 || m == 11))
             return false;
-        }
-        int a = Integer.parseInt(age);
-        if (a < MIN_AGE || a > MAX_AGE){
-            Toast.makeText(this, R.string.age_not_in_range, Toast.LENGTH_SHORT).show();
-            return false;
-        }
+        if (m == 2 && d >= 29)
+            if (d == 29 && ((y%4 == 0 && y%100 != 0) || (y%400 == 0)))
+                return true;
+            else
+                return false;
         return true;
     }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        int id = item.getItemId();
+        switch(id){
+            case R.id.confirm:
+                EditText usernameField = (EditText) findViewById(R.id.username);
+                String username = usernameField.getText().toString();
+                Spinner daySpin = (Spinner) findViewById(R.id.spinner);
+                Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
+                String day = daySpin.getSelectedItem().toString();
+                if (day.length() == 1)
+                    day = "0" + day;
+                if (month.length() == 1)
+                    month = "0" + month;
+                String year = yearSpin.getSelectedItem().toString();
+                if (checkDate(Integer.parseInt(day), Integer.parseInt(month), Integer.parseInt(year))) {
+                    date = year + "/" + month + "/" + day;
+                    if (!checkUsername(username)) {
+                        usernameField.setText("");
+                    }
+                }
+                else
+                    Toast.makeText(this, R.string.invalid_date, Toast.LENGTH_SHORT).show();
+                return true;
+        }
+        return false;
+    }
+
 
     private boolean checkUsername(final String username){
         if (username.equals("")){
@@ -95,9 +191,11 @@ public class GetBasicInfoActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.username_with_spaces,Toast.LENGTH_SHORT).show();
             return false;
         }
+        String lowUsername = username.toLowerCase();
+
         //query to database
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(USERS).orderByChild(USERNAME).equalTo(username)
+        databaseRef.child(USERS).orderByChild(USERNAME).equalTo(lowUsername)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -111,8 +209,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                             //username not used
                             Log.i(TAG, "Username ok");
                             Intent i = getIntent();
-                            i.putExtra(USERNAME, username);
-                            i.putExtra(AGE, age);
+                            i.putExtra(USERNAME, username.toLowerCase());
+                            i.putExtra(DATE, date);
                             setResult(RESULT_OK, i);
                             Log.i(TAG, "Data sent to LoginActivity");
                             /*Toast.makeText(getApplicationContext(),
@@ -156,8 +254,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         if (Profile.getCurrentProfile() != null) {
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
-            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
             setResult(RESULT_CANCELED);
             finish();
         }
@@ -168,8 +266,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                     public void onResult(Status status) {
                         if (status.isSuccess()) {
                             Log.i(TAG, "Logout from Google");
-                            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                             ApplicationClass.setGoogleApiClient(null);
                             setResult(RESULT_CANCELED);
                             finish();

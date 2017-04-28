@@ -1,10 +1,12 @@
 package com.project.pervsys.picaround;
 
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
@@ -13,13 +15,16 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.nfc.Tag;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -63,8 +68,12 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
@@ -74,7 +83,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -86,33 +95,28 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class MapsActivity extends AppCompatActivity implements LocationListener,OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter{
+import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
+import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
+import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
-    private static final int REQUEST_TAKE_PHOTO = 1;
-    private static final int REQUEST_CHECK_SETTINGS = 3;
-    private static final int REQUEST_UPLOAD_PHOTO = 2;
+public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
+
+
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
-
-    private static final String POINT_ID = "pointId";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
-    private static final String PHOTO_PATH = "photoPath";
-    private static final String USERS = "users";
-    private static final String USERNAME = "username";
-    private static final String EMAIL = "email";
 
     private ProgressDialog progress;
     private GoogleMap mMap;
-    private Marker mRome;
-    private Marker mPerth;
     private ImageView mImageView;
 
     private String mCurrentPhotoPath;
@@ -123,11 +127,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String mProvider;
 
     private String username;
+    private String profilePicture;
+    private List<String> thumbnails;
 
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
     private DatabaseReference mDatabaseRef = null;
+    private CameraPosition mCameraPosition;
+    private InfoWindowView mInfoWindow = null;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -141,8 +149,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             storageDir = mAlbumStorageDirFactory.getAlbumStorageDir(getAlbumName());
             System.out.println("StorageDir: " + storageDir.toString());
             if (storageDir != null) {
-                if (! storageDir.mkdirs()) {
-                    if (! storageDir.exists()){
+                if (!storageDir.mkdirs()) {
+                    if (!storageDir.exists()) {
                         Log.d(getAlbumName(), "failed to create directory");
                         return null;
                     }
@@ -175,9 +183,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
 
-
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
+        Log.i(TAG, "Photo added in gallery");
         File f = new File(mCurrentPhotoPath);
         Uri contentUri = Uri.fromFile(f);
         mediaScanIntent.setData(contentUri);
@@ -188,7 +196,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        switch(actionCode) {
+        switch (actionCode) {
             case REQUEST_TAKE_PHOTO:
                 File f = null;
 
@@ -214,17 +222,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         if (mCurrentPhotoPath != null) {
             Log.i(TAG, "The photo has been taken");
-            Log.i(TAG, "Set pic ok");
             galleryAddPic();
-            Log.i(TAG, "Gallery pic ok");
             //Start the UploadPhotoActivity, passing the photo's path
             Intent i = new Intent(this, UploadPhotoActivity.class);
             i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
             Log.d(TAG, "Username " + username);
             i.putExtra(USERNAME, username);
+            i.putExtra(PROFILE_PICTURE, profilePicture);
             Log.i(TAG, "Starting Upload activity");
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
-            mCurrentPhotoPath = null;
         }
 
     }
@@ -244,7 +250,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         setContentView(R.layout.activity_maps);
 
         // Set toolbar
-        Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
 
@@ -257,13 +263,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
 
         // Firebase authentication
-        final String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
-                .getString(Config.LOG_PREF_INFO, null);
+        final String logged = getSharedPreferences(LOG_PREFERENCES, 0)
+                .getString(LOG_PREF_INFO, null);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             Log.i(TAG, "Logged with Firebase, UID: " + user.getUid());
-        }
-        else {
+        } else {
             Log.i(TAG, "Not logged with Firebase");
         }
         mAuth = FirebaseAuth.getInstance();
@@ -281,7 +286,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             }
         };
 
-
+        // Set file settings
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floatingActionButton);
@@ -291,9 +296,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 MediaStore.ACTION_IMAGE_CAPTURE
         );
 
-
-        mAlbumStorageDirFactory = new AlbumStorageDirFactory();
-
         // Get the location manager
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -302,38 +304,59 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
         //Obtain the username
-        startProgressBar();
-
-        String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        Log.d(TAG, "Email = " + email);
-        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for(DataSnapshot child : dataSnapshot.getChildren()) {
-                            if (child != null) {
-                                Log.i(TAG, "Username obtained");
-                                User user = child.getValue(User.class);
-                                Log.e(TAG, user.toString());
-                                username = user.getUsername();
-                                if (progress != null)
-                                    progress.dismiss();
+        if (user != null) {
+            //first usage, not query the db
+            String passedUsername = getIntent().getStringExtra(USERNAME);
+            if (passedUsername != null){
+                username = passedUsername;
+                Log.d(TAG, "First usage, username = " + username);
+            }
+            else {
+                String email = user.getEmail();
+                Log.d(TAG, "Email = " + email);
+                mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                    if (child != null) {
+                                        Log.i(TAG, "Username obtained");
+                                        User user = child.getValue(User.class);
+                                        Log.d(TAG, user.toString());
+                                        username = user.getUsername();
+                                        profilePicture = user.getProfilePicture();
+                                        if (progress != null)
+                                            progress.dismiss();
+                                    } else
+                                        Log.e(TAG, "Cannot obtain the username");
+                                }
                             }
-                            else
-                                Log.e(TAG, "Cannot obtain the username");
-                        }
 
-                    }
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+                                //database error, e.g. permission denied (not logged with Firebase)
+                                Log.e(TAG, databaseError.toString());
+                            }
+                        });
+            }
+        }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
+        // Set the last Map configurations if available
 
+        SharedPreferences settings = getSharedPreferences(SHARED_MAP_POSITION, 0);
+        double latitude = Double.parseDouble(settings.getString("latitude", "0"));
+        double longitude = Double.parseDouble(settings.getString("longitude", "0"));
+        float zoom = Float.parseFloat(settings.getString("zoom", "0"));
+
+        LatLng startPosition = new LatLng(latitude, longitude);
+
+        mCameraPosition = new CameraPosition.Builder()
+                .target(startPosition)
+                .zoom(zoom)
+                .build();                   // Creates a CameraPosition from the builder
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -349,7 +372,20 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            Log.i(TAG, "Location permission not allowed");
+            return;
+        }
         mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+        if(mMap != null)
+            populatePoints();
     }
 
     /* Remove the location listener updates when Activity is paused */
@@ -362,17 +398,34 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onStop() {
         super.onStop();
+
+        // Save map configurations
+
+        CameraPosition mMyCam = mMap.getCameraPosition();
+        String latitude = mMyCam.target.latitude + "";
+        String longitude = mMyCam.target.longitude + "";
+        String zoom = mMyCam.zoom + "";
+
+        SharedPreferences settings = getSharedPreferences(SHARED_MAP_POSITION, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("latitude", latitude);
+        editor.putString("longitude", longitude);
+        editor.putString("zoom", zoom);
+
+        editor.apply();
+
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
     }
 
     @Override
-    protected void onDestroy(){
+    protected void onDestroy() {
         super.onDestroy();
+
         FirebaseAuth.getInstance().signOut();
-        getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit().
-                putString(Config.LOG_PREF_INFO, null).apply();
+        getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit().
+                putString(LOG_PREF_INFO, null).apply();
         ApplicationClass.setGoogleApiClient(null);
         ApplicationClass.setGoogleSignInResult(null);
         Log.i(TAG, "onDestroy");
@@ -388,9 +441,35 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case REQUEST_UPLOAD_PHOTO:
                 if (resultCode == RESULT_OK)
                     Log.i(TAG, "Photo in uploading");
-                else
-                    Log.d(TAG, "Photo upload cancelled");
+                if (resultCode == RESULT_CANCELED) {
+                    Log.i(TAG, "Photo upload cancelled");
+                    File f = new File(mCurrentPhotoPath);
+                    f.delete();
+                    deleteFileFromMediaStore(this.getContentResolver(), f);
+                    Log.i(TAG, "Image has been deleted");
+                }
+                mCurrentPhotoPath = null;
                 break;
+        }
+    }
+
+    //method used for deleting the image from gallery
+    public static void deleteFileFromMediaStore(final ContentResolver contentResolver, final File file) {
+        String canonicalPath;
+        try {
+            canonicalPath = file.getCanonicalPath();
+        } catch (IOException e) {
+            canonicalPath = file.getAbsolutePath();
+        }
+        final Uri uri = MediaStore.Files.getContentUri("external");
+        final int result = contentResolver.delete(uri,
+                MediaStore.Files.FileColumns.DATA + "=?", new String[] {canonicalPath});
+        if (result == 0) {
+            final String absolutePath = file.getAbsolutePath();
+            if (!absolutePath.equals(canonicalPath)) {
+                contentResolver.delete(uri,
+                        MediaStore.Files.FileColumns.DATA + "=?", new String[]{absolutePath});
+            }
         }
     }
 
@@ -398,7 +477,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelable(BITMAP_STORAGE_KEY, mImageBitmap);
-        outState.putBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY, (mImageBitmap != null) );
+        outState.putBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY, (mImageBitmap != null));
         super.onSaveInstanceState(outState);
     }
 
@@ -443,7 +522,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (isIntentAvailable(this, intentName)) {
             btn.setOnClickListener(onClickListener);
         } else {
-            Toast.makeText(this, "ERROR related to " + btn.toString(),Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "ERROR related to " + btn.toString(), Toast.LENGTH_SHORT).show();
             btn.setClickable(false);
         }
     }
@@ -461,11 +540,33 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+
+        // Restore previous configurations of the map, if available
+        if (mCameraPosition != null)
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
+
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            Log.i(TAG, "Location permission not allowed");
+            return;
+        }
         mMap.setMyLocationEnabled(true);
 
         setupGPS(this);
 
-        //Location location = mLocationManager.getLastKnownLocation(mProvider);
+        Location location = mLocationManager.getLastKnownLocation(mProvider);
+        if(location != null){
+            Log.i(TAG, "getLastKnownLocation is not null !!");
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 16);
+            mMap.animateCamera(cameraUpdate);
+        }
 
         //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
         populatePoints();
@@ -492,7 +593,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
                             mMap.addMarker(new MarkerOptions()
-//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
                                     .position(new LatLng(p.getLat(), p.getLon())))
                                     .setTag(p);
                             }
@@ -568,8 +669,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
         marker.showInfoWindow();
-        Point p = (Point) marker.getTag();
-        Log.i(TAG, p.toString());
 
         return true;
     }
@@ -577,8 +676,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onInfoWindowClick(Marker marker) {
         // Start PointActivity
-//        String toShow = marker.getPosition().toString();
-//        Toast.makeText(this, toShow,Toast.LENGTH_SHORT).show();
         Point point = (Point) marker.getTag();
         Intent i = new Intent(this, PointActivity.class);
         i.putExtra(POINT_ID, point.getId());
@@ -592,69 +689,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-        // First opening the infoWindow: loading
-        if (marker.getSnippet() != null) {
-            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
 
-            View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
-            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-
-            Point point = (Point) marker.getTag();
-
-            Picasso.with(this)
-                    .load(point.getIcon())
-                    .into(icon, new MarkerCallback(marker));
-
-            addPictures(marker, point, gridLayout);
-
-            return loadingView;
+        Point point = (Point) marker.getTag();
+        if(mInfoWindow != null) {
+            View toReturn = mInfoWindow;
+            mInfoWindow = null;
+            return toReturn;
         }
-        // Second opening of the infoWindow: show info window
         else {
-            View v = getLayoutInflater().inflate(R.layout.info_window, null);
-
-            ImageView icon = (ImageView) v.findViewById(R.id.info_icon);
-            TextView title = (TextView) v.findViewById(R.id.info_title);
-            TextView category = (TextView) v.findViewById(R.id.info_category);
-            GridLayout gridLayout = (GridLayout) v.findViewById(R.id.info_pictures);
-            TextView description = (TextView) v.findViewById(R.id.info_description);
-
-            Point point = (Point) marker.getTag();
-
-            title.setText(point.getName());
-            category.setText(point.getCategory());
-            description.setText(point.getDescription());
-
-            String iconPath = point.getIcon();
-            Picasso.with(this)
-                    .load(iconPath)
-                    .into(icon, new MarkerCallback(marker));
-
-            addPictures(marker, point, gridLayout);
-
-            return v;
-        }
-    }
-
-    private void addPictures(Marker marker, Point point, GridLayout gridLayout) {
-        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, this.getResources().getDisplayMetrics());
-        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, this.getResources().getDisplayMetrics());
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width, height);
-
-        HashMap<String,Picture> pictures = point.getPictures();
-        for (Picture pic : pictures.values()) {
-            ImageView imageView = new ImageView(this);
-            imageView.setLayoutParams(layoutParams);
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            gridLayout.addView(imageView);
-
-            String path = pic.getPath();
-
-            Picasso.with(this)
-                    .load(path)
-                    .into(imageView, new MarkerCallback(marker));
+            mInfoWindow = new InfoWindowView(this, marker, point);
+            View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
+            return loadingView;
         }
     }
 
@@ -691,11 +736,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public boolean onCreateOptionsMenu(Menu menu){
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, 0)
-                .getString(Config.LOG_PREF_INFO, null);
-        Log.e(TAG, "LOGGED WITH " + logged);
+        String logged = getSharedPreferences(LOG_PREFERENCES, 0)
+                .getString(LOG_PREF_INFO, null);
+        Log.i(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
-        if(logged != null && !logged.equals(Config.NOT_LOGGED))
+        if(logged != null && !logged.equals(NOT_LOGGED))
             menu.add(R.string.logout);
             //if the user is logged, then add logout to the menu
         else
@@ -742,8 +787,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 if (title.equals(getResources().getString(R.string.login))) {
                     Log.i(TAG, "Login has been selected");
                     Toast.makeText(this, "Selected login", Toast.LENGTH_SHORT).show();
-                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                     startLogin();
                     return true;
                 } else {
@@ -780,22 +825,22 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (Profile.getCurrentProfile() != null){
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
-            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
         }
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES,MODE_PRIVATE)
-                .getString(Config.LOG_PREF_INFO,null);
+        String logged = getSharedPreferences(LOG_PREFERENCES,MODE_PRIVATE)
+                .getString(LOG_PREF_INFO,null);
         //logout Google
         if (logged != null){
-            if (logged.equals(Config.GOOGLE_LOGGED)) {
+            if (logged.equals(GOOGLE_LOGGED)) {
                 Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
                         new ResultCallback<Status>() {
                             @Override
                             public void onResult(Status status) {
                                 if (status.isSuccess()) {
                                     Log.i(TAG, "Logout from Google");
-                                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                                     ApplicationClass.setGoogleApiClient(null);
                                     startLogin();
                                 } else
@@ -820,34 +865,5 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         progress.setIndeterminate(true);
         progress.setCanceledOnTouchOutside(false);
         progress.show();
-    }
-
-
-}
-
-class MarkerCallback implements Callback {
-
-    private static final int THUMBNAILS_NUMBER = 7;
-    private static int counter = 0;
-
-    Marker marker=null;
-
-    MarkerCallback(Marker marker) {
-        this.marker=marker;
-    }
-
-    @Override
-    public void onError() {
-        Log.e(getClass().getSimpleName(), "Error loading thumbnail!");
-    }
-
-    @Override
-    public void onSuccess() {
-        counter++;
-        if (counter == THUMBNAILS_NUMBER && marker != null && marker.isInfoWindowShown()) {
-            marker.setSnippet(null);
-            marker.hideInfoWindow();
-            marker.showInfoWindow();
-        }
     }
 }
