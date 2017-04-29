@@ -77,12 +77,16 @@ public class LoginActivity extends AppCompatActivity {
     private User newUser;
     private String username;
     private String date;
+    private String mPictureId;
     private GoogleSignInAccount acct;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // If the activity is called from PictureActivity this extra exists
+        mPictureId = getIntent().getStringExtra(PICTURE_ID);
 
         if (!ApplicationClass.alreadyEnabledPersistence()){
             Log.i(TAG, "Enabling database persistence");
@@ -112,7 +116,15 @@ public class LoginActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
-                    startMain();
+                    if (mPictureId == null) {
+                        startMain();
+                    }
+                    else {
+                        // Login called from PictureActivity
+                        Intent i = new Intent(LoginActivity.this, PictureActivity.class);
+                        i.putExtra(PICTURE_ID, mPictureId);
+                        startActivity(i);
+                    }
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                 } else {
                     // User is signed out
@@ -151,16 +163,21 @@ public class LoginActivity extends AppCompatActivity {
     public void onClick(View view){
         int id = view.getId();
         switch (id){
-//            case R.id.fb_fake:
-//                loginButton.performClick();
-//                break;
             case R.id.no_login:
-                setLogged(NOT_LOGGED);
-                Log.i(TAG, "Not Logged");
-                Intent i = new Intent(getApplicationContext(), MapsActivity.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
+                if (mPictureId == null) {
+                    setLogged(NOT_LOGGED);
+                    Log.i(TAG, "Not Logged");
+                    Intent i = new Intent(getApplicationContext(), MapsActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
 
+                }
+                else {
+                    // Login was called from PictureActivity
+                    Intent i = new Intent(LoginActivity.this, PictureActivity.class);
+                    i.putExtra(PICTURE_ID, mPictureId);
+                    startActivity(i);
+                }
         }
     }
 

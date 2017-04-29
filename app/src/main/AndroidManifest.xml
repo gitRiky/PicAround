@@ -82,7 +82,8 @@
 
         <activity
             android:name=".PictureActivity"
-            android:parentActivityName=".PointActivity"/>
+            android:parentActivityName=".PointActivity"
+            android:launchMode="singleTask"/>
 
     </application>
 

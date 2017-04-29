@@ -80,4 +80,7 @@
     <string name="confirm">continue</string>
     <string name="view">view</string>
     <string name="like">like</string>
+    <string name="login_required">Login required</string>
+    <string name="login_for_upload">You must be logged in order to upload a picture. Do you want to login?</string>
+    <string name="login_for_like">You must be logged in order to put a like. Do you want to login?</string>
 </resources>
