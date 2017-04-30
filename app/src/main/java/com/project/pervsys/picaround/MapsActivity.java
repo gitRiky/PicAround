@@ -819,8 +819,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
-                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                Intent i = new Intent(this, ProfileActivity.class);
+                startActivity(i);
                 return true;
             case R.id.search:
                 Log.i(TAG, "Search has been selected");
