@@ -138,10 +138,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
             Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
         }
 
-      //set the image into imageView
+        //set the image into imageView
         setPic();
-      
-        if (mLatitude == null || mLongitude == null) {
+        if (mLatitude == null || mLongitude == null ||
+                !mLatitude.getClass().equals(Double.class) ||
+                !mLongitude.getClass().equals(Double.class)) {
             Log.d(TAG, "Position not available in the metadata");
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
@@ -190,9 +191,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
             mTimestamp = h + ":" + m;
         }
 
-        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
         //myAttribute += getTagString(ExifInterface.TAG_GPS_LATITUDE_REF, exif);
-        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
         //myAttribute += getTagString(ExifInterface.TAG_GPS_LONGITUDE_REF, exif);
         //myAttribute += getTagString(ExifInterface.TAG_IMAGE_LENGTH, exif);
         //myAttribute += getTagString(ExifInterface.TAG_IMAGE_WIDTH, exif);
@@ -291,14 +292,14 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                     inUpload = false;
                                 }
                             })
-                        .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            @SuppressWarnings("VisibleForTests")
-                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                                transferredBytes = taskSnapshot.getBytesTransferred();
-                                Log.d(TAG, "TransferredBytes " + transferredBytes);
-                            }
-                        });
+                            .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                @SuppressWarnings("VisibleForTests")
+                                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                    transferredBytes = taskSnapshot.getBytesTransferred();
+                                    Log.d(TAG, "TransferredBytes " + transferredBytes);
+                                }
+                            });
                     Intent i = getIntent();
                     setResult(RESULT_OK, i);
                     finish();
@@ -461,16 +462,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         .show();
             }
         })
-        .addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                // Handle unsuccessful uploads
-                // ...
-                Log.e(TAG, "Error during the upload, " + exception.toString());
-                Toast.makeText(getApplicationContext(),
-                        R.string.upload_failed,
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        // ...
+                        Log.e(TAG, "Error during the upload, " + exception.toString());
+                        Toast.makeText(getApplicationContext(),
+                                R.string.upload_failed,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }
