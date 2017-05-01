@@ -8,11 +8,16 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -84,6 +89,8 @@ public class ProfileActivity extends AppCompatActivity {
         mAgeView = (TextView) findViewById(R.id.profile_age);
         mEmailView = (TextView) findViewById(R.id.profile_email);
         mImageView = (ImageView) findViewById(R.id.profile_picture);
+        registerForContextMenu(mImageView);
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null){
             mEmail = user.getEmail();
@@ -157,5 +164,23 @@ public class ProfileActivity extends AppCompatActivity {
             age = currentYear - year - 1;
 
         return "" + age;
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.context_profile_image_menu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.change_profile_image:
+                Toast.makeText(this, "Selected update profile image", Toast.LENGTH_SHORT).show();
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 }

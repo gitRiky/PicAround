@@ -12,20 +12,19 @@
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/profile_picture"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginStart="40dp"
-            android:layout_marginTop="30dp"/>
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="30dp" />
 
         <TextView
             android:id="@+id/profile_username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Username"
             android:layout_alignTop="@+id/profile_picture"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="30dp"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:layout_marginTop="45dp"
+            android:textColor="@color/primary_text_black" />
 
         <TextView
             android:id="@+id/textView3"
@@ -34,56 +33,56 @@
             android:layout_alignStart="@+id/profile_picture"
             android:layout_below="@+id/profile_picture"
             android:layout_marginTop="55dp"
-            android:text="Name:"
-            android:textAppearance="@android:style/TextAppearance.Medium" />
+            android:text="Name:" />
 
         <TextView
+            android:id="@+id/textView6"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignStart="@+id/textView3"
             android:layout_below="@+id/textView3"
-            android:layout_marginTop="64dp"
+            android:layout_marginTop="40dp"
             android:text="Surname:"
-            android:id="@+id/textView6"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:textColor="@color/secondary_text_black" />
 
         <TextView
+            android:id="@+id/textView8"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignStart="@+id/textView6"
             android:layout_below="@+id/textView6"
-            android:layout_marginTop="70dp"
+            android:layout_marginTop="40dp"
             android:text="Age:"
-            android:id="@+id/textView8"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:textColor="@color/secondary_text_black" />
 
         <TextView
+            android:id="@+id/textView13"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignStart="@+id/textView8"
             android:layout_below="@+id/textView8"
-            android:layout_marginTop="66dp"
+            android:layout_marginTop="40dp"
             android:text="Email:"
-            android:id="@+id/textView13"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:textColor="@color/secondary_text_black" />
 
         <TextView
             android:id="@+id/profile_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="45dp"
-            android:layout_toEndOf="@+id/profile_picture"
-            android:textAppearance="@android:style/TextAppearance.Medium"
+            android:layout_above="@+id/textView6"
             android:layout_alignTop="@+id/textView3"
-            android:layout_above="@+id/textView6" />
+            android:layout_toEndOf="@+id/textView6"
+            android:layout_marginStart="20dp"
+            android:textColor="@color/primary_text_black" />
 
         <TextView
             android:id="@+id/profile_surname"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignEnd="@+id/profile_name"
             android:layout_alignTop="@+id/textView6"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:layout_toEndOf="@id/textView6"
+            android:layout_marginStart="20dp"
+            android:textColor="@color/primary_text_black" />
 
         <TextView
             android:id="@+id/profile_age"
@@ -91,7 +90,7 @@
             android:layout_height="wrap_content"
             android:layout_alignStart="@+id/profile_surname"
             android:layout_alignTop="@+id/textView8"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:textColor="@color/primary_text_black" />
 
         <TextView
             android:id="@+id/profile_email"
@@ -99,11 +98,10 @@
             android:layout_height="wrap_content"
             android:layout_alignStart="@+id/profile_age"
             android:layout_alignTop="@+id/textView13"
-            android:textAppearance="@android:style/TextAppearance.Medium"/>
+            android:textColor="@color/primary_text_black" />
 
 
     </RelativeLayout>
-
 
 
 </LinearLayout>
