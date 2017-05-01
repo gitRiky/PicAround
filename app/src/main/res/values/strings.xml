@@ -6,7 +6,6 @@
     <string name="fb_login_protocol_scheme">fb1895338284044111</string>
     <string name="no_login_text"><u>NO, THANKS</u></string>
     <string name="continue_mex">Continue</string>
-    <string name="dialog_profile_info_title">Registration</string>
     <string name="auth_error">Authentication Error! Please try again verifying your credentials</string>
     <string name="logout_message">Do you really want to log out?</string>
     <string name="yes">Yes</string>
@@ -84,4 +83,6 @@
     <string name="start_gallery_intent_title">Select picture</string>
     <string name="title_activity_profile">ProfileActivity</string>
     <string name="update_profile_image">Update profile image</string>
+    <string name="dialog_update_profile_image_mex">Do you really want to update your profile image?</string>
+    <string name="not_logged_mex">You are not logged in! Please perform the login in order to start this activity</string>
 </resources>

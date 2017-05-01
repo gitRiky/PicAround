@@ -1,10 +1,18 @@
 package com.project.pervsys.picaround;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -19,6 +27,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -26,10 +36,18 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.project.pervsys.picaround.domain.User;
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
+
+import id.zelory.compressor.Compressor;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -40,13 +58,18 @@ public class ProfileActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference mDatabaseRef = null;
     private String mEmail;
-
     private TextView mUsernameView;
     private TextView mNameView;
     private TextView mSurnameView;
     private TextView mAgeView;
     private TextView mEmailView;
     private ImageView mImageView;
+    private String mCurrentPhotoPath;
+    private File mCompressedFile;
+    private StorageReference mStorageRef;
+    private User mUser;
+    private String mPhotoId;
+    private String mUserId;
 
 
 
@@ -119,18 +142,17 @@ public class ProfileActivity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Log.d(TAG, "onDataChange");
                         for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
-                            Log.d(TAG, "inside the for");
-                            User user = userSnap.getValue(User.class);
+                            mUser = userSnap.getValue(User.class);
+                            mUserId = userSnap.getKey();
                             Picasso.with(getApplicationContext())
-                                    .load(user.getProfilePicture())
+                                    .load(mUser.getProfilePicture())
                                     .into(mImageView);
-                            mUsernameView.setText(user.getUsername());
-                            mNameView.setText(user.getName());
-                            mSurnameView.setText(user.getSurname());
-                            mEmailView.setText(user.getEmail());
-                            mAgeView.setText(getAge(user.getDate()));
+                            mUsernameView.setText(mUser.getUsername());
+                            mNameView.setText(mUser.getName());
+                            mSurnameView.setText(mUser.getSurname());
+                            mEmailView.setText(mUser.getEmail());
+                            mAgeView.setText(getAge(mUser.getDate()));
                         }
                     }
 
@@ -151,7 +173,6 @@ public class ProfileActivity extends AppCompatActivity {
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
         int currentMonth = Calendar.getInstance().get(Calendar.MONTH);
         int currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-        Log.d(TAG, currentDay + "/" + currentMonth + "/" + currentYear);
         if (currentMonth > month)
             age = currentYear - year;
         else if (currentMonth == month) {
@@ -178,9 +199,136 @@ public class ProfileActivity extends AppCompatActivity {
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.change_profile_image:
-                Toast.makeText(this, "Selected update profile image", Toast.LENGTH_SHORT).show();
+                Log.i(TAG, "Selected update profile image");
+                selectPicture();
+                return true;
             default:
                 return super.onContextItemSelected(item);
+        }
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        switch (requestCode) {
+            case REQUEST_PICK_IMAGE:
+                if (resultCode == RESULT_OK) {
+                    Log.i(TAG, "Photo has been picked");
+                    Uri photoUri = data.getData();
+                    mCurrentPhotoPath = getRealPathFromURI(this, photoUri);
+                    mCompressedFile = Compressor.getDefault(this)
+                            .compressToFile(new File(mCurrentPhotoPath));
+                    Log.i(TAG, "Path: " + mCurrentPhotoPath);
+
+                    //load the new photo
+                    Picasso.with(getApplicationContext())
+                            .load(mCompressedFile)
+                            .fit()
+                            .centerInside()
+                            .into(mImageView);
+
+                    startConfirmDialog();
+                }
+                break;
+        }
+    }
+
+
+    private void startConfirmDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.dialog_update_profile_image_mex)
+                .setTitle(R.string.update_profile_image)
+                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        //start the update
+                        Log.d(TAG, "Start update");
+                        //save the image into the storage
+                        uploadImage();
+                    }
+                })
+                .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        //put the old profile image into the image view
+                        Log.d(TAG, "Put back the old photo");
+                        Picasso.with(getApplicationContext())
+                                .load(mUser.getProfilePicture())
+                                .into(mImageView);
+                    }
+                });
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+
+    }
+
+    //TODO: when a profile image is updated, the pictures loaded before have the older profile image
+    //we have to fix it
+    private void uploadImage(){
+        Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
+        mPhotoId = mUser.getUsername() + "_" + timestamp.toString().replace(" ", "_").replace(".",":");
+        Log.d(TAG, mPhotoId);
+        mStorageRef =  FirebaseStorage.getInstance().getReference().child(mPhotoId);
+        mStorageRef.putFile(Uri.fromFile(mCompressedFile))
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        // Get a URL to the uploaded content
+                        Log.d(TAG, "Image uploaded");
+                        getPhotoPath();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        Log.e(TAG, "Error during the upload, " + exception.toString());
+                    }
+                });
+    }
+
+    private void getPhotoPath(){
+        mStorageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                Log.d(TAG, "Uri: " + uri);
+                mUser.setProfilePicture(uri.toString());
+                DatabaseReference pushRef = mDatabaseRef.child(USERS).child(mUserId);
+                pushRef.setValue(mUser);
+            }
+        });
+    }
+
+
+    //start the gallery Intent
+    private void selectPicture(){
+        if (Build.VERSION.SDK_INT <= 19) {
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            startActivityForResult(Intent.createChooser(intent,
+                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        } else if (Build.VERSION.SDK_INT > 19) {
+            Intent intent = new Intent(Intent.ACTION_PICK,
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(Intent.createChooser(intent,
+                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        }
+    }
+
+    public String getRealPathFromURI(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = { MediaStore.Images.Media.DATA };
+            cursor = context.getContentResolver().query(contentUri,  proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
         }
     }
 }

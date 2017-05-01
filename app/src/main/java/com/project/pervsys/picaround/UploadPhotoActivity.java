@@ -252,7 +252,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     mPointId = pushReference.getKey();
                     toPut.setId(mPointId);
                     pushReference.setValue(toPut);
-
                     File compressedFile = new Compressor.Builder(this)
                             .setMaxHeight(photoW)
                             .setMaxWidth(photoW)

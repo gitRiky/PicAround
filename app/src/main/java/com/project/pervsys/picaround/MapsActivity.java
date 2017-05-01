@@ -819,8 +819,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
-                Intent i = new Intent(this, ProfileActivity.class);
-                startActivity(i);
+                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                        .getString(LOG_PREF_INFO, null);
+                if (logType != null && !logType.equals(NOT_LOGGED)){
+                    Intent i = new Intent(this, ProfileActivity.class);
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
             case R.id.search:
                 Log.i(TAG, "Search has been selected");
