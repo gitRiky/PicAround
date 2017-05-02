@@ -11,12 +11,14 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -43,7 +45,6 @@ import com.project.pervsys.picaround.domain.User;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
@@ -64,11 +65,9 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView mAgeView;
     private TextView mEmailView;
     private ImageView mImageView;
-    private String mCurrentPhotoPath;
     private File mCompressedFile;
     private StorageReference mStorageRef;
     private User mUser;
-    private String mPhotoId;
     private String mUserId;
 
 
@@ -82,6 +81,7 @@ public class ProfileActivity extends AppCompatActivity {
         Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.profile);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         // Set status bar color
         if (android.os.Build.VERSION.SDK_INT >= 21) {
             Window window = this.getWindow();
@@ -187,6 +187,17 @@ public class ProfileActivity extends AppCompatActivity {
         return "" + age;
     }
 
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        int id = item.getItemId();
+        switch(id){
+            case android.R.id.home:
+                NavUtils.navigateUpFromSameTask(this);
+                return true;
+        }
+        return false;
+    }
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v,
                                     ContextMenu.ContextMenuInfo menuInfo) {
@@ -215,10 +226,10 @@ public class ProfileActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo has been picked");
                     Uri photoUri = data.getData();
-                    mCurrentPhotoPath = getRealPathFromURI(this, photoUri);
+                    String currentPhotoPath = getRealPathFromURI(this, photoUri);
                     mCompressedFile = Compressor.getDefault(this)
-                            .compressToFile(new File(mCurrentPhotoPath));
-                    Log.i(TAG, "Path: " + mCurrentPhotoPath);
+                            .compressToFile(new File(currentPhotoPath));
+                    Log.d(TAG, "Path: " + currentPhotoPath);
 
                     //load the new photo
                     Picasso.with(getApplicationContext())
@@ -242,7 +253,7 @@ public class ProfileActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         //start the update
-                        Log.d(TAG, "Start update");
+                        Log.i(TAG, "Updating profile picture");
                         //save the image into the storage
                         uploadImage();
                     }
@@ -267,15 +278,14 @@ public class ProfileActivity extends AppCompatActivity {
     //we have to fix it
     private void uploadImage(){
         Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
-        mPhotoId = mUser.getUsername() + "_" + timestamp.toString().replace(" ", "_").replace(".",":");
-        Log.d(TAG, mPhotoId);
-        mStorageRef =  FirebaseStorage.getInstance().getReference().child(mPhotoId);
+        String photoId = mUser.getUsername() + "_" + timestamp.toString().replace(" ", "_").replace(".",":");
+        mStorageRef =  FirebaseStorage.getInstance().getReference().child(photoId);
         mStorageRef.putFile(Uri.fromFile(mCompressedFile))
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                         // Get a URL to the uploaded content
-                        Log.d(TAG, "Image uploaded");
+                        Log.i(TAG, "Image has been uploaded");
                         getPhotoPath();
                     }
                 })
@@ -317,7 +327,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    public String getRealPathFromURI(Context context, Uri contentUri) {
+    private String getRealPathFromURI(Context context, Uri contentUri) {
         Cursor cursor = null;
         try {
             String[] proj = { MediaStore.Images.Media.DATA };
