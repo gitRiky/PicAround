@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.OnProgressListener;
 
 import android.media.ExifInterface;
@@ -40,6 +44,7 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
@@ -49,6 +54,9 @@ import static com.project.pervsys.picaround.utility.Config.POINTS;
 import id.zelory.compressor.Compressor;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
+import com.project.pervsys.picaround.domain.User;
+import com.squareup.picasso.Picasso;
+
 import static com.project.pervsys.picaround.utility.Config.*;
 
 public class UploadPhotoActivity extends AppCompatActivity {
@@ -89,7 +97,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private long totalBytes;
     private boolean inUpload = false;
     private boolean uploadError = false;
-
+    private String mUserPushId;
+    private DatabaseReference mDatabaseRef = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,6 +139,26 @@ public class UploadPhotoActivity extends AppCompatActivity {
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         mDescriptionField = (EditText) findViewById(R.id.photo_description);
+
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child(USERS).keepSynced(true);
+        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                            mUserPushId = userSnap.getKey();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             Log.i(TAG, "The path of the photo is: " + mPhotoPath);
@@ -155,12 +184,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch (requestCode){
             case REQUEST_PICK_LOCATION:
                 if(resultCode == RESULT_OK) {
-                    String[] latlong = data.getStringExtra(LOCATION_EXTRA).split(",");
-                    if (mLatitude == null && mLongitude == null) {
-                        mLatitude = latlong[0].substring(10);
-                        mLongitude = latlong[1].replace(")", "");
-                        Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
-                    }
+                    String[] latLong = data.getStringExtra(LOCATION_EXTRA).split(",");
+                    mLatitude = latLong[0].substring(10);
+                    mLongitude = latLong[1].replace(")", "");
+                    Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
+
                 }
                 //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
                 else{
@@ -248,7 +276,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
     }
 
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -262,7 +289,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
             mAuth.removeAuthStateListener(mAuthListener);
         }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
@@ -278,7 +304,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         finish();
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         int id = item.getItemId();
@@ -289,7 +314,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
-
                     Point toPut = new Point();
                     toPut.setLat(Double.parseDouble(mLatitude));
                     toPut.setLon(Double.parseDouble(mLongitude));
@@ -489,7 +513,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
             public void onSuccess(Uri uri) {
-                Log.d(TAG, "MyDownloadLink:  " + uri);
+                Log.d(TAG, "MyDownloadLink: " + uri);
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
                         mUser.getUid(), mUsername, profilePicture);
                 picture.setTimestamp(mTimestamp);
@@ -500,6 +524,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 pushReference.setValue(picture);
 
                 databaseReference.child(POINTS).child(mPointId).child(PICTURES).push().setValue(picture);
+                databaseReference.child(USERS).child(mUserPushId).child(PICTURES).push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,

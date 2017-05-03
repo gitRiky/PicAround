@@ -133,6 +133,15 @@ public class PictureActivity extends AppCompatActivity {
                             mUsername.setText(mPicture.getUsername());
                             mDescription.setText(mPicture.getDescription());
 
+                            mUsername.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    Intent i = new Intent(PictureActivity.this, UserActivity.class);
+                                    i.putExtra(USER_ID, mPicture.getUserId());
+                                    startActivity(i);
+                                }
+                            });
+
                             mLikesNumber = mPicture.getLikes();
                             mViewsNumber = mPicture.getViews();
 
@@ -146,7 +155,8 @@ public class PictureActivity extends AppCompatActivity {
 
                             if (mUser != null){
                                 if(!mViewsList.containsValue(mUser.getUid())) {
-                                    mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST).push().setValue(mUser.getUid());
+                                    mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST).push()
+                                            .setValue(mUser.getUid());
                                     mViewsNumber++;
                                     increasedViews = true;
                                     increaseViews();
@@ -218,7 +228,7 @@ public class PictureActivity extends AppCompatActivity {
                             .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {
                                     Intent i = new Intent(PictureActivity.this, LoginActivity.class);
-                                    i.putExtra(PICTURE_ID, mPictureId);
+                                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                                     startActivity(i);
                                 }
                             }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -340,54 +350,13 @@ public class PictureActivity extends AppCompatActivity {
                 //Profile activity
                 return true;
             case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
+                finish();
                 return true;
             default:
                 return true;
         }
     }
 
-    private HashMap<String,String> getViewsList(Picture picture){
-        final HashMap<String,String> result = new HashMap<>();
-        mDatabaseRef.child(PICTURES).child(picture.getId()).child(VIEWS_LIST)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for (DataSnapshot child : dataSnapshot.getChildren()) {
-                            result.put(child.getKey(), child.getValue().toString());
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
-
-        return result;
-    }
-
-    private HashMap<String,String> getLikesList(Picture picture){
-        final HashMap<String,String> result = new HashMap<>();
-        mDatabaseRef.child(PICTURES).child(picture.getId()).child(LIKES_LIST)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for (DataSnapshot child : dataSnapshot.getChildren()) {
-                            result.put(child.getKey(), child.getValue().toString());
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
-
-        return result;
-    }
 
     @Override
     public void onDestroy(){

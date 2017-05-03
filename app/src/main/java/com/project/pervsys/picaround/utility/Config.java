@@ -15,6 +15,8 @@ public class Config {
     public static final String PICTURES = "pictures";
     public static final String POPULARITY = "popularity";
     public static final String PICTURE_ID = "pictureId";
+    public static final String USER_ID = "userId";
+    public static final String ID = "id";
     public static final String POINT_ID = "pointId";
     public static final String LIKES_LIST = "likesList";
     public static final String VIEWS_LIST = "viewsList";
