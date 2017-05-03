@@ -3,6 +3,9 @@ package com.project.pervsys.picaround.domain;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
 @IgnoreExtraProperties
 
 public class User {
@@ -13,11 +16,11 @@ public class User {
     private String date;
     private String profilePicture;
     private String id;
+    private HashMap<String,Picture> pictures;
 
     public User(){
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
-
 
     public User(String username, String email, String name, String surname, String date, String profilePicture, String id) {
         this.username = username;
@@ -85,6 +88,14 @@ public class User {
         this.id = id;
     }
 
+    public HashMap<String, Picture> getPictures() {
+        return pictures;
+    }
+
+    public void setPictures(HashMap<String, Picture> pictures) {
+        this.pictures = pictures;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -92,28 +103,43 @@ public class User {
 
         User user = (User) o;
 
-        if (date != user.date) return false;
-        if (!username.equals(user.username)) return false;
-        if (!email.equals(user.email)) return false;
+        if (username != null ? !username.equals(user.username) : user.username != null)
+            return false;
+        if (email != null ? !email.equals(user.email) : user.email != null) return false;
         if (name != null ? !name.equals(user.name) : user.name != null) return false;
         if (surname != null ? !surname.equals(user.surname) : user.surname != null) return false;
-        return profilePicture != null ? profilePicture.equals(user.profilePicture) : user.profilePicture == null;
+        if (date != null ? !date.equals(user.date) : user.date != null) return false;
+        if (profilePicture != null ? !profilePicture.equals(user.profilePicture) : user.profilePicture != null)
+            return false;
+        if (!id.equals(user.id)) return false;
+        return pictures != null ? pictures.equals(user.pictures) : user.pictures == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = username.hashCode();
-        result = 31 * result + email.hashCode();
+        int result = username != null ? username.hashCode() : 0;
+        result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (surname != null ? surname.hashCode() : 0);
-        result = 31 * result + date.hashCode();
+        result = 31 * result + (date != null ? date.hashCode() : 0);
         result = 31 * result + (profilePicture != null ? profilePicture.hashCode() : 0);
+        result = 31 * result + id.hashCode();
+        result = 31 * result + (pictures != null ? pictures.hashCode() : 0);
         return result;
     }
 
     @Override
-    public String toString(){
-        return name + ", " + surname + ", " + email + "\n" + username + ", " + date;
+    public String toString() {
+        return "User{" +
+                "username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", name='" + name + '\'' +
+                ", surname='" + surname + '\'' +
+                ", date='" + date + '\'' +
+                ", profilePicture='" + profilePicture + '\'' +
+                ", id='" + id + '\'' +
+                ", pictures=" + pictures +
+                '}';
     }
 }
