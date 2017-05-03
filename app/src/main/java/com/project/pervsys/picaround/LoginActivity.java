@@ -76,6 +76,7 @@ public class LoginActivity extends AppCompatActivity {
     private User newUser;
     private String username;
     private String date;
+    private String mPictureId;
     private GoogleSignInAccount acct;
 
     @Override
@@ -150,16 +151,12 @@ public class LoginActivity extends AppCompatActivity {
     public void onClick(View view){
         int id = view.getId();
         switch (id){
-//            case R.id.fb_fake:
-//                loginButton.performClick();
-//                break;
             case R.id.no_login:
                 setLogged(NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
                 Intent i = new Intent(getApplicationContext(), MapsActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
-
         }
     }
 

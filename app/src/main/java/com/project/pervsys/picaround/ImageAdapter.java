@@ -49,7 +49,7 @@ public class ImageAdapter extends BaseAdapter{
         ImageView imageView;
         if (view == null){
             imageView = new ImageView(mContext);
-            int dim = viewGroup.getWidth()/3;
+            int dim = viewGroup.getWidth()/3-20;
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dim, dim);
             imageView.setLayoutParams(layoutParams);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);

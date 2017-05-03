@@ -11,15 +11,11 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
-import android.nfc.Tag;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -31,7 +27,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -39,10 +34,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.GridLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.facebook.Profile;
@@ -64,19 +56,12 @@ import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.project.pervsys.picaround.domain.Picture;
-import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -85,24 +70,14 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
 import static com.project.pervsys.picaround.utility.Config.*;
-import com.squareup.picasso.Callback;
-import com.squareup.picasso.Picasso;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
-import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
-import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
 
@@ -131,6 +106,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String profilePicture;
     private List<String> thumbnails;
 
+    private FirebaseUser mUser;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private GoogleApiClient mGoogleApiClient;
@@ -195,28 +171,48 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     private void dispatchTakePictureIntent(int actionCode) {
+        mUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (mUser != null) {
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            switch (actionCode) {
+                case REQUEST_TAKE_PHOTO:
+                    File f = null;
 
-        switch (actionCode) {
-            case REQUEST_TAKE_PHOTO:
-                File f = null;
-                try {
-                    f = setUpPhotoFile();
-                    mCurrentPhotoPath = f.getAbsolutePath();
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    f = null;
-                    mCurrentPhotoPath = null;
-                }
-                break;
+                    try {
+                        f = setUpPhotoFile();
+                        mCurrentPhotoPath = f.getAbsolutePath();
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        f = null;
+                        mCurrentPhotoPath = null;
+                    }
+                    break;
+                
+                default:
+                    break;
+            } // switch
 
-            default:
-                break;
-        } // switch
 
-        startActivityForResult(takePictureIntent, actionCode);
+            startActivityForResult(takePictureIntent, actionCode);
+        }
+        else {
+            // user not logged
+            AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this)
+                    .setTitle(R.string.login_required)
+                    .setMessage(R.string.login_for_upload)
+                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            startLogin();
+                        }
+                    }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            //do nothing
+                        }
+                    });
+            dialog.show();
+        }
     }
 
     private void handleBigCameraPhoto() {
@@ -261,9 +257,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         // Firebase authentication
         final String logged = getSharedPreferences(LOG_PREFERENCES, 0)
                 .getString(LOG_PREF_INFO, null);
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            Log.i(TAG, "Logged with Firebase, UID: " + user.getUid());
+        mUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (mUser != null) {
+            Log.i(TAG, "Logged with Firebase, UID: " + mUser.getUid());
         } else {
             Log.i(TAG, "Not logged with Firebase");
         }
@@ -279,6 +275,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     // User is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                 }
+                // Recreate menu in order to change "Login" to "Logout"
+                invalidateOptionsMenu();
             }
         };
 
@@ -300,7 +298,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
         //Obtain the username
-        if (user != null) {
+        if (mUser != null) {
             //first usage, not query the db
             String passedUsername = getIntent().getStringExtra(USERNAME);
             if (passedUsername != null){
@@ -308,7 +306,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 Log.d(TAG, "First usage, username = " + username);
             }
             else {
-                String email = user.getEmail();
+                String email = mUser.getEmail();
                 Log.d(TAG, "Email = " + email);
                 mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
                         .addListenerForSingleValueEvent(new ValueEventListener() {

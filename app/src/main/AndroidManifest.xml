@@ -76,14 +76,13 @@
             android:name=".PickLocationActivity"
             android:label="@string/title_activity_pick_location" />
         <activity
-            android:name=".PictureActivity"
-            android:parentActivityName=".PointActivity" />
+            android:name=".PictureActivity"/>
+        <activity android:name=".UserActivity"/>
         <activity
             android:name=".ProfileActivity"
             android:label="@string/title_activity_profile"
             android:parentActivityName=".MapsActivity"
             android:theme="@style/AppTheme"/>
-        
     </application>
 
 </manifest>

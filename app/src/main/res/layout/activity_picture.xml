@@ -111,7 +111,6 @@
             android:layout_marginTop="20dp"
             android:layout_centerHorizontal="true"
             android:background="@color/transparent"
-            android:visibility="invisible"
             android:tint="@color/secondary_text_black"
             android:src="@drawable/ic_thumb_up_black_36dp"/>
 

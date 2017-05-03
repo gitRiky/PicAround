@@ -32,9 +32,6 @@ import static com.project.pervsys.picaround.utility.Config.POPULARITY;
 import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
 import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
-/**
- * Created by federico on 20/04/17.
- */
 
 public class InfoWindowView extends GridLayout {
 

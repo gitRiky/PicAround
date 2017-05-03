@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.OnProgressListener;
 
 import android.media.ExifInterface;
@@ -40,6 +44,8 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
 import static com.project.pervsys.picaround.utility.Config.PHOTO_PATH;
@@ -48,6 +54,9 @@ import static com.project.pervsys.picaround.utility.Config.POINTS;
 import id.zelory.compressor.Compressor;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
+import com.project.pervsys.picaround.domain.User;
+import com.squareup.picasso.Picasso;
+
 import static com.project.pervsys.picaround.utility.Config.*;
 
 public class UploadPhotoActivity extends AppCompatActivity {
@@ -88,7 +97,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private long totalBytes;
     private boolean inUpload = false;
     private boolean uploadError = false;
-
+    private String mUserPushId;
+    private DatabaseReference mDatabaseRef = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,6 +139,26 @@ public class UploadPhotoActivity extends AppCompatActivity {
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
         mImageView = (ImageView) findViewById(R.id.image_to_upload);
         mDescriptionField = (EditText) findViewById(R.id.photo_description);
+
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child(USERS).keepSynced(true);
+        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                            mUserPushId = userSnap.getKey();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             takeExifInfo(exif);
@@ -137,10 +167,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
             Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
         }
 
-      //set the image into imageView
+        //set the image into imageView
         setPic();
-      
-        if (mLatitude == null || mLongitude == null) {
+        if (mLatitude == null || mLongitude == null || !isDouble(mLatitude) || !isDouble(mLongitude)) {
             Log.d(TAG, "Position not available in the metadata");
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
@@ -154,12 +183,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch (requestCode){
             case REQUEST_PICK_LOCATION:
                 if(resultCode == RESULT_OK) {
-                    String[] latlong = data.getStringExtra(LOCATION_EXTRA).split(",");
-                    if (mLatitude == null && mLongitude == null) {
-                        mLatitude = latlong[0].substring(10);
-                        mLongitude = latlong[1].replace(")", "");
-                        Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
-                    }
+                    String[] latLong = data.getStringExtra(LOCATION_EXTRA).split(",");
+                    mLatitude = latLong[0].substring(10);
+                    mLongitude = latLong[1].replace(")", "");
+                    Log.d(TAG, "FROM pickLocation Activity: -> Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
+
                 }
                 //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
                 else{
@@ -170,6 +198,52 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isDouble(String value){
+        final String Digits     = "(\\p{Digit}+)";
+        final String HexDigits  = "(\\p{XDigit}+)";
+        // an exponent is 'e' or 'E' followed by an optionally
+        // signed decimal integer.
+        final String Exp        = "[eE][+-]?"+Digits;
+        final String fpRegex    =
+                ("[\\x00-\\x20]*"+ // Optional leading "whitespace"
+                        "[+-]?(" +         // Optional sign character
+                        "NaN|" +           // "NaN" string
+                        "Infinity|" +      // "Infinity" string
+
+                        // A decimal floating-point string representing a finite positive
+                        // number without a leading sign has at most five basic pieces:
+                        // Digits . Digits ExponentPart FloatTypeSuffix
+                        //
+                        // Since this method allows integer-only strings as input
+                        // in addition to strings of floating-point literals, the
+                        // two sub-patterns below are simplifications of the grammar
+                        // productions from the Java Language Specification, 2nd
+                        // edition, section 3.10.2.
+
+                        // Digits ._opt Digits_opt ExponentPart_opt FloatTypeSuffix_opt
+                        "((("+Digits+"(\\.)?("+Digits+"?)("+Exp+")?)|"+
+
+                        // . Digits ExponentPart_opt FloatTypeSuffix_opt
+                        "(\\.("+Digits+")("+Exp+")?)|"+
+
+                        // Hexadecimal strings
+                        "((" +
+                        // 0[xX] HexDigits ._opt BinaryExponent FloatTypeSuffix_opt
+                        "(0[xX]" + HexDigits + "(\\.)?)|" +
+
+                        // 0[xX] HexDigits_opt . HexDigits BinaryExponent FloatTypeSuffix_opt
+                        "(0[xX]" + HexDigits + "?(\\.)" + HexDigits + ")" +
+
+                        ")[pP][+-]?" + Digits + "))" +
+                        "[fFdD]?))" +
+                        "[\\x00-\\x20]*");// Optional trailing "whitespace"
+
+        if (Pattern.matches(fpRegex, value)){
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     private void takeExifInfo(ExifInterface exif) {
         mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
@@ -190,9 +264,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
             mTimestamp = h + ":" + m;
         }
 
-        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+        mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
         //myAttribute += getTagString(ExifInterface.TAG_GPS_LATITUDE_REF, exif);
-        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+        mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
         //myAttribute += getTagString(ExifInterface.TAG_GPS_LONGITUDE_REF, exif);
         //myAttribute += getTagString(ExifInterface.TAG_IMAGE_LENGTH, exif);
         //myAttribute += getTagString(ExifInterface.TAG_IMAGE_WIDTH, exif);
@@ -201,7 +275,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
     }
-
 
     @Override
     protected void onStart() {
@@ -217,7 +290,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
         MenuInflater inflater = getMenuInflater();
@@ -232,7 +304,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         finish();
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         int id = item.getItemId();
@@ -243,7 +314,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage
-
                     Point toPut = new Point();
                     toPut.setLat(Double.parseDouble(mLatitude));
                     toPut.setLon(Double.parseDouble(mLongitude));
@@ -290,14 +360,14 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                     inUpload = false;
                                 }
                             })
-                        .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            @SuppressWarnings("VisibleForTests")
-                            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                                transferredBytes = taskSnapshot.getBytesTransferred();
-                                Log.d(TAG, "TransferredBytes " + transferredBytes);
-                            }
-                        });
+                            .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                                @Override
+                                @SuppressWarnings("VisibleForTests")
+                                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                    transferredBytes = taskSnapshot.getBytesTransferred();
+                                    Log.d(TAG, "TransferredBytes " + transferredBytes);
+                                }
+                            });
                     Intent i = getIntent();
                     setResult(RESULT_OK, i);
                     finish();
@@ -442,7 +512,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         pathRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
             public void onSuccess(Uri uri) {
-                Log.d(TAG, "MyDownloadLink:  " + uri);
+                Log.d(TAG, "MyDownloadLink: " + uri);
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
                         mUser.getUid(), mUsername, profilePicture);
                 picture.setTimestamp(mTimestamp);
@@ -453,6 +523,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 pushReference.setValue(picture);
 
                 databaseReference.child(POINTS).child(mPointId).child(PICTURES).push().setValue(picture);
+                databaseReference.child(USERS).child(mUserPushId).child(PICTURES).push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,
@@ -460,16 +531,16 @@ public class UploadPhotoActivity extends AppCompatActivity {
                         .show();
             }
         })
-        .addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                // Handle unsuccessful uploads
-                // ...
-                Log.e(TAG, "Error during the upload, " + exception.toString());
-                Toast.makeText(getApplicationContext(),
-                        R.string.upload_failed,
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        // ...
+                        Log.e(TAG, "Error during the upload, " + exception.toString());
+                        Toast.makeText(getApplicationContext(),
+                                R.string.upload_failed,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

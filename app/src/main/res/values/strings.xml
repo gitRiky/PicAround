@@ -79,6 +79,9 @@
     <string name="confirm">continue</string>
     <string name="view">view</string>
     <string name="like">like</string>
+    <string name="login_required">Login required</string>
+    <string name="login_for_upload">You must be logged in order to upload a picture. Do you want to login?</string>
+    <string name="login_for_like">You must be logged in order to put a like. Do you want to login?</string>
     <string name="add_picture">Add picture</string>
     <string name="start_gallery_intent_title">Select picture</string>
     <string name="title_activity_profile">ProfileActivity</string>
@@ -89,4 +92,5 @@
     <string name="surname_field">Surname:</string>
     <string name="age_field">Age:</string>
     <string name="email_field">Email:</string>
+
 </resources>
