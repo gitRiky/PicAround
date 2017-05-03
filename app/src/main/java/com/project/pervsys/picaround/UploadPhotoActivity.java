@@ -163,6 +163,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
                 //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
                 else{
+                    setResult(RESULT_CANCELED, getIntent());
                     finish();
                 }
                 break;
