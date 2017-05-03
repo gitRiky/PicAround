@@ -161,7 +161,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
-            Log.i(TAG, "The path of the photo is: " + mPhotoPath);
             takeExifInfo(exif);
         } catch (IOException e) {
             e.printStackTrace();
@@ -192,6 +191,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
                 //TODO: if RESULT_CANCELED then we should revert the upload of the picture.
                 else{
+                    setResult(RESULT_CANCELED, getIntent());
                     finish();
                 }
                 break;
@@ -323,7 +323,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     mPointId = pushReference.getKey();
                     toPut.setId(mPointId);
                     pushReference.setValue(toPut);
-
                     File compressedFile = new Compressor.Builder(this)
                             .setMaxHeight(photoW)
                             .setMaxWidth(photoW)

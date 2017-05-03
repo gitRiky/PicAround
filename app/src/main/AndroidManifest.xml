@@ -77,8 +77,12 @@
             android:label="@string/title_activity_pick_location" />
         <activity
             android:name=".PictureActivity"/>
-            <!--android:launchMode="singleTask" />-->
         <activity android:name=".UserActivity"/>
+        <activity
+            android:name=".ProfileActivity"
+            android:label="@string/title_activity_profile"
+            android:parentActivityName=".MapsActivity"
+            android:theme="@style/AppTheme"/>
     </application>
 
 </manifest>

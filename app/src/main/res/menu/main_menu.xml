@@ -5,6 +5,9 @@
         android:id="@+id/profile"
         android:title="@string/profile"/>
     <item
+        android:id="@+id/add_picture"
+        android:title="@string/add_picture" />
+    <item
         android:id="@+id/settings"
         android:title="@string/settings" />
     <item
@@ -13,6 +16,7 @@
     <item
         android:id="@+id/help"
         android:title="@string/help" />
+
     <item
         android:id="@+id/info"
         android:title="@string/info" />
