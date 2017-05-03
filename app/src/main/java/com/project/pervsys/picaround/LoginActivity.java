@@ -59,7 +59,6 @@ import org.json.JSONObject;
 public class LoginActivity extends AppCompatActivity {
 
 
-    private static final String EMAIL = "email";
     private static final String FIELDS = "fields";
     private static final String NEEDED_FB_INFO = "name,email";
     private static final String TAG = "LoginActivity";

@@ -35,4 +35,6 @@ public class Config {
     public static final int REQUEST_UPLOAD_PHOTO = 6;
     public static final int REQUEST_CHECK_SETTINGS = 7;
     public static final int REQUEST_PICK_LOCATION = 8;
+    public static final int REQUEST_PICK_IMAGE = 9;
+    public static final int REQUEST_UPLOAD_PHOTO_FROM_GALLERY = 10;
 }

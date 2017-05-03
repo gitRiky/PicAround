@@ -9,6 +9,7 @@ import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Criteria;
@@ -200,7 +201,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         switch (actionCode) {
             case REQUEST_TAKE_PHOTO:
                 File f = null;
-
                 try {
                     f = setUpPhotoFile();
                     mCurrentPhotoPath = f.getAbsolutePath();
@@ -224,14 +224,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (mCurrentPhotoPath != null) {
             Log.i(TAG, "The photo has been taken");
             galleryAddPic();
+            boolean fromCamera = true;
             //Start the UploadPhotoActivity, passing the photo's path
-            Intent i = new Intent(this, UploadPhotoActivity.class);
-            i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
-            Log.d(TAG, "Username " + username);
-            i.putExtra(USERNAME, username);
-            i.putExtra(PROFILE_PICTURE, profilePicture);
-            Log.i(TAG, "Starting Upload activity");
-            startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
+            startUploadPhotoActivity(fromCamera);
         }
 
     }
@@ -439,6 +434,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     handleBigCameraPhoto();
                 }
                 break;
+            //upload of a photo taken by the application's camera
+            //in this case, if the upload is cancelled, then the image is deleted
             case REQUEST_UPLOAD_PHOTO:
                 if (resultCode == RESULT_OK)
                     Log.i(TAG, "Photo in uploading");
@@ -451,7 +448,51 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 }
                 mCurrentPhotoPath = null;
                 break;
+            case REQUEST_PICK_IMAGE:
+                if (resultCode == RESULT_OK) {
+                    Log.i(TAG, "Photo has been picked");
+                    Uri photoUri = data.getData();
+                    mCurrentPhotoPath = getRealPathFromURI(this, photoUri);
+                    boolean fromCamera = false;
+                    startUploadPhotoActivity(fromCamera);
+                }
+                break;
+            //upload of a photo taken from gallery
+            //in this case, no deletion needed
+            case REQUEST_UPLOAD_PHOTO_FROM_GALLERY:
+                if (resultCode == RESULT_OK)
+                    Log.i(TAG, "Photo taken from gallery in uploading");
+                if (resultCode == RESULT_CANCELED)
+                    Log.i(TAG, "Photo upload cancelled");
+                break;
         }
+    }
+
+    public String getRealPathFromURI(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = { MediaStore.Images.Media.DATA };
+            cursor = context.getContentResolver().query(contentUri,  proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    private void startUploadPhotoActivity(boolean fromCamera){
+        Intent i = new Intent(this, UploadPhotoActivity.class);
+        i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
+        i.putExtra(USERNAME, username);
+        i.putExtra(PROFILE_PICTURE, profilePicture);
+        Log.i(TAG, "Starting Upload activity");
+        if (fromCamera)
+            startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
+        else
+            startActivityForResult(i, REQUEST_UPLOAD_PHOTO_FROM_GALLERY);
     }
 
     //method used for deleting the image from gallery
@@ -584,8 +625,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populatePoints() {
         // get all the points
-        mDatabaseRef.child("points").keepSynced(true);
-        mDatabaseRef.child("points")
+        mDatabaseRef.child(POINTS).keepSynced(true);
+        mDatabaseRef.child(POINTS)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -755,6 +796,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+            case R.id.add_picture:
+                Log.i(TAG, "Add picture has been selected");
+                selectPicture();
+                return true;
             case R.id.settings:
                 Log.i(TAG, "Settings has been selected");
                 Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();
@@ -777,8 +822,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
-                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                        .getString(LOG_PREF_INFO, null);
+                if (logType != null && !logType.equals(NOT_LOGGED)){
+                    Intent i = new Intent(this, ProfileActivity.class);
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
             case R.id.search:
                 Log.i(TAG, "Search has been selected");
@@ -801,6 +852,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 }
         }
         return false;
+    }
+
+    //start the gallery Intent
+    private void selectPicture(){
+        if (Build.VERSION.SDK_INT <= 19) {
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            startActivityForResult(Intent.createChooser(intent,
+                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        } else if (Build.VERSION.SDK_INT > 19) {
+            Intent intent = new Intent(Intent.ACTION_PICK,
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(Intent.createChooser(intent,
+                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        }
     }
 
     private void prepareLogOut(){
@@ -859,14 +927,5 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         Intent i = new Intent(this, LoginActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
-    }
-
-    private void startProgressBar(){
-        progress = new ProgressDialog(this);
-        progress.setMessage(getString(R.string.loading));
-        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        progress.setIndeterminate(true);
-        progress.setCanceledOnTouchOutside(false);
-        progress.show();
     }
 }
