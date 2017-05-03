@@ -137,6 +137,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private DatabaseReference mDatabaseRef = null;
     private CameraPosition mCameraPosition;
     private InfoWindowView mInfoWindow = null;
+    private Point mLastPoint;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -732,12 +733,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public View getInfoContents(Marker marker) {
 
         Point point = (Point) marker.getTag();
-        if(mInfoWindow != null) {
+        if(mInfoWindow != null && mLastPoint.equals(point)) {
             View toReturn = mInfoWindow;
+            mLastPoint = null;
             mInfoWindow = null;
             return toReturn;
         }
         else {
+            mLastPoint = point;
             mInfoWindow = new InfoWindowView(this, marker, point);
             View loadingView = getLayoutInflater().inflate(R.layout.basic_loading_info_window, null);
             return loadingView;

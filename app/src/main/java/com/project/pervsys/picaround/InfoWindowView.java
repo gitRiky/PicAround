@@ -119,6 +119,8 @@ class MarkerCallback implements Callback {
     private int counter;
     private Context context;
 
+    private static final int WAIT_FOR_RELOAD_INFO_WINDOW = 250;
+
     MarkerCallback(Marker marker, Context context) {
         this.marker=marker;
         this.counter = THUMBNAILS_NUMBER;
@@ -137,6 +139,11 @@ class MarkerCallback implements Callback {
         if (counter == 0 && marker != null && marker.isInfoWindowShown()) {
             //Toast.makeText(context, "Picasso callback done", Toast.LENGTH_SHORT).show();
             marker.hideInfoWindow();
+            try {
+                Thread.sleep(WAIT_FOR_RELOAD_INFO_WINDOW);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             marker.showInfoWindow();
         }
     }
