@@ -89,6 +89,7 @@ public class LoginActivity extends AppCompatActivity {
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
             ApplicationClass.setAlreadyEnabledPersistence(true);
         }
+
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();
@@ -104,7 +105,8 @@ public class LoginActivity extends AppCompatActivity {
             i.putExtra("alreadyRegistered", true);
             startActivity(i);
         }
-
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child(USERS).keepSynced(true);
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -346,6 +348,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void checkEmailGoogle(final GoogleSignInAccount acct){
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        Log.d(TAG, acct.getEmail());
         databaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
