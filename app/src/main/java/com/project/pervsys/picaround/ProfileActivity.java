@@ -116,6 +116,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null){
+            Log.d(TAG, "Firebase user is present");
             mEmail = user.getEmail();
             getProfileInfo();
         }
