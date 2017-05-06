@@ -104,8 +104,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private LocationManager mLocationManager = null;
     private String mProvider;
 
-    private String username;
-    private String profilePicture;
+    private String mUsername;
+    private String mProfilePicture;
     private List<String> thumbnails;
 
     private FirebaseUser mUser;
@@ -299,17 +299,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
-        //Obtain the username
+        //Obtain the mUsername
         if (mUser != null) {
             //first usage, not query the db
             String passedUsername = getIntent().getStringExtra(USERNAME);
             if (passedUsername != null){
-                username = passedUsername;
-                Log.d(TAG, "First usage, username = " + username);
+                mUsername = passedUsername;
+                mProfilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
+                Log.d(TAG, "First usage, mUsername = " + mUsername + "\nProfile picture :" + mProfilePicture );
             }
             else {
                 String email = mUser.getEmail();
-                Log.d(TAG, "Email = " + email);
                 mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
                         .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
@@ -319,12 +319,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                         Log.i(TAG, "Username obtained");
                                         User user = child.getValue(User.class);
                                         Log.d(TAG, user.toString());
-                                        username = user.getUsername();
-                                        profilePicture = user.getProfilePicture();
+                                        mUsername = user.getUsername();
+                                        mProfilePicture = user.getProfilePicture();
                                         if (progress != null)
                                             progress.dismiss();
                                     } else
-                                        Log.e(TAG, "Cannot obtain the username");
+                                        Log.e(TAG, "Cannot obtain the mUsername");
                                 }
                             }
 
@@ -486,8 +486,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void startUploadPhotoActivity(boolean fromCamera){
         Intent i = new Intent(this, UploadPhotoActivity.class);
         i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
-        i.putExtra(USERNAME, username);
-        i.putExtra(PROFILE_PICTURE, profilePicture);
+        i.putExtra(USERNAME, mUsername);
+        i.putExtra(PROFILE_PICTURE, mProfilePicture);
         Log.i(TAG, "Starting Upload activity");
         if (fromCamera)
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO);

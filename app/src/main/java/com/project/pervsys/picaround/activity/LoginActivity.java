@@ -4,7 +4,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.provider.ContactsContract;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -54,6 +54,9 @@ import static com.project.pervsys.picaround.utility.Config.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URI;
+import java.net.URL;
+
 public class LoginActivity extends AppCompatActivity {
 
 
@@ -72,10 +75,9 @@ public class LoginActivity extends AppCompatActivity {
     private LoginResult loginRes;
     private boolean firstLog;
     private User newUser;
-    private String username;
-    private String date;
+    private String mUsername;
+    private String mDate;
     private DatabaseReference mDatabaseRef;
-    private String mPictureId;
     private GoogleSignInAccount acct;
 
     @Override
@@ -211,8 +213,8 @@ public class LoginActivity extends AppCompatActivity {
                 //return from GetBasicInfoActivity
                 if (resultCode == RESULT_OK) {
                     startProgressBar();
-                    username = data.getStringExtra(USERNAME);
-                    date = data.getStringExtra(DATE);
+                    mUsername = data.getStringExtra(USERNAME);
+                    mDate = data.getStringExtra(DATE);
                     if (loginRes != null)
                         handleFacebookAccessToken(loginRes.getAccessToken());
                     else
@@ -224,8 +226,8 @@ public class LoginActivity extends AppCompatActivity {
             case RC_GET_INFO_GOOGLE:
                 if (resultCode == RESULT_OK){
                     startProgressBar();
-                    username = data.getStringExtra(USERNAME);
-                    date = data.getStringExtra(DATE);
+                    mUsername = data.getStringExtra(USERNAME);
+                    mDate = data.getStringExtra(DATE);
                     firebaseAuthWithGoogle(acct);
                 }
                 else
@@ -415,8 +417,8 @@ public class LoginActivity extends AppCompatActivity {
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
                                 Profile profile = Profile.getCurrentProfile();
-                                newUser = new User(username, facebookEmail, profile.getFirstName(),
-                                        profile.getLastName(), date,
+                                newUser = new User(mUsername, facebookEmail, profile.getFirstName(),
+                                        profile.getLastName(), mDate,
                                         profile.getProfilePictureUri(100,100).toString(),
                                         mAuth.getCurrentUser().getUid());
                                 mDatabaseRef.child(USERS).push().setValue(newUser);
@@ -498,8 +500,8 @@ public class LoginActivity extends AppCompatActivity {
                         else{
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
-                                newUser = new User(username, acct.getEmail(), acct.getGivenName(),
-                                        acct.getFamilyName(), date,
+                                newUser = new User(mUsername, acct.getEmail(), acct.getGivenName(),
+                                        acct.getFamilyName(), mDate,
                                         acct.getPhotoUrl().toString(),
                                         mAuth.getCurrentUser().getUid());
                                 mDatabaseRef.child(USERS).push().setValue(newUser);
@@ -581,8 +583,18 @@ public class LoginActivity extends AppCompatActivity {
 
     private void startMain(){
         Intent i = new Intent(this, MapsActivity.class);
-        if (firstLog)
-            i.putExtra(USERNAME, username);
+        if (firstLog) {
+            i.putExtra(USERNAME, mUsername);
+            String log = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                    .getString(LOG_PREF_INFO, null);
+            if (log.equals(GOOGLE_LOGGED)) {
+                i.putExtra(PROFILE_PICTURE, acct.getPhotoUrl().toString());
+            }
+            else {
+                i.putExtra(PROFILE_PICTURE,
+                        Profile.getCurrentProfile().getProfilePictureUri(100, 100).toString());
+            }
+        }
         Log.d(TAG, "First log = " + firstLog);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
