@@ -46,7 +46,7 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity">
+        <activity android:name=".activity.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -62,26 +62,26 @@
              You can define the keys for the debug and release targets in src/debug/ and src/release/.
         -->
         <activity
-            android:name=".MapsActivity"
+            android:name=".activity.MapsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_maps"
             android:launchMode="singleTop" />
-        <activity android:name=".GetBasicInfoActivity" />
+        <activity android:name=".activity.GetBasicInfoActivity" />
         <activity
-            android:name=".PointActivity"
+            android:name=".activity.PointActivity"
             android:launchMode="singleTop"
-            android:parentActivityName=".MapsActivity" />
-        <activity android:name=".UploadPhotoActivity" />
+            android:parentActivityName=".activity.MapsActivity" />
+        <activity android:name=".activity.UploadPhotoActivity" />
         <activity
-            android:name=".PickLocationActivity"
+            android:name=".activity.PickLocationActivity"
             android:label="@string/title_activity_pick_location" />
         <activity
-            android:name=".PictureActivity"/>
-        <activity android:name=".UserActivity"/>
+            android:name=".activity.PictureActivity"/>
+        <activity android:name=".activity.UserActivity"/>
         <activity
-            android:name=".ProfileActivity"
+            android:name=".activity.ProfileActivity"
             android:label="@string/title_activity_profile"
-            android:parentActivityName=".MapsActivity"
+            android:parentActivityName=".activity.MapsActivity"
             android:theme="@style/AppTheme"/>
     </application>
 

@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
 import android.net.Uri;
@@ -30,7 +30,6 @@ import static com.project.pervsys.picaround.utility.Config.PICTURES;
 import static com.project.pervsys.picaround.utility.Config.POINTS;
 import static com.project.pervsys.picaround.utility.Config.POPULARITY;
 import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
-import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
 
 public class InfoWindowView extends GridLayout {

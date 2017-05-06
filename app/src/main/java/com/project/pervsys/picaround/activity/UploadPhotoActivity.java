@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.app.NotificationManager;
 import android.content.Context;
@@ -44,7 +44,6 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
@@ -52,10 +51,10 @@ import static com.project.pervsys.picaround.utility.Config.PHOTO_PATH;
 import static com.project.pervsys.picaround.utility.Config.POINTS;
 
 import id.zelory.compressor.Compressor;
+
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
-import com.project.pervsys.picaround.domain.User;
-import com.squareup.picasso.Picasso;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 

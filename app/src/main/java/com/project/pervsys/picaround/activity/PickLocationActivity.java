@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -20,6 +20,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.project.pervsys.picaround.R;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;

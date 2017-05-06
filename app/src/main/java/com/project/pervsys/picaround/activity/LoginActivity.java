@@ -1,18 +1,16 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -31,7 +29,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -50,6 +47,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.User;
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -76,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
     private User newUser;
     private String username;
     private String date;
+    private DatabaseReference mDatabaseRef;
     private String mPictureId;
     private GoogleSignInAccount acct;
 
@@ -90,23 +89,17 @@ public class LoginActivity extends AppCompatActivity {
             ApplicationClass.setAlreadyEnabledPersistence(true);
         }
 
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child(USERS).keepSynced(true);
+
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();
             /* GOOGLE LOGIN */
             setUpGoogleLogin();
         }
-        //else we are logged with Facebook
-        else {
-            setLogged(FB_LOGGED);
-            Log.i(TAG, "Logged with Facebook");
-            Intent i = new Intent(getApplicationContext(), MapsActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-            i.putExtra("alreadyRegistered", true);
-            startActivity(i);
-        }
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(USERS).keepSynced(true);
+        else
+            startProgressBar();
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -127,17 +120,25 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     public void onStart(){
         super.onStart();
-
-        //silent Google sign-in
         mAuth.addAuthStateListener(mAuthListener);
-        String logged = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
-                .getString(LOG_PREF_INFO,null);
-        if(logged == null){
-            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
-                    .silentSignIn(mGoogleApiClient);
-            if (opr.isDone()) {
-                GoogleSignInResult result = opr.get();
-                handleSignInResult(result);
+
+        //already logged with facebook
+        if (Profile.getCurrentProfile() != null){
+            setLogged(FB_LOGGED);
+            Log.i(TAG, "Logged with Facebook");
+            handleFacebookAccessToken(AccessToken.getCurrentAccessToken());
+        }
+        else {
+            //silent Google sign-in
+            String logged = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                    .getString(LOG_PREF_INFO, null);
+            if (logged == null) {
+                OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
+                        .silentSignIn(mGoogleApiClient);
+                if (opr.isDone()) {
+                    GoogleSignInResult result = opr.get();
+                    handleSignInResult(result);
+                }
             }
         }
     }
@@ -315,9 +316,8 @@ public class LoginActivity extends AppCompatActivity {
 
 
     private void checkEmailFb(final AccessToken token){
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
         //String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(facebookEmail)
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(facebookEmail)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -347,9 +347,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void checkEmailGoogle(final GoogleSignInAccount acct){
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        Log.d(TAG, acct.getEmail());
-        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -421,8 +419,7 @@ public class LoginActivity extends AppCompatActivity {
                                         profile.getLastName(), date,
                                         profile.getProfilePictureUri(100,100).toString(),
                                         mAuth.getCurrentUser().getUid());
-                                DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-                                databaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
@@ -505,8 +502,7 @@ public class LoginActivity extends AppCompatActivity {
                                         acct.getFamilyName(), date,
                                         acct.getPhotoUrl().toString(),
                                         mAuth.getCurrentUser().getUid());
-                                DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-                                databaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERS).push().setValue(newUser);
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)

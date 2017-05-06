@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
@@ -63,6 +63,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;

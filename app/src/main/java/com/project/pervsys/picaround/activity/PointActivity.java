@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -8,7 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -16,11 +15,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.GridLayout;
 import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -30,14 +25,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
-import com.project.pervsys.picaround.domain.Point;
-import static com.project.pervsys.picaround.utility.Config.*;
-import com.squareup.picasso.Picasso;
 
-import java.util.HashMap;
+import static com.project.pervsys.picaround.utility.Config.*;
+
 import java.util.LinkedHashMap;
-import java.util.List;
 
 public class PointActivity extends AppCompatActivity {
 
