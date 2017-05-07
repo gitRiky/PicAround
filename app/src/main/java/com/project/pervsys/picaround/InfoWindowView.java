@@ -71,7 +71,7 @@ public class InfoWindowView extends GridLayout {
                     Picture picture = photoSnap.getValue(Picture.class);
                     String pictureName = picture.getName();
                     // TODO: removed thumbnails feature
-                    String thumbnailName = /*THUMB_PREFIX +*/ pictureName;
+                    String thumbnailName = THUMB_PREFIX + pictureName;
                     FirebaseStorage storage = FirebaseStorage.getInstance();
                     StorageReference pathReference = storage.getReference().child(thumbnailName);
                     Log.i(TAG, "storageRef=" + pathReference);

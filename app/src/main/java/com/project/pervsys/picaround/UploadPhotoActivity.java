@@ -345,6 +345,13 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     // Get a URL to the uploaded content
                                     getPath();
+                                    // Generate and upload thumbnail
+                                    File thumbnailFile = Compressor.getDefault(UploadPhotoActivity.this)
+                                            .compressToFile(new File(mPhotoPath));
+                                    Uri fileUri = Uri.fromFile(thumbnailFile);
+                                    String thumbnailId = THUMB_PREFIX + mPhotoId;
+                                    StorageReference thumbRef = mStorageRef.child(thumbnailId);
+                                    thumbRef.putFile(fileUri);
                                 }
                             })
                             .addOnFailureListener(new OnFailureListener() {
