@@ -13,6 +13,10 @@ public class Config {
     public static final String USERS = "users";
     public static final String DATE = "date";
     public static final String PICTURES = "pictures";
+    public static final String LATITUDE = "latitude";
+    public static final Double DEFAULT_LAT = 100000.0;
+    public static final Double DEFAULT_LNG = 100000.0;
+    public static final String LONGITUDE = "longitude";
     public static final String POPULARITY = "popularity";
     public static final String PICTURE_ID = "pictureId";
     public static final String USER_ID = "userId";

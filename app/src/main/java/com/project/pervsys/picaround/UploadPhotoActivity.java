@@ -171,7 +171,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         //set the image into imageView
         setPic();
-        if (mLatitude == null || mLongitude == null || !isDouble(mLatitude) || !isDouble(mLongitude)) {
+        if (mLatitude == null || mLongitude == null  || mLatitude.equals(DEFAULT_LAT + "") || mLongitude.equals(DEFAULT_LNG + "") || !isDouble(mLatitude) || !isDouble(mLongitude)) {
             Log.d(TAG, "Position not available in the metadata");
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
             startActivityForResult(pickLocationIntent, REQUEST_PICK_LOCATION);
@@ -262,6 +262,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
         mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+
+        if(mLatitude == null)
+            mLatitude = getIntent().getDoubleExtra(LATITUDE, DEFAULT_LAT) + "";
+        if(mLongitude == null)
+            mLongitude = getIntent().getDoubleExtra(LONGITUDE, DEFAULT_LNG) + "";
 
         Log.d(TAG, "Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
 
