@@ -39,4 +39,7 @@ public class Config {
     public static final int REQUEST_PICK_LOCATION = 8;
     public static final int REQUEST_PICK_IMAGE = 9;
     public static final int REQUEST_UPLOAD_PHOTO_FROM_GALLERY = 10;
+    public static final int PERMISSIONS_REQUEST_FINE_LOCATION = 11;
+    public static final int PERMISSIONS_REQUEST_COARSE_LOCATION = 12;
+    public static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 13;
 }

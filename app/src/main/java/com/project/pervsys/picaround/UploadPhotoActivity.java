@@ -44,6 +44,8 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -246,33 +248,24 @@ public class UploadPhotoActivity extends AppCompatActivity {
     }
 
     private void takeExifInfo(ExifInterface exif) {
+
+        // Take timestamp
         mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME);
-        if(mTimestamp == null)
-            mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL);
-        if(mTimestamp == null)
-            mTimestamp = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED);
-        if(mTimestamp == null)
-            mTimestamp = exif.getAttribute(ExifInterface.TAG_GPS_DATESTAMP);
-        if(mTimestamp == null)
-            mTimestamp = exif.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP);
         if(mTimestamp != null)
             mTimestamp = mTimestamp.replace(" ", SEPARATOR);
         else{
-            TimePicker tp = new TimePicker(this);
-            String h = tp.getCurrentHour() + "";
-            String m = tp.getCurrentMinute() + "";
-            mTimestamp = h + ":" + m;
+            SimpleDateFormat s = new SimpleDateFormat("yyyy:MM:dd_hh:mm:ss");
+            mTimestamp = s.format(new Date());
         }
 
+        // Take latlng
+
         mLatitude = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
-        //myAttribute += getTagString(ExifInterface.TAG_GPS_LATITUDE_REF, exif);
         mLongitude = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
-        //myAttribute += getTagString(ExifInterface.TAG_GPS_LONGITUDE_REF, exif);
-        //myAttribute += getTagString(ExifInterface.TAG_IMAGE_LENGTH, exif);
-        //myAttribute += getTagString(ExifInterface.TAG_IMAGE_WIDTH, exif);
-        //myAttribute += getTagString(ExifInterface.TAG_ORIENTATION, exif);
+
         Log.d(TAG, "Timestamp = " + mTimestamp + " lat = " + mLatitude + " long = " + mLongitude);
 
+        // Take orientation
         orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
     }
 

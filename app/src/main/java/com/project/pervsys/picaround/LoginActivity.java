@@ -89,6 +89,10 @@ public class LoginActivity extends AppCompatActivity {
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
             ApplicationClass.setAlreadyEnabledPersistence(true);
         }
+
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child(USERS).keepSynced(true);
+
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();
