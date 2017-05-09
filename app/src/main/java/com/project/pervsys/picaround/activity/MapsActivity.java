@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -64,6 +64,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -89,6 +90,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
+    private static final String IMAGE_TYPE = "image/*";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
@@ -105,8 +107,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private LocationManager mLocationManager = null;
     private String mProvider;
 
-    private String username;
-    private String profilePicture;
+    private String mUsername;
+    private String mProfilePicture;
     private List<String> thumbnails;
 
     private FirebaseUser mUser;
@@ -299,16 +301,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
-        //Obtain the username
+        //Obtain the mUsername
         if (mUser != null) {
             //first usage, not query the db
             String passedUsername = getIntent().getStringExtra(USERNAME);
-            if (passedUsername != null) {
-                username = passedUsername;
-                Log.d(TAG, "First usage, username = " + username);
-            } else {
+            if (passedUsername != null){
+                mUsername = passedUsername;
+                mProfilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
+                Log.d(TAG, "First usage, mUsername = " + mUsername + "\nProfile picture :" + mProfilePicture );
+            }
+            else {
                 String email = mUser.getEmail();
-                Log.d(TAG, "Email = " + email);
                 mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
                         .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
@@ -318,12 +321,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                         Log.i(TAG, "Username obtained");
                                         User user = child.getValue(User.class);
                                         Log.d(TAG, user.toString());
-                                        username = user.getUsername();
-                                        profilePicture = user.getProfilePicture();
+                                        mUsername = user.getUsername();
+                                        mProfilePicture = user.getProfilePicture();
                                         if (progress != null)
                                             progress.dismiss();
                                     } else
-                                        Log.e(TAG, "Cannot obtain the username");
+                                        Log.e(TAG, "Cannot obtain the mUsername");
                                 }
                             }
 
@@ -501,9 +504,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         Location currentLocation = null;
         Intent i = new Intent(this, UploadPhotoActivity.class);
         i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
-        i.putExtra(USERNAME, username);
-        i.putExtra(PROFILE_PICTURE, profilePicture);
-
+        i.putExtra(USERNAME, mUsername);
+        i.putExtra(PROFILE_PICTURE, mProfilePicture);
         Log.i(TAG, "Starting Upload activity");
         if (fromCamera) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -887,7 +889,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void selectPicture(){
         if (Build.VERSION.SDK_INT <= 19) {
             Intent intent = new Intent();
-            intent.setType("image/*");
+            intent.setType(IMAGE_TYPE);
             intent.setAction(Intent.ACTION_GET_CONTENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             startActivityForResult(Intent.createChooser(intent,
