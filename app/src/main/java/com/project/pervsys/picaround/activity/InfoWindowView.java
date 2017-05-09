@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
 import android.net.Uri;
@@ -25,12 +25,7 @@ import com.project.pervsys.picaround.domain.Point;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
-import static com.project.pervsys.picaround.utility.Config.NUM_COLUMN_INFOWINDOW;
-import static com.project.pervsys.picaround.utility.Config.PICTURES;
-import static com.project.pervsys.picaround.utility.Config.POINTS;
-import static com.project.pervsys.picaround.utility.Config.POPULARITY;
-import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
-import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
+import static com.project.pervsys.picaround.utility.Config.*;
 
 
 public class InfoWindowView extends GridLayout {

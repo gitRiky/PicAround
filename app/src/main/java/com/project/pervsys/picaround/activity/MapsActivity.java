@@ -1,5 +1,6 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -36,7 +37,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
-
+import com.project.pervsys.picaround.R;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
 import com.github.clans.fab.FloatingActionButton;
@@ -64,7 +65,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.miguelcatalan.materialsearchview.MaterialSearchView;
+
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -91,6 +92,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
+    private static final String IMAGE_TYPE = "image/*";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
@@ -109,8 +111,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private LocationManager mLocationManager = null;
     private String mProvider;
 
-    private String username;
-    private String profilePicture;
+    private String mUsername;
+    private String mProfilePicture;
     private List<String> thumbnails;
     private FloatingActionMenu mFloatingActionMenu;
 
@@ -181,31 +183,32 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void dispatchTakePictureIntent(int actionCode) {
         mUser = FirebaseAuth.getInstance().getCurrentUser();
         if (mUser != null) {
-            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
             switch (actionCode) {
                 case REQUEST_TAKE_PHOTO:
-                    File f = null;
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                                PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+                    } else {
+                        File f = null;
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        try {
+                            f = setUpPhotoFile();
+                            mCurrentPhotoPath = f.getAbsolutePath();
+                            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            f = null;
+                            mCurrentPhotoPath = null;
+                        }
 
-                    try {
-                        f = setUpPhotoFile();
-                        mCurrentPhotoPath = f.getAbsolutePath();
-                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        f = null;
-                        mCurrentPhotoPath = null;
+                        startActivityForResult(takePictureIntent, actionCode);
                     }
                     break;
-                
                 default:
                     break;
             } // switch
-
-
-            startActivityForResult(takePictureIntent, actionCode);
-        }
-        else {
+        } else {
             // user not logged
             AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this)
                     .setTitle(R.string.login_required)
@@ -346,21 +349,19 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         // Get the location manager
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        mProvider = mLocationManager.getBestProvider(new Criteria(), true);
-
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
 
-        //Obtain the username
+        //Obtain the mUsername
         if (mUser != null) {
             //first usage, not query the db
             String passedUsername = getIntent().getStringExtra(USERNAME);
             if (passedUsername != null){
-                username = passedUsername;
-                Log.d(TAG, "First usage, username = " + username);
+                mUsername = passedUsername;
+                mProfilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
+                Log.d(TAG, "First usage, mUsername = " + mUsername + "\nProfile picture :" + mProfilePicture );
             }
             else {
                 String email = mUser.getEmail();
-                Log.d(TAG, "Email = " + email);
                 mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
                         .addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
@@ -370,12 +371,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                         Log.i(TAG, "Username obtained");
                                         User user = child.getValue(User.class);
                                         Log.d(TAG, user.toString());
-                                        username = user.getUsername();
-                                        profilePicture = user.getProfilePicture();
+                                        mUsername = user.getUsername();
+                                        mProfilePicture = user.getProfilePicture();
                                         if (progress != null)
                                             progress.dismiss();
                                     } else
-                                        Log.e(TAG, "Cannot obtain the username");
+                                        Log.e(TAG, "Cannot obtain the mUsername");
                                 }
                             }
 
@@ -419,19 +420,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onResume() {
         super.onResume();
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.i(TAG, "Location permission not allowed");
-            return;
-        }
-        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
-        if(mMap != null)
+        // TODO: The app executes populatePoints() in onResume() also !
+        if (mMap != null)
             populatePoints();
     }
 
@@ -478,6 +468,32 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         Log.i(TAG, "onDestroy");
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) throws SecurityException {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    mProvider = mLocationManager.getBestProvider(new Criteria(), true);
+                    if (mProvider != null) {
+                        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+                        mMap.setMyLocationEnabled(true);
+                        setupGPS(this);
+                    }
+                }
+            }
+            break;
+
+            case PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
+
+            }
+            break;
+        }
+    }
+
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case REQUEST_TAKE_PHOTO:
@@ -522,8 +538,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public String getRealPathFromURI(Context context, Uri contentUri) {
         Cursor cursor = null;
         try {
-            String[] proj = { MediaStore.Images.Media.DATA };
-            cursor = context.getContentResolver().query(contentUri,  proj, null, null, null);
+            String[] proj = {MediaStore.Images.Media.DATA};
+            cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
             int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
             cursor.moveToFirst();
             return cursor.getString(column_index);
@@ -534,14 +550,25 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
     }
 
-    private void startUploadPhotoActivity(boolean fromCamera){
+    private void startUploadPhotoActivity(boolean fromCamera) {
+        Location currentLocation = null;
         Intent i = new Intent(this, UploadPhotoActivity.class);
         i.putExtra(PHOTO_PATH, mCurrentPhotoPath);
-        i.putExtra(USERNAME, username);
-        i.putExtra(PROFILE_PICTURE, profilePicture);
+        i.putExtra(USERNAME, mUsername);
+        i.putExtra(PROFILE_PICTURE, mProfilePicture);
         Log.i(TAG, "Starting Upload activity");
-        if (fromCamera)
+        if (fromCamera) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                currentLocation = mLocationManager.getLastKnownLocation(mProvider);
+            }
+            if(currentLocation != null){
+                Double lat = currentLocation.getLatitude();
+                Double lng = currentLocation.getLongitude();
+                i.putExtra(LATITUDE, lat);
+                i.putExtra(LONGITUDE, lng);
+            }
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO);
+        }
         else
             startActivityForResult(i, REQUEST_UPLOAD_PHOTO_FROM_GALLERY);
     }
@@ -633,27 +660,30 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+        Location location = null;
 
         // Restore previous configurations of the map, if available
         if (mCameraPosition != null)
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            Log.i(TAG, "Location permission not allowed");
-            return;
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    PERMISSIONS_REQUEST_FINE_LOCATION);
+            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        PERMISSIONS_REQUEST_COARSE_LOCATION);
+            }
         }
-        mMap.setMyLocationEnabled(true);
+        else{
+            mProvider = mLocationManager.getBestProvider(new Criteria(), true);
+            mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+            mMap.setMyLocationEnabled(true);
+            setupGPS(this);
+            location = mLocationManager.getLastKnownLocation(mProvider);
+        }
 
-        setupGPS(this);
-
-        Location location = mLocationManager.getLastKnownLocation(mProvider);
         if(location != null){
             Log.i(TAG, "getLastKnownLocation is not null !!");
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -893,7 +923,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void selectPicture(){
         if (Build.VERSION.SDK_INT <= 19) {
             Intent intent = new Intent();
-            intent.setType("image/*");
+            intent.setType(IMAGE_TYPE);
             intent.setAction(Intent.ACTION_GET_CONTENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             startActivityForResult(Intent.createChooser(intent,

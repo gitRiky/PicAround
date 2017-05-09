@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -41,6 +41,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.User;
 import com.squareup.picasso.Picasso;
 
@@ -116,7 +117,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null){
-            Log.d(TAG, "Firebase user is present");
             mEmail = user.getEmail();
             getProfileInfo();
         }

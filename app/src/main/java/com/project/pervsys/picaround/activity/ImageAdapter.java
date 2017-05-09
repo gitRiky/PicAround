@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
 import android.view.View;

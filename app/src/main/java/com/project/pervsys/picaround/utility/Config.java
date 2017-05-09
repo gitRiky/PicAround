@@ -13,6 +13,10 @@ public class Config {
     public static final String USERS = "users";
     public static final String DATE = "date";
     public static final String PICTURES = "pictures";
+    public static final String LATITUDE = "latitude";
+    public static final Double DEFAULT_LAT = 100000.0;
+    public static final Double DEFAULT_LNG = 100000.0;
+    public static final String LONGITUDE = "longitude";
     public static final String POPULARITY = "popularity";
     public static final String PICTURE_ID = "pictureId";
     public static final String USER_ID = "userId";
@@ -39,4 +43,7 @@ public class Config {
     public static final int REQUEST_PICK_LOCATION = 8;
     public static final int REQUEST_PICK_IMAGE = 9;
     public static final int REQUEST_UPLOAD_PHOTO_FROM_GALLERY = 10;
+    public static final int PERMISSIONS_REQUEST_FINE_LOCATION = 11;
+    public static final int PERMISSIONS_REQUEST_COARSE_LOCATION = 12;
+    public static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 13;
 }
