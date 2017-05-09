@@ -319,16 +319,6 @@ public class PictureActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.settings:
-                Log.i(TAG, "Settings has been selected");
-                Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();
-                //Settings activity
-                return true;
-            case R.id.contact:
-                Log.i(TAG, "Contact has been selected");
-                Toast.makeText(this, "Selected contact", Toast.LENGTH_SHORT).show();
-                //Contact activity
-                return true;
             case R.id.help:
                 Log.i(TAG, "Help has been selected");
                 Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
@@ -341,14 +331,16 @@ public class PictureActivity extends AppCompatActivity {
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
-                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                        .getString(LOG_PREF_INFO, null);
+                if (logType != null && !logType.equals(NOT_LOGGED)){
+                    Intent i = new Intent(this, ProfileActivity.class);
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
-            case R.id.search:
-                Log.i(TAG, "Search has been selected");
-                Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-                //Profile activity
-                return true;
+
             case android.R.id.home:
                 finish();
                 return true;
@@ -356,7 +348,6 @@ public class PictureActivity extends AppCompatActivity {
                 return true;
         }
     }
-
 
     @Override
     public void onDestroy(){

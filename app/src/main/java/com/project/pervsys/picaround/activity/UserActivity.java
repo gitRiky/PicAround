@@ -6,6 +6,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -13,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -111,8 +115,47 @@ public class UserActivity extends AppCompatActivity {
                         Log.e(TAG, databaseError.toString());
                     }
                 });
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.help:
+                Log.i(TAG, "Help has been selected");
+                Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
+                //Help activity
+                return true;
+            case R.id.info:
+                Log.i(TAG, "Info has been selected");
+                Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
+                //Info activity
+                return true;
+            case R.id.profile:
+                Log.i(TAG, "Profile has been selected");
+                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                        .getString(LOG_PREF_INFO, null);
+                if (logType != null && !logType.equals(NOT_LOGGED)){
+                    Intent i = new Intent(this, ProfileActivity.class);
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
+                return true;
+
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return true;
+        }
     }
 
     private int getAge(String date){
