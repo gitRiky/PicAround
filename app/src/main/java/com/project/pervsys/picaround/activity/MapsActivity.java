@@ -1,6 +1,7 @@
 package com.project.pervsys.picaround.activity;
 
 import android.Manifest;
+import android.app.Application;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -361,31 +362,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 Log.d(TAG, "First usage, mUsername = " + mUsername + "\nProfile picture :" + mProfilePicture );
             }
             else {
-                String email = mUser.getEmail();
-                mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                    if (child != null) {
-                                        Log.i(TAG, "Username obtained");
-                                        User user = child.getValue(User.class);
-                                        Log.d(TAG, user.toString());
-                                        mUsername = user.getUsername();
-                                        mProfilePicture = user.getProfilePicture();
-                                        if (progress != null)
-                                            progress.dismiss();
-                                    } else
-                                        Log.e(TAG, "Cannot obtain the mUsername");
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                                //database error, e.g. permission denied (not logged with Firebase)
-                                Log.e(TAG, databaseError.toString());
-                            }
-                        });
+                getProfileInfo();
             }
         }
 
@@ -410,6 +387,35 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mapFragment.getMapAsync(this);
     }
 
+    private void getProfileInfo() {
+        String email = mUser.getEmail();
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            if (child != null) {
+                                User user = child.getValue(User.class);
+                                Log.d(TAG, user.toString());
+                                mUsername = user.getUsername();
+                                mProfilePicture = user.getProfilePicture();
+                                Log.i(TAG, "Username= " + mUsername
+                                        + ", profilePicturePath = " + mProfilePicture);
+                                if (progress != null)
+                                    progress.dismiss();
+                            } else
+                                Log.e(TAG, "Cannot obtain profile info");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -423,6 +429,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         // TODO: The app executes populatePoints() in onResume() also !
         if (mMap != null)
             populatePoints();
+
+        String newProfilePicturePath = ApplicationClass.getNewProfilePicturePath();
+        if (newProfilePicturePath != null){
+            Log.i(TAG, "Profile image has been updated");
+            mProfilePicture = newProfilePicturePath;
+            ApplicationClass.setNewProfilePicturePath(null);
+        }
     }
 
     /* Remove the location listener updates when Activity is paused */
