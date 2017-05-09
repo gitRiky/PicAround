@@ -321,51 +321,35 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     mPointId = pushReference.getKey();
                     toPut.setId(mPointId);
                     pushReference.setValue(toPut);
-                    File compressedFile = new Compressor.Builder(this)
-                            .setMaxHeight(photoW)
-                            .setMaxWidth(photoW)
-                            .setQuality(COMPRESSION_QUALITY)
-                            .setCompressFormat(Bitmap.CompressFormat.JPEG)
-                            .build()
-                            .compressToFile(new File(mPhotoPath));
-                    Uri file = Uri.fromFile(compressedFile);
-                    totalBytes = compressedFile.length();
 
                     //save the image as username_timestamp
                     mPhotoId = mUsername + SEPARATOR + mTimestamp;
-                    StorageReference riversRef = mStorageRef.child(mPhotoId);
-                    inUpload = true;
-                    showProgressBar();
 
-                    riversRef.putFile(file)
+                    // Generate and upload thumbnail
+                    File thumbnailFile = Compressor.getDefault(UploadPhotoActivity.this)
+                            .compressToFile(new File(mPhotoPath));
+                    Uri thumbnailUri = Uri.fromFile(thumbnailFile);
+                    String thumbnailId = THUMB_PREFIX + mPhotoId;
+                    StorageReference thumbRef = mStorageRef.child(thumbnailId);
+                    thumbRef.putFile(thumbnailUri)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                    // Get a URL to the uploaded content
-                                    getPath();
+                                    Log.i(TAG, "Thumbnail successfully uploaded");
+                                    uploadPicture();
                                 }
                             })
                             .addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception exception) {
                                     // Handle unsuccessful uploads
-                                    // ...
-                                    Log.e(TAG, "Error during the upload, " + exception.toString());
+                                    Log.e(TAG, "Error during uploading the thumbnail, " + exception.toString());
                                     Toast.makeText(getApplicationContext(),
                                             R.string.upload_failed,
                                             Toast.LENGTH_SHORT).show();
-                                    uploadError = true;
-                                    inUpload = false;
-                                }
-                            })
-                            .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-                                @Override
-                                @SuppressWarnings("VisibleForTests")
-                                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                                    transferredBytes = taskSnapshot.getBytesTransferred();
-                                    Log.d(TAG, "TransferredBytes " + transferredBytes);
                                 }
                             });
+
                     Intent i = getIntent();
                     setResult(RESULT_OK, i);
                     finish();
@@ -373,6 +357,52 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 return true;
         }
         return false;
+    }
+
+    private void uploadPicture() {
+        File compressedFile = new Compressor.Builder(this)
+                .setMaxHeight(photoW)
+                .setMaxWidth(photoW)
+                .setQuality(COMPRESSION_QUALITY)
+                .setCompressFormat(Bitmap.CompressFormat.JPEG)
+                .build()
+                .compressToFile(new File(mPhotoPath));
+        final Uri file = Uri.fromFile(compressedFile);
+        totalBytes = compressedFile.length();
+
+        final StorageReference riversRef = mStorageRef.child(mPhotoId);
+
+        inUpload = true;
+        showProgressBar();
+        riversRef.putFile(file)
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Log.i(TAG, "Picture successfully uploaded");
+                        // Get a URL to the uploaded content
+                        getPath();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        Log.e(TAG, "Error during uploading the picture, " + exception.toString());
+                        Toast.makeText(getApplicationContext(),
+                                R.string.upload_failed,
+                                Toast.LENGTH_SHORT).show();
+                        uploadError = true;
+                        inUpload = false;
+                    }
+                })
+                .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    @SuppressWarnings("VisibleForTests")
+                    public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                        transferredBytes = taskSnapshot.getBytesTransferred();
+                        Log.d(TAG, "TransferredBytes " + transferredBytes);
+                    }
+                });
     }
 
     private void showProgressBar(){
