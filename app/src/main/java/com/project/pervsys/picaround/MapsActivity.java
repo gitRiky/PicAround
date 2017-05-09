@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -40,6 +39,8 @@ import android.widget.Toast;
 
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -63,6 +64,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.miguelcatalan.materialsearchview.MaterialSearchView;
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -70,6 +72,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
+import com.project.pervsys.picaround.localDatabase.DBManager;
+
 import static com.project.pervsys.picaround.utility.Config.*;
 
 import java.io.File;
@@ -95,6 +99,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ProgressDialog progress;
     private GoogleMap mMap;
     private ImageView mImageView;
+//    private MaterialSearchView mSearchView;
+    private DBManager mDbManager;
 
     private String mCurrentPhotoPath;
     private Bitmap mImageBitmap;
@@ -106,6 +112,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String username;
     private String profilePicture;
     private List<String> thumbnails;
+    private FloatingActionMenu mFloatingActionMenu;
 
     private FirebaseUser mUser;
     private FirebaseAuth mAuth;
@@ -280,16 +287,57 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 invalidateOptionsMenu();
             }
         };
+//        mDbManager = new DBManager(MapsActivity.this);
+//        mSearchView = (MaterialSearchView) findViewById(R.id.search_view);
+//        mSearchView.setHint(getString(R.string.search_user));
+//        mSearchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
+//            @Override
+//            public boolean onQueryTextSubmit(String query) {
+//                search(query);
+//                return false;
+//            }
+//
+//            @Override
+//            public boolean onQueryTextChange(String newText) {
+//                search(newText);
+//                return false;
+//            }
+//        });
+//        mSearchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
+//            @Override
+//            public void onSearchViewShown() {
+//                Log.d(TAG, "onSearchViewShown()");
+//                if (mFloatingActionMenu.isOpened())
+//                    mFloatingActionMenu.close(true);
+//                populateUsernames();
+//            }
+//
+//            @Override
+//            public void onSearchViewClosed() {
+//                //Do some magic
+//            }
+//        });
 
         // Set file settings
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floatingActionButton);
+        mFloatingActionMenu = (FloatingActionMenu) findViewById(R.id.menu);
+        mFloatingActionMenu.setClosedOnTouchOutside(true);
+
+        FloatingActionButton cameraButton = (FloatingActionButton) findViewById(R.id.menu_item_camera);
+        FloatingActionButton galleryButton = (FloatingActionButton) findViewById(R.id.menu_item_gallery);
         setBtnListenerOrDisable(
-                fab,
+                cameraButton,
                 mTakePicOnClickListener,
                 MediaStore.ACTION_IMAGE_CAPTURE
         );
+
+        galleryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                selectPicture();
+            }
+        });
 
         // Get the location manager
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -781,6 +829,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         inflater.inflate(R.menu.main_menu, menu);
         String logged = getSharedPreferences(LOG_PREFERENCES, 0)
                 .getString(LOG_PREF_INFO, null);
+
+//        MenuItem item = menu.findItem(R.id.action_search);
+//        mSearchView.setMenuItem(item);
+
         Log.i(TAG, "LOGGED WITH " + logged);
         //if the user is not logged, then add login to the menu
         if(logged != null && !logged.equals(NOT_LOGGED))
@@ -795,15 +847,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.add_picture:
-                Log.i(TAG, "Add picture has been selected");
-                selectPicture();
-                return true;
-            case R.id.settings:
-                Log.i(TAG, "Settings has been selected");
-                Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();
-                //Settings activity
-                return true;
             case R.id.contact:
                 Log.i(TAG, "Contact has been selected");
                 Toast.makeText(this, "Selected contact", Toast.LENGTH_SHORT).show();
@@ -830,11 +873,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
-            case R.id.search:
-                Log.i(TAG, "Search has been selected");
-                Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-                //Search activity
-                return true;
+//            case R.id.search:
+//                Log.i(TAG, "Search has been selected");
+//                Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
+//                //Search activity
+//                return true;
             default:
                 String title = (String) item.getTitle();
                 if (title.equals(getResources().getString(R.string.login))) {
@@ -927,4 +970,46 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
     }
+
+    @Override
+    public void onBackPressed() {
+        if (mFloatingActionMenu.isOpened()){
+            mFloatingActionMenu.close(true);
+        }
+//        else if (mSearchView.isSearchOpen()) {
+//            mSearchView.closeSearch();
+//        }
+        else  {
+            super.onBackPressed();
+        }
+    }
+
+//    private void populateUsernames(){
+//        mDatabaseRef.child(USERNAMES)
+//                .addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(DataSnapshot dataSnapshot) {
+//                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+//                            String username = (String)child.getValue();
+//                            mDbManager.insert(username);
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(DatabaseError databaseError) {
+//                        //database error, e.g. permission denied (not logged with Firebase)
+//                        Log.e(TAG, databaseError.toString());
+//                    }
+//                });
+//    }
+//
+//    private void search(String text){
+//        Log.d(TAG, "------------ QUERY RESULTS:");
+//        Cursor result = mDbManager.query(text);
+//        result.moveToFirst();
+//        for (int i = 0; i < result.getCount(); i++) {
+//            String username = result.getString(result.getColumnIndex(USERNAME));
+//            Log.d(TAG, username);
+//        }
+//    }
 }

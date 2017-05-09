@@ -92,5 +92,6 @@
     <string name="surname_field">Surname:</string>
     <string name="age_field">Age:</string>
     <string name="email_field">Email:</string>
+    <string name="search_user">Search user</string>
 
 </resources>
