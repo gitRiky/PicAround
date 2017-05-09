@@ -5,9 +5,6 @@
         android:id="@+id/profile"
         android:title="@string/profile"/>
     <item
-        android:id="@+id/contact"
-        android:title="@string/contact" />
-    <item
         android:id="@+id/help"
         android:title="@string/help" />
     <item

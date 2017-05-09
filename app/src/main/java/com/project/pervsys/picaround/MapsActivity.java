@@ -239,6 +239,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             new Button.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mFloatingActionMenu.isOpened())
+                        mFloatingActionMenu.close(false);
                     dispatchTakePictureIntent(REQUEST_TAKE_PHOTO);
                 }
             };
@@ -335,6 +337,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         galleryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mFloatingActionMenu.isOpened())
+                    mFloatingActionMenu.close(false);
                 selectPicture();
             }
         });
@@ -847,11 +851,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.contact:
-                Log.i(TAG, "Contact has been selected");
-                Toast.makeText(this, "Selected contact", Toast.LENGTH_SHORT).show();
-                //Contact activity
-                return true;
             case R.id.help:
                 Log.i(TAG, "Help has been selected");
                 Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
@@ -873,16 +872,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
-//            case R.id.search:
-//                Log.i(TAG, "Search has been selected");
-//                Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-//                //Search activity
-//                return true;
             default:
                 String title = (String) item.getTitle();
                 if (title.equals(getResources().getString(R.string.login))) {
                     Log.i(TAG, "Login has been selected");
-                    Toast.makeText(this, "Selected login", Toast.LENGTH_SHORT).show();
                     getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
                             .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                     startLogin();
