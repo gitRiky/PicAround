@@ -912,7 +912,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     return true;
                 } else {
                     Log.i(TAG, "Logout has been selected");
-                    Toast.makeText(this, "Selected logout", Toast.LENGTH_SHORT).show();
                     prepareLogOut();
                 }
         }
