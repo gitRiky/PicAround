@@ -88,6 +88,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String IMAGEVIEW_VISIBILITY_STORAGE_KEY = "imageviewvisibility";
     private static final String JPEG_FILE_SUFFIX = ".jpg";
     private static final String JPEG_FILE_PREFIX = "IMG_";
+    private static final String IMAGE_TYPE = "image/*";
     private static final String TAG = "MapsActivity";
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
@@ -858,7 +859,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private void selectPicture(){
         if (Build.VERSION.SDK_INT <= 19) {
             Intent intent = new Intent();
-            intent.setType("image/*");
+            intent.setType(IMAGE_TYPE);
             intent.setAction(Intent.ACTION_GET_CONTENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             startActivityForResult(Intent.createChooser(intent,

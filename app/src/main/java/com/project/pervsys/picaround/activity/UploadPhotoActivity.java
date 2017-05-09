@@ -145,10 +145,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Log.d(TAG, mUser.getUid());
+
                         for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
                             mUserPushId = userSnap.getKey();
-                            Log.d(TAG, "mUserPushId = " + mUserPushId);
                         }
                     }
 
@@ -523,7 +522,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 pushReference.setValue(picture);
 
                 databaseReference.child(POINTS).child(mPointId).child(PICTURES).push().setValue(picture);
-                Log.d(TAG, "push id = " + mUserPushId);
                 databaseReference.child(USERS).child(mUserPushId).child(PICTURES).push().setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
