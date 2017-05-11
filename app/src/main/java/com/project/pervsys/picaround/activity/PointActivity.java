@@ -82,7 +82,7 @@ public class PointActivity extends AppCompatActivity {
         final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
-        mDatabaseRef.child("points").child(pointId).child("pictures").orderByChild("popularity")
+        mDatabaseRef.child(POINTS).child(pointId).child(PICTURES).orderByChild(POPULARITY)
             .addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {

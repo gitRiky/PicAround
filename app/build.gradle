@@ -8,6 +8,7 @@ android {
         applicationId "com.project.pervsys.picaround"
         minSdkVersion 18
         targetSdkVersion 25
+        vectorDrawables.useSupportLibrary = true
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -43,6 +44,7 @@ dependencies {
     compile 'com.android.support:design:25.3.0'
     compile 'de.hdodenhof:circleimageview:2.1.0'
     compile 'com.github.clans:fab:1.6.4'
+    compile 'com.miguelcatalan:materialsearchview:1.4.0'
     testCompile 'junit:junit:4.12'
 }
 

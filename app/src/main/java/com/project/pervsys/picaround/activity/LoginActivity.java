@@ -422,6 +422,7 @@ public class LoginActivity extends AppCompatActivity {
                                         profile.getProfilePictureUri(100,100).toString(),
                                         mAuth.getCurrentUser().getUid());
                                 mDatabaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERNAMES).push().setValue(mUsername);
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
@@ -505,6 +506,7 @@ public class LoginActivity extends AppCompatActivity {
                                         acct.getPhotoUrl().toString(),
                                         mAuth.getCurrentUser().getUid());
                                 mDatabaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERNAMES).push().setValue(mUsername);
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)

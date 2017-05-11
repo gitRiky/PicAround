@@ -39,6 +39,7 @@ public class UserActivity extends AppCompatActivity {
     private static final String TAG = "UserActivity";
     private DatabaseReference mDatabaseRef = null;
     private String mUserId;
+    private String mUsername;
     private User mUser;
     private HashMap<String,Picture> mPictures;
 
@@ -62,6 +63,18 @@ public class UserActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         mUserId = intent.getStringExtra(USER_ID);
+        mUsername = intent.getStringExtra(USERNAME);
+
+        String orderByParameter = null;
+        String equalToParameter = null;
+        if (mUserId != null){
+            orderByParameter = ID;
+            equalToParameter = mUserId;
+        }
+        else if (mUsername != null){
+            orderByParameter = USERNAME;
+            equalToParameter = mUsername;
+        }
 
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
         final TextView username = (TextView) findViewById(R.id.username);
@@ -72,7 +85,7 @@ public class UserActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUserId)
+        mDatabaseRef.child(USERS).orderByChild(orderByParameter).equalTo(equalToParameter)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {

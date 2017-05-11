@@ -32,6 +32,7 @@
             fab:menu_buttonSpacing="4dp"
             fab:menu_colorNormal="@color/colorAccent"
             fab:menu_colorPressed="@color/colorAccent"
+            fab:menu_colorRipple="#2979FF"
             fab:menu_labels_textColor="@color/primary_text_black"
             fab:menu_labels_colorNormal="@color/white"
             fab:menu_labels_colorPressed="@color/secondary_text_white"
@@ -69,10 +70,18 @@
 
         <include layout="@layout/toolbar"> </include>
 
+        <!--<br.com.mauker.materialsearchview.MaterialSearchView-->
+            <!--android:id="@+id/search_view"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"/>-->
+
         <com.miguelcatalan.materialsearchview.MaterialSearchView
             android:id="@+id/search_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            style="@style/MaterialSearchViewStyle"/>
+
+
     </FrameLayout>
 
 </RelativeLayout>

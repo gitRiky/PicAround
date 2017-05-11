@@ -11,6 +11,7 @@ public class Config {
     public static final String SHARED_MAP_POSITION = "sharedmapposition";
     public static final String POINTS = "points";
     public static final String USERS = "users";
+    public static final String USERNAMES = "usernames";
     public static final String DATE = "date";
     public static final String PICTURES = "pictures";
     public static final String LATITUDE = "latitude";
