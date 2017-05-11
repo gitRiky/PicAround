@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -21,6 +22,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.alexvasilkov.gestures.Settings;
+import com.alexvasilkov.gestures.views.GestureImageView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -61,7 +64,7 @@ public class PictureActivity extends AppCompatActivity {
     private TextView mUsername;
     private TextView mDescription;
     private ImageButton mLikeButton;
-    private ImageView mPictureView;
+    private GestureImageView mPictureView;
     private ImageView mUserIcon;
 
     @Override
@@ -98,7 +101,9 @@ public class PictureActivity extends AppCompatActivity {
             }
         };
 
-        mPictureView = (ImageView) findViewById(R.id.picture);
+        mPictureView = (GestureImageView) findViewById(R.id.picture);
+        mPictureView.getController().getSettings()
+                .setGravity(Gravity.TOP);
         mUserIcon = (ImageView) findViewById(R.id.user_icon);
         mUsername = (TextView) findViewById(R.id.username);
         mDescription = (TextView) findViewById(R.id.description);

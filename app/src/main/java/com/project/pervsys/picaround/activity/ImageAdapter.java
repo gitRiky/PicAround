@@ -1,6 +1,10 @@
 package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -13,8 +17,11 @@ import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
 
+import static java.security.AccessController.getContext;
+
 public class ImageAdapter extends BaseAdapter{
 
+    private static final int GRID_SPACE = 24;
     private Context mContext;
     private HashMap<String,Picture> mPictures;
     private String[] mKeys;
@@ -49,7 +56,7 @@ public class ImageAdapter extends BaseAdapter{
         ImageView imageView;
         if (view == null){
             imageView = new ImageView(mContext);
-            int dim = viewGroup.getWidth()/3-20;
+            int dim = (viewGroup.getWidth()-GRID_SPACE)/3;
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dim, dim);
             imageView.setLayoutParams(layoutParams);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -65,4 +72,5 @@ public class ImageAdapter extends BaseAdapter{
 
         return imageView;
     }
+
 }

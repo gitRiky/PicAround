@@ -316,6 +316,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 Intent intent = new Intent(MapsActivity.this, UserActivity.class);
                 intent.putExtra(USERNAME, username);
                 startActivity(intent);
+                mSearchView.closeSearch();
             }
         });
 

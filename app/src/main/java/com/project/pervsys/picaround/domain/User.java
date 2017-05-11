@@ -1,6 +1,8 @@
 package com.project.pervsys.picaround.domain;
 
 
+import android.util.Log;
+
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.HashMap;
@@ -30,6 +32,7 @@ public class User {
         this.date = date;
         this.profilePicture = profilePicture;
         this.id = id;
+        this.pictures = new HashMap<>();
     }
 
     public String getUsername() {
@@ -89,6 +92,10 @@ public class User {
     }
 
     public HashMap<String, Picture> getPictures() {
+        if (pictures == null){
+            Log.d("User", "pictures == null");
+            return new HashMap<>();
+        }
         return pictures;
     }
 
