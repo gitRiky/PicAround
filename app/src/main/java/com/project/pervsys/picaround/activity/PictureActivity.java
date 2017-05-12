@@ -8,20 +8,24 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.alexvasilkov.gestures.GestureController;
 import com.alexvasilkov.gestures.Settings;
 import com.alexvasilkov.gestures.views.GestureImageView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -66,6 +70,7 @@ public class PictureActivity extends AppCompatActivity {
     private ImageButton mLikeButton;
     private GestureImageView mPictureView;
     private ImageView mUserIcon;
+    private boolean visible = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,17 +78,12 @@ public class PictureActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_picture);
 
-        // Set toolbar
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
         // Set status bar color
         if (android.os.Build.VERSION.SDK_INT >= 21) {
             Window window = this.getWindow();
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
         }
 
         mAuth = FirebaseAuth.getInstance();
@@ -101,9 +101,44 @@ public class PictureActivity extends AppCompatActivity {
             }
         };
 
+        final RelativeLayout transitionContainer = (RelativeLayout) findViewById(R.id.transition_container);
+        final RelativeLayout userLayout = (RelativeLayout) findViewById(R.id.user);
+        final RelativeLayout infoLayout = (RelativeLayout) findViewById(R.id.info);
+
         mPictureView = (GestureImageView) findViewById(R.id.picture);
         mPictureView.getController().getSettings()
-                .setGravity(Gravity.TOP);
+                .setGravity(Gravity.CENTER);
+
+        mPictureView.getController().setOnGesturesListener(new GestureController.OnGestureListener() {
+            @Override
+            public void onDown(@NonNull MotionEvent e) {}
+
+            @Override
+            public void onUpOrCancel(@NonNull MotionEvent e) {}
+
+            @Override
+            public boolean onSingleTapUp(@NonNull MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+                TransitionManager.beginDelayedTransition(transitionContainer);
+                visible = !visible;
+                userLayout.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+                infoLayout.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+                return false;
+            }
+
+            @Override
+            public void onLongPress(@NonNull MotionEvent e) {}
+
+            @Override
+            public boolean onDoubleTap(@NonNull MotionEvent e) {
+                return false;
+            }
+        });
+
         mUserIcon = (ImageView) findViewById(R.id.user_icon);
         mUsername = (TextView) findViewById(R.id.username);
         mDescription = (TextView) findViewById(R.id.description);
@@ -175,7 +210,8 @@ public class PictureActivity extends AppCompatActivity {
                                         R.color.colorAccent));
                             else
                                 mLikeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
-                                        R.color.secondary_text_black));
+                                        R.color.white));
+                            mLikeButton.setVisibility(View.VISIBLE);
 
                             setTextView(mLikesNumber, mLikesTextView);
                             setTextView(mViewsNumber,mViewsTextView);
@@ -217,7 +253,7 @@ public class PictureActivity extends AppCompatActivity {
                     } else {
                         Log.d(TAG, "local like is true, we are removing a like");
                         mLikeButton.setColorFilter(ContextCompat.getColor(PictureActivity.this,
-                                R.color.secondary_text_black));
+                                R.color.white));
                         localLike = false;
                         mLikesNumber--;
                         Log.d(TAG, "likes number = " + mLikesNumber);
