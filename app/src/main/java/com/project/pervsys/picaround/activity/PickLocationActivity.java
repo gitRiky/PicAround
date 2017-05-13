@@ -109,33 +109,12 @@ public class PickLocationActivity extends AppCompatActivity implements OnMapRead
         if (mCameraPosition != null)
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this,
-//                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-//                    PERMISSIONS_REQUEST_FINE_LOCATION);
-//            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-//                ActivityCompat.requestPermissions(this,
-//                        new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
-//                        PERMISSIONS_REQUEST_COARSE_LOCATION);
-//            }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Nothing to do if permissions are not granted
+        }
+        else{
             mMap.setMyLocationEnabled(true);
         }
-
         mPickLocation.setOnClickListener(mPickListener);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) throws SecurityException{
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    mMap.setMyLocationEnabled(true);
-                }
-            }
-        }
     }
 }

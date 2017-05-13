@@ -404,7 +404,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 .build();                   // Creates a CameraPosition from the builder
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -476,13 +475,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "Permission given");
 
+                    setupGPS(this);
                     mProvider = mLocationManager.getBestProvider(new Criteria(), true);
-                    if (mProvider != null) {
-                        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
-                        mMap.setMyLocationEnabled(true);
-                        setupGPS(this);
-                    }
+                    mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+                    mMap.setMyLocationEnabled(true);
                 }
             }
             break;
@@ -667,20 +665,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            Log.i(TAG, "Permission asked");
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_FINE_LOCATION);
-            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        PERMISSIONS_REQUEST_COARSE_LOCATION);
-            }
         }
         else{
+            Log.i(TAG, "Permission not asked");
+            setupGPS(this);
             mProvider = mLocationManager.getBestProvider(new Criteria(), true);
             mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
             mMap.setMyLocationEnabled(true);
-            setupGPS(this);
             location = mLocationManager.getLastKnownLocation(mProvider);
         }
 
