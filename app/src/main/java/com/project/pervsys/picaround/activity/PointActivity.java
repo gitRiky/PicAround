@@ -169,7 +169,7 @@ public class PointActivity extends AppCompatActivity {
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             default:
-                return true;
+                return onOptionsItemSelected(item);
         }
     }
 }

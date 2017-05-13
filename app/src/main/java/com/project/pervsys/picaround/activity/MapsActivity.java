@@ -881,12 +881,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 //        mSearchView.setMenuItem(item);
 
         Log.i(TAG, "LOGGED WITH " + logged);
-        //if the user is not logged, then add login to the menu
+
         if(logged != null && !logged.equals(NOT_LOGGED))
-            menu.add(R.string.logout);
-            //if the user is logged, then add logout to the menu
+            menu.findItem(R.id.logout).setVisible(true);
         else
-            menu.add(R.string.login);
+            menu.findItem(R.id.login).setVisible(true);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -915,20 +914,18 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
+            case R.id.login:
+                getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                        .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
+                startLogin();
+                return true;
+            case R.id.logout:
+                Log.i(TAG, "Logout has been selected");
+                prepareLogOut();
+                return true;
             default:
-                String title = (String) item.getTitle();
-                if (title.equals(getResources().getString(R.string.login))) {
-                    Log.i(TAG, "Login has been selected");
-                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
-                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
-                    startLogin();
-                    return true;
-                } else {
-                    Log.i(TAG, "Logout has been selected");
-                    prepareLogOut();
-                }
+                return super.onOptionsItemSelected(item);
         }
-        return false;
     }
 
     //start the gallery Intent

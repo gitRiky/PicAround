@@ -360,7 +360,7 @@ public class PictureActivity extends AppCompatActivity {
                 finish();
                 return true;
             default:
-                return true;
+                return super.onOptionsItemSelected(item);
         }
     }
 
