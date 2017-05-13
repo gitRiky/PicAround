@@ -5,6 +5,10 @@
         android:id="@+id/profile"
         android:title="@string/profile"/>
     <item
+        android:id="@+id/delete_picture"
+        android:title="@string/delete"
+        android:visible="false" />
+    <item
         android:id="@+id/help"
         android:title="@string/help" />
     <item

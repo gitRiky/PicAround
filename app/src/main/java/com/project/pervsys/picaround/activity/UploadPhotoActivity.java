@@ -315,7 +315,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     Point toPut = new Point();
                     toPut.setLat(Double.parseDouble(mLatitude));
                     toPut.setLon(Double.parseDouble(mLongitude));
-
                     DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
                     DatabaseReference pushReference = databaseReference.child(POINTS).push();
                     mPointId = pushReference.getKey();
@@ -550,8 +549,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 picture.setId(id);
                 pushReference.setValue(picture);
 
-                databaseReference.child(POINTS).child(mPointId).child(PICTURES).push().setValue(picture);
-                databaseReference.child(USERS).child(mUserPushId).child(PICTURES).push().setValue(picture);
+                databaseReference.child(POINTS).child(mPointId).child(PICTURES).child(id).setValue(picture);
+                databaseReference.child(USERS).child(mUserPushId).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,

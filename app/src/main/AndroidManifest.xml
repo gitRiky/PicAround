@@ -76,7 +76,8 @@
             android:name=".activity.PickLocationActivity"
             android:label="@string/title_activity_pick_location" />
         <activity
-            android:name=".activity.PictureActivity"/>
+            android:name=".activity.PictureActivity"
+            android:parentActivityName=".activity.MapsActivity"/>
         <activity android:name=".activity.UserActivity"/>
         <activity
             android:name=".activity.ProfileActivity"
