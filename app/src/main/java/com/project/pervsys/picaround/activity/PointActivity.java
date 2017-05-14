@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -8,7 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -16,11 +15,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.GridLayout;
 import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -30,20 +25,17 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
-import com.project.pervsys.picaround.domain.Point;
-import com.project.pervsys.picaround.utility.Config;
-import com.squareup.picasso.Picasso;
 
-import java.util.HashMap;
+import static com.project.pervsys.picaround.utility.Config.*;
+
 import java.util.LinkedHashMap;
-import java.util.List;
 
 public class PointActivity extends AppCompatActivity {
 
     private static final String TAG = "PointActivity";
-    private static final String POINT_ID = "pointId";
-    private static final String PICTURE_ID = "pictureId";
+
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private DatabaseReference mDatabaseRef = null;
@@ -83,7 +75,7 @@ public class PointActivity extends AppCompatActivity {
         };
 
         Intent intent = getIntent();
-        String pointId = intent.getStringExtra(POINT_ID);
+        final String pointId = intent.getStringExtra(POINT_ID);
 
         final GridView pointPictures = (GridView) findViewById(R.id.point_pictures);
 
@@ -111,6 +103,8 @@ public class PointActivity extends AppCompatActivity {
                                 // Start PictureActivity
                                 Intent i = new Intent(PointActivity.this, PictureActivity.class);
                                 i.putExtra(PICTURE_ID, picture.getId());
+                                i.putExtra(USER_ID, picture.getUserId());
+                                i.putExtra(POINT_ID, pointId);
                                 startActivity(i);
                             }
                         });
@@ -150,16 +144,6 @@ public class PointActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.settings:
-                Log.i(TAG, "Settings has been selected");
-                Toast.makeText(this, "Selected settings", Toast.LENGTH_SHORT).show();
-                //Settings activity
-                return true;
-            case R.id.contact:
-                Log.i(TAG, "Contact has been selected");
-                Toast.makeText(this, "Selected contact", Toast.LENGTH_SHORT).show();
-                //Contact activity
-                return true;
             case R.id.help:
                 Log.i(TAG, "Help has been selected");
                 Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
@@ -172,19 +156,20 @@ public class PointActivity extends AppCompatActivity {
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
-                Toast.makeText(this, "Selected profile", Toast.LENGTH_SHORT).show();
-                //Profile activity
-                return true;
-            case R.id.search:
-                Log.i(TAG, "Search has been selected");
-                Toast.makeText(this, "Selected search", Toast.LENGTH_SHORT).show();
-                //Profile activity
+                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                        .getString(LOG_PREF_INFO, null);
+                if (logType != null && !logType.equals(NOT_LOGGED)){
+                    Intent i = new Intent(this, ProfileActivity.class);
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             default:
-                return true;
+                return onOptionsItemSelected(item);
         }
     }
 }

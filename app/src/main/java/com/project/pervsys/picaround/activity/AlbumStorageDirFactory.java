@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.os.Environment;
 
@@ -6,9 +6,6 @@ import java.io.File;
 
 import static android.os.Environment.getExternalStorageDirectory;
 
-/**
- * Created by federico on 27/03/17.
- */
 
 class AlbumStorageDirFactory {
 

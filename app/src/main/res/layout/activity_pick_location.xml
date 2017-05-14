@@ -4,12 +4,17 @@
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content" android:layout_height="wrap_content" >
+
+    <include layout="@layout/toolbar"
+        android:id="@+id/include_toolbar_pick_location"/>
+
     <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.project.pervsys.picaround.PickLocationActivity"/>
+        tools:context="com.project.pervsys.picaround.activity.PickLocationActivity"
+        android:layout_below="@id/include_toolbar_pick_location" />
 
     <ImageView
         android:id="@+id/marker_centered"
@@ -20,19 +25,15 @@
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 
-    <Button
+    <android.support.design.widget.FloatingActionButton
         android:id="@+id/pick_location_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:hint="@string/continue_mex" />
+        android:src="@drawable/com_facebook_button_like_icon_selected"
+        map:fabSize="normal"
+        map:layout_anchorGravity="bottom|right"
+        map:useCompatPadding="true" />
 
-    <Button
-        android:id="@+id/exit_button_from_pickloc"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:hint="@string/exit" />
 </RelativeLayout>

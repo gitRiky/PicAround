@@ -1,9 +1,7 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -25,24 +23,17 @@ import android.widget.Toast;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import com.project.pervsys.picaround.R;
+
+import static com.project.pervsys.picaround.utility.Config.*;
 
 import java.util.Calendar;
 
@@ -50,9 +41,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     private static final int MIN_AGE = 6;
     private final static int MAX_AGE = 95;
     private final static String TAG = "GetBasicInfoActivity";
-    private final static String USERS = "users";
-    private final static String USERNAME = "username";
-    private final static String DATE = "date";
+
     private GoogleApiClient mGoogleApiClient;
     private String month;
     private String date;
@@ -197,7 +186,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
 
         //query to database
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(USERS).orderByChild(USERNAME).equalTo(lowUsername)
+        databaseRef.child(USERNAMES).orderByValue().equalTo(lowUsername)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -211,7 +200,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                             //username not used
                             Log.i(TAG, "Username ok");
                             Intent i = getIntent();
-                            i.putExtra(USERNAME, username.toLowerCase());
+                            i.putExtra(USERNAME, username);
                             i.putExtra(DATE, date);
                             setResult(RESULT_OK, i);
                             Log.i(TAG, "Data sent to LoginActivity");
@@ -256,8 +245,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         if (Profile.getCurrentProfile() != null) {
             LoginManager.getInstance().logOut();
             Log.i(TAG, "Logout from Facebook");
-            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
             setResult(RESULT_CANCELED);
             finish();
         }
@@ -268,8 +257,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                     public void onResult(Status status) {
                         if (status.isSuccess()) {
                             Log.i(TAG, "Logout from Google");
-                            getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                    .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED).apply();
+                            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                             ApplicationClass.setGoogleApiClient(null);
                             setResult(RESULT_CANCELED);
                             finish();

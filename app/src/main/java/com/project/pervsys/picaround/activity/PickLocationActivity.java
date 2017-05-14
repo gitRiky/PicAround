@@ -1,12 +1,19 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
+import android.*;
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -15,32 +22,19 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.project.pervsys.picaround.R;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
+import static com.project.pervsys.picaround.utility.Config.PERMISSIONS_REQUEST_COARSE_LOCATION;
+import static com.project.pervsys.picaround.utility.Config.PERMISSIONS_REQUEST_FINE_LOCATION;
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
 
-public class PickLocationActivity extends FragmentActivity implements OnMapReadyCallback {
+public class PickLocationActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private Button mPickLocation;
-    private Button mExit;
+    private FloatingActionButton mPickLocation;
     private CameraPosition mCameraPosition;
 
-    Button.OnClickListener mExitListener =
-            new Button.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    handleExitPressed();
-                }
-            };
-
-
-    private void handleExitPressed() {
-        Intent i = new Intent();
-        setResult(RESULT_CANCELED, i);
-        finish();
-    }
 
     Button.OnClickListener mPickListener =
             new Button.OnClickListener() {
@@ -66,10 +60,19 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pick_location);
 
-        mPickLocation = (Button) findViewById(R.id.pick_location_button);
+        // Set toolbar
+        Toolbar toolbar = (Toolbar) findViewById(R.id.include_toolbar_pick_location);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(R.string.app_name);
 
-        mExit = (Button) findViewById(R.id.exit_button_from_pickloc);
-        mExit.setOnClickListener(mExitListener);
+        // Set status bar color
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            Window window = this.getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
+        }
+        mPickLocation = (FloatingActionButton) findViewById(R.id.pick_location_button);
 
         // Load map configurations, if available
         SharedPreferences settings = getSharedPreferences(SHARED_MAP_POSITION, 0);
@@ -106,18 +109,33 @@ public class PickLocationActivity extends FragmentActivity implements OnMapReady
         if (mCameraPosition != null)
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this,
+//                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+//                    PERMISSIONS_REQUEST_FINE_LOCATION);
+//            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+//                ActivityCompat.requestPermissions(this,
+//                        new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
+//                        PERMISSIONS_REQUEST_COARSE_LOCATION);
+//            }
+            mMap.setMyLocationEnabled(true);
         }
-        mMap.setMyLocationEnabled(true);
 
         mPickLocation.setOnClickListener(mPickListener);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) throws SecurityException{
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    mMap.setMyLocationEnabled(true);
+                }
+            }
+        }
     }
 }

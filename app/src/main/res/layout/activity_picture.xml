@@ -101,7 +101,7 @@
             android:layout_below="@id/views_likes"
             android:gravity="center"
             android:textSize="18sp"
-            android:visibility="invisible"/>
+            android:visibility="visible"/>
 
         <ImageButton
             android:id="@+id/like_button"
@@ -111,7 +111,6 @@
             android:layout_marginTop="20dp"
             android:layout_centerHorizontal="true"
             android:background="@color/transparent"
-            android:visibility="invisible"
             android:tint="@color/secondary_text_black"
             android:src="@drawable/ic_thumb_up_black_36dp"/>
 

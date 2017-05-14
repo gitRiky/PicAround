@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
 import android.net.Uri;
@@ -25,16 +25,8 @@ import com.project.pervsys.picaround.domain.Point;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
-import static com.project.pervsys.picaround.utility.Config.NUM_COLUMN_INFOWINDOW;
-import static com.project.pervsys.picaround.utility.Config.PICTURES;
-import static com.project.pervsys.picaround.utility.Config.POINTS;
-import static com.project.pervsys.picaround.utility.Config.POPULARITY;
-import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
-import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
+import static com.project.pervsys.picaround.utility.Config.*;
 
-/**
- * Created by federico on 20/04/17.
- */
 
 public class InfoWindowView extends GridLayout {
 
@@ -74,7 +66,7 @@ public class InfoWindowView extends GridLayout {
                     Picture picture = photoSnap.getValue(Picture.class);
                     String pictureName = picture.getName();
                     // TODO: removed thumbnails feature
-                    String thumbnailName = /*THUMB_PREFIX +*/ pictureName;
+                    String thumbnailName = THUMB_PREFIX + pictureName;
                     FirebaseStorage storage = FirebaseStorage.getInstance();
                     StorageReference pathReference = storage.getReference().child(thumbnailName);
                     Log.i(TAG, "storageRef=" + pathReference);
@@ -119,6 +111,8 @@ class MarkerCallback implements Callback {
     private int counter;
     private Context context;
 
+    private static final int WAIT_FOR_RELOAD_INFO_WINDOW = 250;
+
     MarkerCallback(Marker marker, Context context) {
         this.marker=marker;
         this.counter = THUMBNAILS_NUMBER;
@@ -137,6 +131,11 @@ class MarkerCallback implements Callback {
         if (counter == 0 && marker != null && marker.isInfoWindowShown()) {
             //Toast.makeText(context, "Picasso callback done", Toast.LENGTH_SHORT).show();
             marker.hideInfoWindow();
+            try {
+                Thread.sleep(WAIT_FOR_RELOAD_INFO_WINDOW);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             marker.showInfoWindow();
         }
     }

@@ -1,18 +1,16 @@
-package com.project.pervsys.picaround;
+package com.project.pervsys.picaround.activity;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -31,7 +29,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -50,25 +47,23 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
+import static com.project.pervsys.picaround.utility.Config.*;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URI;
+import java.net.URL;
+
 public class LoginActivity extends AppCompatActivity {
 
-    private static final int RC_SIGN_IN = 1;
-    private static final int RC_LINK = 2;
-    private static final int RC_GET_INFO_FB = 3;
-    private static final int RC_GET_INFO_GOOGLE = 4;
-    private static final String EMAIL = "email";
+
     private static final String FIELDS = "fields";
     private static final String NEEDED_FB_INFO = "name,email";
     private static final String TAG = "LoginActivity";
-    private static final String USERS = "users";
-    private static final String USERNAME = "username";
-    private static final String DATE = "date";
+
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
@@ -80,8 +75,9 @@ public class LoginActivity extends AppCompatActivity {
     private LoginResult loginRes;
     private boolean firstLog;
     private User newUser;
-    private String username;
-    private String date;
+    private String mUsername;
+    private String mDate;
+    private DatabaseReference mDatabaseRef;
     private GoogleSignInAccount acct;
 
     @Override
@@ -94,22 +90,18 @@ public class LoginActivity extends AppCompatActivity {
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
             ApplicationClass.setAlreadyEnabledPersistence(true);
         }
+
+        mDatabaseRef = FirebaseDatabase.getInstance().getReference();
+        mDatabaseRef.child(USERS).keepSynced(true);
+
         if (Profile.getCurrentProfile() == null){
              /* FACEBOOK LOGIN */
             setUpFbLogin();
             /* GOOGLE LOGIN */
             setUpGoogleLogin();
         }
-        //else we are logged with Facebook
-        else {
-            setLogged(Config.FB_LOGGED);
-            Log.i(TAG, "Logged with Facebook");
-            Intent i = new Intent(getApplicationContext(), MapsActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-            i.putExtra("alreadyRegistered", true);
-            startActivity(i);
-        }
-
+        else
+            startProgressBar();
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -130,17 +122,25 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     public void onStart(){
         super.onStart();
-
-        //silent Google sign-in
         mAuth.addAuthStateListener(mAuthListener);
-        String logged = getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
-                .getString(Config.LOG_PREF_INFO,null);
-        if(logged == null){
-            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
-                    .silentSignIn(mGoogleApiClient);
-            if (opr.isDone()) {
-                GoogleSignInResult result = opr.get();
-                handleSignInResult(result);
+
+        //already logged with facebook
+        if (Profile.getCurrentProfile() != null){
+            setLogged(FB_LOGGED);
+            Log.i(TAG, "Logged with Facebook");
+            handleFacebookAccessToken(AccessToken.getCurrentAccessToken());
+        }
+        else {
+            //silent Google sign-in
+            String logged = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                    .getString(LOG_PREF_INFO, null);
+            if (logged == null) {
+                OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
+                        .silentSignIn(mGoogleApiClient);
+                if (opr.isDone()) {
+                    GoogleSignInResult result = opr.get();
+                    handleSignInResult(result);
+                }
             }
         }
     }
@@ -156,16 +156,12 @@ public class LoginActivity extends AppCompatActivity {
     public void onClick(View view){
         int id = view.getId();
         switch (id){
-//            case R.id.fb_fake:
-//                loginButton.performClick();
-//                break;
             case R.id.no_login:
-                setLogged(Config.NOT_LOGGED);
+                setLogged(NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
                 Intent i = new Intent(getApplicationContext(), MapsActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
-
         }
     }
 
@@ -217,8 +213,8 @@ public class LoginActivity extends AppCompatActivity {
                 //return from GetBasicInfoActivity
                 if (resultCode == RESULT_OK) {
                     startProgressBar();
-                    username = data.getStringExtra(USERNAME);
-                    date = data.getStringExtra(DATE);
+                    mUsername = data.getStringExtra(USERNAME);
+                    mDate = data.getStringExtra(DATE);
                     if (loginRes != null)
                         handleFacebookAccessToken(loginRes.getAccessToken());
                     else
@@ -230,8 +226,8 @@ public class LoginActivity extends AppCompatActivity {
             case RC_GET_INFO_GOOGLE:
                 if (resultCode == RESULT_OK){
                     startProgressBar();
-                    username = data.getStringExtra(USERNAME);
-                    date = data.getStringExtra(DATE);
+                    mUsername = data.getStringExtra(USERNAME);
+                    mDate = data.getStringExtra(DATE);
                     firebaseAuthWithGoogle(acct);
                 }
                 else
@@ -253,7 +249,7 @@ public class LoginActivity extends AppCompatActivity {
             acct = result.getSignInAccount();
             checkEmailGoogle(acct);
             Log.i(TAG, "Logged with Google");
-            setLogged(Config.GOOGLE_LOGGED);
+            setLogged(GOOGLE_LOGGED);
         } else {
             Toast.makeText(this, R.string.auth_error, Toast.LENGTH_LONG).show();
         }
@@ -280,7 +276,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 startProgressBar();
                 Log.i(TAG, "Logged with Facebook");
-                setLogged(Config.FB_LOGGED);
+                setLogged(FB_LOGGED);
                 loginRes = loginResult;
                 //Here we have access to the public profile and the email
                 //We can make a GraphRequest for obtaining information (specified in parameters)
@@ -322,9 +318,8 @@ public class LoginActivity extends AppCompatActivity {
 
 
     private void checkEmailFb(final AccessToken token){
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
         //String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(facebookEmail)
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(facebookEmail)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -354,8 +349,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void checkEmailGoogle(final GoogleSignInAccount acct){
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
+        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(acct.getEmail())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -423,12 +417,12 @@ public class LoginActivity extends AppCompatActivity {
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
                                 Profile profile = Profile.getCurrentProfile();
-                                newUser = new User(username, facebookEmail, profile.getFirstName(),
-                                        profile.getLastName(), date,
+                                newUser = new User(mUsername, facebookEmail, profile.getFirstName(),
+                                        profile.getLastName(), mDate,
                                         profile.getProfilePictureUri(100,100).toString(),
                                         mAuth.getCurrentUser().getUid());
-                                DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-                                databaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERNAMES).push().setValue(mUsername.toLowerCase());
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
@@ -469,9 +463,9 @@ public class LoginActivity extends AppCompatActivity {
                             public void onResult(Status status) {
                                 if (status.isSuccess()) {
                                     Log.i(TAG, "Logout from the wrong Google account");
-                                    getSharedPreferences(Config.LOG_PREFERENCES, MODE_PRIVATE)
+                                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
                                             .edit()
-                                            .putString(Config.LOG_PREF_INFO, Config.NOT_LOGGED)
+                                            .putString(LOG_PREF_INFO, NOT_LOGGED)
                                             .apply();
                                     ApplicationClass.setGoogleApiClient(null);
                                 } else
@@ -507,12 +501,12 @@ public class LoginActivity extends AppCompatActivity {
                         else{
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
-                                newUser = new User(username, acct.getEmail(), acct.getGivenName(),
-                                        acct.getFamilyName(), date,
+                                newUser = new User(mUsername, acct.getEmail(), acct.getGivenName(),
+                                        acct.getFamilyName(), mDate,
                                         acct.getPhotoUrl().toString(),
                                         mAuth.getCurrentUser().getUid());
-                                DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-                                databaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERS).push().setValue(newUser);
+                                mDatabaseRef.child(USERNAMES).push().setValue(mUsername.toLowerCase());
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
@@ -583,14 +577,27 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setLogged(String type){
-        SharedPreferences settings = getSharedPreferences(Config.LOG_PREFERENCES,0);
+        SharedPreferences settings = getSharedPreferences(LOG_PREFERENCES,0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putString(Config.LOG_PREF_INFO, type);
+        editor.putString(LOG_PREF_INFO, type);
         editor.apply();
     }
 
     private void startMain(){
         Intent i = new Intent(this, MapsActivity.class);
+        if (firstLog) {
+            i.putExtra(USERNAME, mUsername);
+            String log = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
+                    .getString(LOG_PREF_INFO, null);
+            if (log.equals(GOOGLE_LOGGED)) {
+                i.putExtra(PROFILE_PICTURE, acct.getPhotoUrl().toString());
+            }
+            else {
+                i.putExtra(PROFILE_PICTURE,
+                        Profile.getCurrentProfile().getProfilePictureUri(100, 100).toString());
+            }
+        }
+        Log.d(TAG, "First log = " + firstLog);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
     }
