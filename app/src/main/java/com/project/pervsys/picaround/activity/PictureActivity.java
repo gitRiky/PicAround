@@ -2,7 +2,6 @@ package com.project.pervsys.picaround.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
@@ -23,7 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -163,8 +161,6 @@ public class PictureActivity extends AppCompatActivity {
 
                             if (mUser != null){
                                 if(!mViewsList.containsValue(mUser.getUid())) {
-                                    mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST).push()
-                                            .setValue(mUser.getUid());
                                     mViewsNumber++;
                                     increasedViews = true;
                                     increaseViews();
@@ -251,8 +247,12 @@ public class PictureActivity extends AppCompatActivity {
         });
     }
 
-    private void increaseViews(){
-        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+
+
+    private void increaseViews() {
+        mDatabaseRef.child(POINTS).child(mPointId)
+                .child(PICTURES).child(mPictureId)
+                .runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(final MutableData mutableData) {
                 Picture picture = mutableData.getValue(Picture.class);
@@ -262,8 +262,15 @@ public class PictureActivity extends AppCompatActivity {
                 int views = picture.getViews();
                 //increase it by one
                 picture.setViews(views + 1);
+                //add the userId to views list
+                picture.addView(mUser.getUid());
                 //store the new views value to db
                 mutableData.setValue(picture);
+                mDatabaseRef.child(USERS)
+                        .child(mUser.getUid())
+                        .child(PICTURES)
+                        .child(mPictureId)
+                        .setValue(picture);
                 //add the id to viewsList
                 return Transaction.success(mutableData);
             }
@@ -448,7 +455,9 @@ public class PictureActivity extends AppCompatActivity {
 
 
     private void updatePopularity(){
-        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+        mDatabaseRef.child(POINTS).child(mPointId)
+                .child(PICTURES).child(mPictureId)
+                .runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(MutableData mutableData) {
                 Picture picture = mutableData.getValue(Picture.class);
@@ -465,6 +474,11 @@ public class PictureActivity extends AppCompatActivity {
                     popularity = 0;
                 picture.setPopularity(1 - popularity);
                 mutableData.setValue(picture);
+                mDatabaseRef.child(USERS)
+                        .child(mUser.getUid())
+                        .child(PICTURES)
+                        .child(mPictureId)
+                        .setValue(picture);
                 return Transaction.success(mutableData);
             }
 
@@ -475,8 +489,11 @@ public class PictureActivity extends AppCompatActivity {
         });
     }
 
+
     private void updateLikes(){
-        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+        mDatabaseRef.child(POINTS).child(mPointId)
+                .child(PICTURES).child(mPictureId)
+                .runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(MutableData mutableData) {
                 Picture picture = mutableData.getValue(Picture.class);
@@ -495,6 +512,11 @@ public class PictureActivity extends AppCompatActivity {
                     picture.removeLike(mUser.getUid());
                 }
                 mutableData.setValue(picture);
+                mDatabaseRef.child(USERS)
+                        .child(mUser.getUid())
+                        .child(PICTURES)
+                        .child(mPictureId)
+                        .setValue(picture);
                 return Transaction.success(mutableData);
             }
 

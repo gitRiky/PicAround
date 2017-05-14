@@ -160,6 +160,14 @@ public class Picture {
         return likesList;
     }
 
+    public void addView(String id){
+        if (viewsList == null)
+            viewsList = new HashMap<>();
+        viewsList.put(id, id);
+    }
+
+
+
     public void setLikesList(HashMap<String, String> likesList) {
         this.likesList = likesList;
     }
