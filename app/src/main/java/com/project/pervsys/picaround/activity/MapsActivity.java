@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Paint;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -29,15 +30,27 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.GridLayout;
+import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.Query;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.R;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
@@ -67,6 +80,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -75,6 +89,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.localDatabase.DBManager;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
+import com.squareup.picasso.Picasso;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -82,6 +98,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
@@ -102,6 +119,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ProgressDialog progress;
     private GoogleMap mMap;
     private ImageView mImageView;
+    private SlidingUpPanelLayout mSlidingUpPanel;
 //    private MaterialSearchView mSearchView;
     private DBManager mDbManager;
 
@@ -324,6 +342,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 //            }
 //        });
 
+        // Set the Sliding up panel
+        setSlidingUpPanel();
+
         // Set file settings
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
 
@@ -381,12 +402,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 .build();                   // Creates a CameraPosition from the builder
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
 
+    private void setSlidingUpPanel() {
+        mSlidingUpPanel = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+    }
+  
     private void getProfileInfo() {
         String email = mUser.getEmail();
         mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
@@ -489,13 +514,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "Permission given");
 
+                    setupGPS(this);
                     mProvider = mLocationManager.getBestProvider(new Criteria(), true);
-                    if (mProvider != null) {
-                        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
-                        mMap.setMyLocationEnabled(true);
-                        setupGPS(this);
-                    }
+                    mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+                    mMap.setMyLocationEnabled(true);
                 }
             }
             break;
@@ -680,20 +704,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            Log.i(TAG, "Permission asked");
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_FINE_LOCATION);
-            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        PERMISSIONS_REQUEST_COARSE_LOCATION);
-            }
         }
         else{
+            Log.i(TAG, "Permission not asked");
+            setupGPS(this);
             mProvider = mLocationManager.getBestProvider(new Criteria(), true);
             mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
             mMap.setMyLocationEnabled(true);
-            setupGPS(this);
             location = mLocationManager.getLastKnownLocation(mProvider);
         }
 
@@ -790,6 +811,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
+        // Show the sliding panel
+        Point point = (Point) marker.getTag();
+        populateSlidingPanel(marker, this);
+        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+        TextView tv = (TextView) findViewById(R.id.marker_details);
+        tv.setText(point.getLat() + "  " + point.getLon());
+
         // Calculate required horizontal shift for current screen density
         final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
         // Calculate required vertical shift for current screen density
@@ -805,17 +833,68 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
         marker.showInfoWindow();
-
         return true;
+    }
+
+    private void populateSlidingPanel(Marker marker, final Context context) {
+
+        Point point = (Point) marker.getTag();
+
+        final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
+        final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
+
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child(POINTS).keepSynced(true);
+
+        Query photos;
+        photos = databaseRef.child(POINTS).child(point.getId()).child(PICTURES)
+                .orderByChild(POPULARITY);
+
+        photos.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                for (DataSnapshot photoSnap : dataSnapshot.getChildren()) {
+                    for (DataSnapshot picture : dataSnapshot.getChildren()) {
+                        Picture pic = picture.getValue(Picture.class);
+                        pictures.put(picture.getKey(), pic);
+                    }
+
+                    ImageAdapter adapter = new ImageAdapter(context, pictures);
+                    pointPictures.setAdapter(adapter);
+                    pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                            Picture picture = (Picture) adapterView.getItemAtPosition(position);
+
+                            Log.i(TAG, "Picture: " + picture);
+
+                            // Start PictureActivity
+                            Intent i = new Intent(context, PictureActivity.class);
+                            i.putExtra(PICTURE_ID, picture.getId());
+                            startActivity(i);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // TODO: what to do here?
+            }
+        });
     }
 
     @Override
     public void onInfoWindowClick(Marker marker) {
+        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+        /*
         // Start PointActivity
         Point point = (Point) marker.getTag();
         Intent i = new Intent(this, PointActivity.class);
         i.putExtra(POINT_ID, point.getId());
         startActivity(i);
+        */
     }
 
     @Override
@@ -825,7 +904,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-
         Point point = (Point) marker.getTag();
         if(mInfoWindow != null && mLastPoint.equals(point)) {
             View toReturn = mInfoWindow;
@@ -1011,6 +1089,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 //        else if (mSearchView.isSearchOpen()) {
 //            mSearchView.closeSearch();
 //        }
+        else if (mSlidingUpPanel != null &&
+                (mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED ||
+                        mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED)
+                ) {
+            mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+        }
         else  {
             super.onBackPressed();
         }
