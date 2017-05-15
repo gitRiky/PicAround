@@ -29,7 +29,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -46,7 +45,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
@@ -86,7 +84,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private String mLatitude;
     private String profilePicture;
     private String mLongitude;
-    private String mPointId;
+    private String mPlaceId;
     private NotificationManager mNotifyManager;
     private NotificationCompat.Builder mBuilder;
     private int orientation;
@@ -316,9 +314,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     toPut.setLat(Double.parseDouble(mLatitude));
                     toPut.setLon(Double.parseDouble(mLongitude));
                     DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                    DatabaseReference pushReference = databaseReference.child(POINTS).push();
-                    mPointId = pushReference.getKey();
-                    toPut.setId(mPointId);
+                    DatabaseReference pushReference = databaseReference.child(PLACES).push();
+                    mPlaceId = pushReference.getKey();
+                    toPut.setId(mPlaceId);
                     pushReference.setValue(toPut);
 
                     //save the image as username_timestamp
@@ -549,7 +547,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 picture.setId(id);
                 pushReference.setValue(picture);
 
-                databaseReference.child(POINTS).child(mPointId).child(PICTURES).child(id).setValue(picture);
+                databaseReference.child(PLACES).child(mPlaceId).child(PICTURE).child(id).setValue(picture);
                 databaseReference.child(USERS).child(mUserPushId).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
