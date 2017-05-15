@@ -247,8 +247,6 @@ public class PictureActivity extends AppCompatActivity {
         });
     }
 
-
-
     private void increaseViews() {
         mDatabaseRef.child(POINTS).child(mPointId)
                 .child(PICTURES).child(mPictureId)
