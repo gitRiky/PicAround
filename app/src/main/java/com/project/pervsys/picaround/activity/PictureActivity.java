@@ -3,6 +3,7 @@ package com.project.pervsys.picaround.activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -30,6 +31,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
@@ -63,6 +66,8 @@ public class PictureActivity extends AppCompatActivity {
     private ImageButton mLikeButton;
     private ImageView mPictureView;
     private ImageView mUserIcon;
+    private String mOwnerId;
+    private String mPointId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,7 +114,8 @@ public class PictureActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         mPictureId = intent.getStringExtra(PICTURE_ID);
-
+        mOwnerId = intent.getStringExtra(USER_ID);
+        mPointId = intent.getStringExtra(POINT_ID);
         createView();
     }
 
@@ -155,8 +161,6 @@ public class PictureActivity extends AppCompatActivity {
 
                             if (mUser != null){
                                 if(!mViewsList.containsValue(mUser.getUid())) {
-                                    mDatabaseRef.child(PICTURES).child(mPictureId).child(VIEWS_LIST).push()
-                                            .setValue(mUser.getUid());
                                     mViewsNumber++;
                                     increasedViews = true;
                                     increaseViews();
@@ -243,8 +247,12 @@ public class PictureActivity extends AppCompatActivity {
         });
     }
 
-    private void increaseViews(){
-        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+
+
+    private void increaseViews() {
+        mDatabaseRef.child(POINTS).child(mPointId)
+                .child(PICTURES).child(mPictureId)
+                .runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(final MutableData mutableData) {
                 Picture picture = mutableData.getValue(Picture.class);
@@ -254,10 +262,16 @@ public class PictureActivity extends AppCompatActivity {
                 int views = picture.getViews();
                 //increase it by one
                 picture.setViews(views + 1);
+                //add the userId to views list
+                picture.addView(mUser.getUid());
                 //store the new views value to db
                 mutableData.setValue(picture);
+                mDatabaseRef.child(USERS)
+                        .child(mUser.getUid())
+                        .child(PICTURES)
+                        .child(mPictureId)
+                        .setValue(picture);
                 //add the id to viewsList
-                //mutableData.child(VIEWS_LIST).setValue(mUser);
                 return Transaction.success(mutableData);
             }
 
@@ -312,6 +326,12 @@ public class PictureActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
+
+        //if the picture has been uploaded by the user, then can be deleted by him
+        if (mUser != null) {
+            if (mUser.getUid().equals(mOwnerId))
+                menu.findItem(R.id.delete_picture).setVisible(true);
+        }
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -319,6 +339,9 @@ public class PictureActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+            case R.id.delete_picture:
+                startDeleteDialog();
+                return true;
             case R.id.help:
                 Log.i(TAG, "Help has been selected");
                 Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
@@ -340,13 +363,29 @@ public class PictureActivity extends AppCompatActivity {
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
-
             case android.R.id.home:
                 finish();
                 return true;
             default:
-                return true;
+                return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void startDeleteDialog() {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(PictureActivity.this)
+                .setTitle(R.string.delete_picture)
+                .setMessage(R.string.delete_picture_message)
+                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Log.i(TAG, "The current picture will be removed");
+                        deletePicture();
+                    }
+                }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //do nothing
+                    }
+                });
+        dialog.show();
     }
 
     @Override
@@ -367,8 +406,58 @@ public class PictureActivity extends AppCompatActivity {
     }
 
 
+    private void deletePicture(){
+
+        //delete picture in points
+        DatabaseReference pointsRef = mDatabaseRef.child(POINTS);
+        pointsRef.child(mPointId).child(PICTURES).child(mPictureId).setValue(null);
+
+        //delete picture in user
+        DatabaseReference usersRef = mDatabaseRef.child(USERS);
+        /* in case of users key = firebase auth id
+           usersRef.child(mOwnerId).child(PICTURES).child(mPictureId).setValue(null);
+         */
+        usersRef.orderByChild(ID).equalTo(mOwnerId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for(DataSnapshot usersSnap : dataSnapshot.getChildren()){
+                            String userId = usersSnap.getKey();
+                            DatabaseReference picUserRef = mDatabaseRef.child(USERS)
+                                    .child(userId)
+                                    .child(PICTURES);
+                            picUserRef.child(mPictureId).setValue(null);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        Log.e(TAG, "Error deleting picture's ref from Users");
+                    }
+                });
+
+        //delete picture in pictures
+        DatabaseReference picturesRef = mDatabaseRef.child(PICTURES);
+        picturesRef.child(mPictureId).setValue(null);
+
+        //delete picture from the storage
+        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+        String picName = mPicture.getName();
+        storageReference.child(picName).delete();
+        storageReference.child(THUMB_PREFIX + picName).delete();
+        Log.i(TAG, "Image deleted");
+        Toast.makeText(this, getString(R.string.delete_picture_ok),
+                Toast.LENGTH_LONG).show();
+
+        //start the mapsActivity
+        NavUtils.navigateUpFromSameTask(this);
+    }
+
+
     private void updatePopularity(){
-        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+        mDatabaseRef.child(POINTS).child(mPointId)
+                .child(PICTURES).child(mPictureId)
+                .runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(MutableData mutableData) {
                 Picture picture = mutableData.getValue(Picture.class);
@@ -385,6 +474,11 @@ public class PictureActivity extends AppCompatActivity {
                     popularity = 0;
                 picture.setPopularity(1 - popularity);
                 mutableData.setValue(picture);
+                mDatabaseRef.child(USERS)
+                        .child(mUser.getUid())
+                        .child(PICTURES)
+                        .child(mPictureId)
+                        .setValue(picture);
                 return Transaction.success(mutableData);
             }
 
@@ -395,8 +489,11 @@ public class PictureActivity extends AppCompatActivity {
         });
     }
 
+
     private void updateLikes(){
-        mDatabaseRef.child(PICTURES).child(mPictureId).runTransaction(new Transaction.Handler() {
+        mDatabaseRef.child(POINTS).child(mPointId)
+                .child(PICTURES).child(mPictureId)
+                .runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(MutableData mutableData) {
                 Picture picture = mutableData.getValue(Picture.class);
@@ -415,6 +512,11 @@ public class PictureActivity extends AppCompatActivity {
                     picture.removeLike(mUser.getUid());
                 }
                 mutableData.setValue(picture);
+                mDatabaseRef.child(USERS)
+                        .child(mUser.getUid())
+                        .child(PICTURES)
+                        .child(mPictureId)
+                        .setValue(picture);
                 return Transaction.success(mutableData);
             }
 

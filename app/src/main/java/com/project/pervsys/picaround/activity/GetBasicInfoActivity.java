@@ -186,7 +186,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
 
         //query to database
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(USERS).orderByChild(USERNAME).equalTo(lowUsername)
+        databaseRef.child(USERNAMES).orderByValue().equalTo(lowUsername)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -200,7 +200,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                             //username not used
                             Log.i(TAG, "Username ok");
                             Intent i = getIntent();
-                            i.putExtra(USERNAME, username.toLowerCase());
+                            i.putExtra(USERNAME, username);
                             i.putExtra(DATE, date);
                             setResult(RESULT_OK, i);
                             Log.i(TAG, "Data sent to LoginActivity");

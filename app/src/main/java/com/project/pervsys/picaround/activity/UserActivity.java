@@ -154,7 +154,7 @@ public class UserActivity extends AppCompatActivity {
                 finish();
                 return true;
             default:
-                return true;
+                return onOptionsItemSelected(item);
         }
     }
 

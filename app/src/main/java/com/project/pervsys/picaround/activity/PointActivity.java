@@ -75,7 +75,7 @@ public class PointActivity extends AppCompatActivity {
         };
 
         Intent intent = getIntent();
-        String pointId = intent.getStringExtra(POINT_ID);
+        final String pointId = intent.getStringExtra(POINT_ID);
 
         final GridView pointPictures = (GridView) findViewById(R.id.point_pictures);
 
@@ -103,6 +103,8 @@ public class PointActivity extends AppCompatActivity {
                                 // Start PictureActivity
                                 Intent i = new Intent(PointActivity.this, PictureActivity.class);
                                 i.putExtra(PICTURE_ID, picture.getId());
+                                i.putExtra(USER_ID, picture.getUserId());
+                                i.putExtra(POINT_ID, pointId);
                                 startActivity(i);
                             }
                         });
@@ -167,7 +169,7 @@ public class PointActivity extends AppCompatActivity {
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             default:
-                return true;
+                return onOptionsItemSelected(item);
         }
     }
 }

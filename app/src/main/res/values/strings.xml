@@ -93,5 +93,9 @@
     <string name="age_field">Age:</string>
     <string name="email_field">Email:</string>
     <string name="search_user">Search user</string>
+    <string name="delete">Delete</string>
+    <string name="delete_picture">Delete picture</string>
+    <string name="delete_picture_message">Are you sure that you want to delete this picture?</string>
+    <string name="delete_picture_ok">The picture has been successfully deleted!</string>
 
 </resources>
