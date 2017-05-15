@@ -835,7 +835,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         Query photos;
         photos = databaseRef.child(POINTS).child(point.getId()).child(PICTURES)
-                .orderByChild(POPULARITY).limitToFirst(THUMBNAILS_NUMBER);
+                .orderByChild(POPULARITY);
 
         photos.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
