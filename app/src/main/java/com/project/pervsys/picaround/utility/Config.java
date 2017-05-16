@@ -34,6 +34,8 @@ public class Config {
     public static final int THUMBNAILS_NUMBER = 6;
     public static final int NUM_COLUMN_INFOWINDOW = 3;
     public static final String THUMB_PREFIX = "thumb_";
+    public static final String INTERM_PREFIX = "small_";
+
 
 
     public static final int RC_SIGN_IN = 1;

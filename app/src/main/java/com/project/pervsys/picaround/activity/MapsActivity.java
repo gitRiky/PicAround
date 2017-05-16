@@ -413,8 +413,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
   
     private void getProfileInfo() {
-        String email = mUser.getEmail();
-        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+        mDatabaseRef.child(USERS).orderByKey().equalTo(mUser.getUid())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -838,7 +837,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populateSlidingPanel(Marker marker, final Context context) {
 
-        Point point = (Point) marker.getTag();
+        final Point point = (Point) marker.getTag();
 
         final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
         final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
@@ -872,6 +871,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             // Start PictureActivity
                             Intent i = new Intent(context, PictureActivity.class);
                             i.putExtra(PICTURE_ID, picture.getId());
+                            i.putExtra(USER_ID, picture.getUserId());
+                            i.putExtra(POINT_ID, point.getId());
                             startActivity(i);
                         }
                     });
