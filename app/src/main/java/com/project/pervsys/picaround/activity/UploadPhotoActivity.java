@@ -132,7 +132,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
             }
         };
         mUser = mAuth.getCurrentUser();
-        mUserPushId = mUser.getUid();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         mUsername = getIntent().getStringExtra(USERNAME);

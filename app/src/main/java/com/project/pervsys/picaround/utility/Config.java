@@ -13,7 +13,6 @@ public class Config {
     public static final String USERS = "users";
     public static final String DATE = "date";
     public static final String PICTURES = "pictures";
-    public static final String PICTURE = "picture";
     public static final String LATITUDE = "latitude";
     public static final Double DEFAULT_LAT = 100000.0;
     public static final Double DEFAULT_LNG = 100000.0;
@@ -32,7 +31,6 @@ public class Config {
     public static final String PROFILE_PICTURE = "profilePicture";
     public static final String USERNAME = "username";
     public static final String USERNAMES = "usernames";
-    public static final String PLACES = "places";
     public static final String PICTURE = "picture";
     public static final int THUMBNAILS_NUMBER = 6;
     public static final int NUM_COLUMN_INFOWINDOW = 3;

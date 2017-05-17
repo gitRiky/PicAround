@@ -1145,6 +1145,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
         else if (mSearchView.isSearchOpen()) {
             mSearchView.closeSearch();
+        }
         else if (mSlidingUpPanel != null &&
                 (mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED ||
                         mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED)

@@ -72,10 +72,6 @@ public class Picture implements Parcelable {
         return description;
     }
 
-    public boolean isInPlace(){
-        return inPlace;
-    }
-
     public void setDescription(String description) {
         this.description = description;
     }
@@ -150,14 +146,6 @@ public class Picture implements Parcelable {
 
     public void setPlace(Place place) {
         this.place = place;
-    }
-
-    public String getPointId() {
-        return pointId;
-    }
-
-    public void setPointId(String pointId) {
-        this.pointId = pointId;
     }
 
     public String getUserIcon() {
