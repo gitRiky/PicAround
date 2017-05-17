@@ -76,7 +76,14 @@
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:parentActivityName=".activity.MapsActivity" />
-        <activity android:name=".activity.UploadPhotoActivity" />
+        <activity
+            android:name=".activity.UploadPhotoActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".activity.PickLocationActivity"
             android:label="@string/title_activity_pick_location" />

@@ -27,17 +27,20 @@ public class Picture implements Parcelable {
     private HashMap<String,String> likesList;
     private HashMap<String,String> viewsList;
 
+
     public Picture(){
         // Default constructor required for calls to DataSnapshot.getValue(Picture.class)
     }
 
-    public Picture(String name, String description, String path, String userId, String username, String userIcon){
+    public Picture(String name, String description, String path, String userId, String username, String userIcon, String pointId){
+
         this.name = name;
         this.description = description;
         this.path = path;
         this.userId = userId;
         this.username = username;
         this.userIcon = userIcon;
+        this.pointId = pointId;
         this.inPlace = true;
     }
 
@@ -47,6 +50,14 @@ public class Picture implements Parcelable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setPointId(String pointId){
+        this.pointId = pointId;
+    }
+
+    public String getPointId(){
+        return pointId;
     }
 
     public String getName() {
@@ -59,6 +70,10 @@ public class Picture implements Parcelable {
 
     public String getDescription() {
         return description;
+    }
+
+    public boolean isInPlace(){
+        return inPlace;
     }
 
     public void setDescription(String description) {

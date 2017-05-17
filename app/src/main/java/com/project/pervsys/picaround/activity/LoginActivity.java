@@ -79,6 +79,8 @@ public class LoginActivity extends AppCompatActivity {
     private User newUser;
     private String mUsername;
     private String mDate;
+    private FirebaseUser mUser;
+    private String mUserId;
     private DatabaseReference mDatabaseRef;
     private GoogleSignInAccount acct;
 
