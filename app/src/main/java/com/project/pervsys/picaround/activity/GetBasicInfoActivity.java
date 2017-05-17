@@ -150,7 +150,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         switch(id){
             case R.id.confirm:
                 EditText usernameField = (EditText) findViewById(R.id.username);
-                String username = usernameField.getText().toString();
+                String username = usernameField.getText().toString().toLowerCase();
                 Spinner daySpin = (Spinner) findViewById(R.id.spinner);
                 Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
                 String day = daySpin.getSelectedItem().toString();

@@ -68,7 +68,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_HOR_LEFT = 3;
     private static final int PIC_VER_TOP = 6;
     private static final int PIC_VER_BOTTOM = 8;
-    private static final int COMPRESSION_QUALITY = 65;
+    private static final int COMPRESSION_QUALITY = 25;
     private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
 
 
@@ -134,6 +134,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
             }
         };
         mUser = mAuth.getCurrentUser();
+        mUserPushId = mUser.getUid();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         mUsername = getIntent().getStringExtra(USERNAME);
@@ -144,22 +145,24 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUser.getUid())
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
+//        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUser.getUid())
+//                .addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(DataSnapshot dataSnapshot) {
+//
+//                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+//                            mUserPushId = userSnap.getKey();
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onCancelled(DatabaseError databaseError) {
+//                        //database error, e.g. permission denied (not logged with Firebase)
+//                        Log.e(TAG, databaseError.toString());
+//                    }
+//                });
 
-                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
-                            mUserPushId = userSnap.getKey();
-                        }
-                    }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
 
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
@@ -529,7 +532,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         //TODO: remove this if no check is needed
         return true;
     }
-
 
     private void getPath(){
 

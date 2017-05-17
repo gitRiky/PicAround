@@ -1,10 +1,13 @@
 package com.project.pervsys.picaround.domain;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Picture {
+public class Picture implements Parcelable {
 
     private String id;
     private String name;
@@ -19,6 +22,8 @@ public class Picture {
     private String username;
     private String userIcon;
     private Place place;
+    private String pointId;
+    private boolean inPlace;
     private HashMap<String,String> likesList;
     private HashMap<String,String> viewsList;
 
@@ -26,23 +31,6 @@ public class Picture {
         // Default constructor required for calls to DataSnapshot.getValue(Picture.class)
     }
 
-    public Picture(String name, String description, String path, String timestamp, String type,
-                   String userId, String username, Place place) {
-        this.name = name;
-        this.description = description;
-        this.path = path;
-        this.timestamp = timestamp;
-        this.type = type;
-        this.userId = userId;
-        this.username = username;
-        this.place = place;
-        this.likesList = new HashMap<>();
-        this.viewsList = new HashMap<>();
-    }
-
-
-    //TODO: remove this constructor
-    // temp constructor for simulating the upload of a picture
     public Picture(String name, String description, String path, String userId, String username, String userIcon){
         this.name = name;
         this.description = description;
@@ -50,6 +38,7 @@ public class Picture {
         this.userId = userId;
         this.username = username;
         this.userIcon = userIcon;
+        this.inPlace = true;
     }
 
     public String getId() {
@@ -148,6 +137,14 @@ public class Picture {
         this.place = place;
     }
 
+    public String getPointId() {
+        return pointId;
+    }
+
+    public void setPointId(String pointId) {
+        this.pointId = pointId;
+    }
+
     public String getUserIcon() {
         return userIcon;
     }
@@ -166,19 +163,21 @@ public class Picture {
         viewsList.put(id, id);
     }
 
-
+    public boolean isInPlace(){
+        return inPlace;
+    }
 
     public void setLikesList(HashMap<String, String> likesList) {
         this.likesList = likesList;
     }
 
-   public void addLike(String id){
+    public void addLike(String id){
        if (likesList == null)
            likesList = new HashMap<>();
        likesList.put(id, id);
    }
 
-   public void removeLike(String id){
+    public void removeLike(String id){
        likesList.remove(id);
    }
 
@@ -197,13 +196,13 @@ public class Picture {
 
         Picture picture = (Picture) o;
 
-        return id.equals(picture.id);
+        return id != null ? id.equals(picture.id) : picture.id == null;
 
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return id != null ? id.hashCode() : 0;
     }
 
     @Override
@@ -218,12 +217,69 @@ public class Picture {
                 ", popularity=" + popularity +
                 ", timestamp='" + timestamp + '\'' +
                 ", type='" + type + '\'' +
-                ", userId=" + userId +
+                ", userId='" + userId + '\'' +
                 ", username='" + username + '\'' +
                 ", userIcon='" + userIcon + '\'' +
-                ", place=" + place + '\'' +
-                ", likesList=" + likesList + '\'' +
+                ", place=" + place +
+                ", pointId='" + pointId + '\'' +
+                ", inPlace=" + inPlace +
+                ", likesList=" + likesList +
                 ", viewsList=" + viewsList +
                 '}';
     }
+
+    protected Picture(Parcel in) {
+        id = in.readString();
+        name = in.readString();
+        description = in.readString();
+        path = in.readString();
+        views = in.readInt();
+        likes = in.readInt();
+        popularity = in.readDouble();
+        timestamp = in.readString();
+        type = in.readString();
+        userId = in.readString();
+        username = in.readString();
+        userIcon = in.readString();
+        place = (Place) in.readValue(Place.class.getClassLoader());
+        likesList = (HashMap) in.readValue(HashMap.class.getClassLoader());
+        viewsList = (HashMap) in.readValue(HashMap.class.getClassLoader());
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
+        dest.writeString(name);
+        dest.writeString(description);
+        dest.writeString(path);
+        dest.writeInt(views);
+        dest.writeInt(likes);
+        dest.writeDouble(popularity);
+        dest.writeString(timestamp);
+        dest.writeString(type);
+        dest.writeString(userId);
+        dest.writeString(username);
+        dest.writeString(userIcon);
+        dest.writeValue(place);
+        dest.writeValue(likesList);
+        dest.writeValue(viewsList);
+    }
+
+    @SuppressWarnings("unused")
+    public static final Parcelable.Creator<Picture> CREATOR = new Parcelable.Creator<Picture>() {
+        @Override
+        public Picture createFromParcel(Parcel in) {
+            return new Picture(in);
+        }
+
+        @Override
+        public Picture[] newArray(int size) {
+            return new Picture[size];
+        }
+    };
 }

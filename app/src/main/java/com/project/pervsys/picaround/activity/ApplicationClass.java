@@ -39,7 +39,6 @@ public class ApplicationClass extends Application{
     }
 
 
-
     public static void setAlreadyEnabledPersistence(boolean state){
         alreadyEnabledPersistence = state;
     }

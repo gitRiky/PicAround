@@ -13,6 +13,7 @@ public class Config {
     public static final String USERS = "users";
     public static final String DATE = "date";
     public static final String PICTURES = "pictures";
+    public static final String PICTURE = "picture";
     public static final String LATITUDE = "latitude";
     public static final Double DEFAULT_LAT = 100000.0;
     public static final Double DEFAULT_LNG = 100000.0;
@@ -22,6 +23,8 @@ public class Config {
     public static final String USER_ID = "userId";
     public static final String ID = "id";
     public static final String POINT_ID = "pointId";
+    public static final String POSITION = "position";
+    public static final String PLACES = "places";
     public static final String LIKES_LIST = "likesList";
     public static final String VIEWS_LIST = "viewsList";
     public static final String PHOTO_PATH = "photoPath";

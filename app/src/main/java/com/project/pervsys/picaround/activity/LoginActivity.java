@@ -68,6 +68,8 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
     private FirebaseAuth mAuth;
+    private FirebaseUser mUser;
+    private String mUserId;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private AuthCredential facebookCredentialToLink;
     private String facebookEmail;
@@ -417,12 +419,15 @@ public class LoginActivity extends AppCompatActivity {
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
                                 Profile profile = Profile.getCurrentProfile();
+                                mUser = mAuth.getCurrentUser();
+                                mUserId = mUser.getUid();
                                 newUser = new User(mUsername, facebookEmail, profile.getFirstName(),
                                         profile.getLastName(), mDate,
                                         profile.getProfilePictureUri(100,100).toString(),
-                                        mAuth.getCurrentUser().getUid());
-                                mDatabaseRef.child(USERS).push().setValue(newUser);
-                                mDatabaseRef.child(USERNAMES).push().setValue(mUsername.toLowerCase());
+                                        mUserId);
+
+                                mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
+                                mDatabaseRef.child(USERNAMES).child(mUserId).setValue(mUsername.toLowerCase());
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
@@ -501,12 +506,15 @@ public class LoginActivity extends AppCompatActivity {
                         else{
                             if (firstLog){
                                 Log.i(TAG, "First usage for the user");
+                                mUser = mAuth.getCurrentUser();
+                                mUserId = mUser.getUid();
                                 newUser = new User(mUsername, acct.getEmail(), acct.getGivenName(),
                                         acct.getFamilyName(), mDate,
                                         acct.getPhotoUrl().toString(),
-                                        mAuth.getCurrentUser().getUid());
-                                mDatabaseRef.child(USERS).push().setValue(newUser);
-                                mDatabaseRef.child(USERNAMES).push().setValue(mUsername.toLowerCase());
+                                        mUserId);
+
+                                mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
+                                mDatabaseRef.child(USERNAMES).child(mUserId).setValue(mUsername.toLowerCase());
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
