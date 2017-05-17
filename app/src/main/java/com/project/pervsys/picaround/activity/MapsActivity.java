@@ -1059,18 +1059,24 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     //start the gallery Intent
     private void selectPicture(){
-        if (Build.VERSION.SDK_INT <= 19) {
-            Intent intent = new Intent();
-            intent.setType(IMAGE_TYPE);
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(Intent.createChooser(intent,
-                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
-        } else if (Build.VERSION.SDK_INT > 19) {
-            Intent intent = new Intent(Intent.ACTION_PICK,
-                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(Intent.createChooser(intent,
-                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        } else {
+            if (Build.VERSION.SDK_INT <= 19) {
+                Intent intent = new Intent();
+                intent.setType(IMAGE_TYPE);
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(Intent.createChooser(intent,
+                        getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+            } else if (Build.VERSION.SDK_INT > 19) {
+                Intent intent = new Intent(Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(Intent.createChooser(intent,
+                        getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+            }
         }
     }
 
