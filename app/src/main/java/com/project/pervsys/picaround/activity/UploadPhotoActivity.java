@@ -132,6 +132,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
             }
         };
         mUser = mAuth.getCurrentUser();
+        mUserPushId = mUser.getUid();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
         mUsername = getIntent().getStringExtra(USERNAME);
@@ -142,7 +143,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-
+      
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             takeExifInfo(exif);
@@ -545,7 +546,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         //TODO: remove this if no check is needed
         return true;
     }
-
 
     private void getPath(){
 

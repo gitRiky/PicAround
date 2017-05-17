@@ -39,6 +39,7 @@ public class UserActivity extends AppCompatActivity {
     private static final String TAG = "UserActivity";
     private DatabaseReference mDatabaseRef = null;
     private String mUserId;
+    private String mUsername;
     private User mUser;
     private HashMap<String,Picture> mPictures;
 
@@ -62,17 +63,30 @@ public class UserActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         mUserId = intent.getStringExtra(USER_ID);
+        mUsername = intent.getStringExtra(USERNAME);
+
+        String orderByParameter = null;
+        String equalToParameter = null;
+        if (mUserId != null){
+            orderByParameter = ID;
+            equalToParameter = mUserId;
+        }
+        else if (mUsername != null){
+            orderByParameter = USERNAME;
+            equalToParameter = mUsername.toLowerCase();
+        }
 
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
         final TextView username = (TextView) findViewById(R.id.username);
         final TextView fullName = (TextView) findViewById(R.id.user_fullname);
+        final TextView noPictures = (TextView) findViewById(R.id.no_pictures);
         final GridView userPictures = (GridView) findViewById(R.id.user_pictures);
 
         mPictures = new HashMap<>();
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUserId)
+        mDatabaseRef.child(USERS).orderByChild(orderByParameter).equalTo(equalToParameter)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -81,30 +95,45 @@ public class UserActivity extends AppCompatActivity {
                             mUser = userSnap.getValue(User.class);
                             username.setText(mUser.getUsername());
 
-                            int age = getAge(mUser.getDate());
-                            fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " + age);
-
-                            mPictures = mUser.getPictures();
-
                             Picasso.with(UserActivity.this)
                                     .load(mUser.getProfilePicture())
                                     .into(userIcon);
 
-                            ImageAdapter adapter = new ImageAdapter(UserActivity.this, mPictures);
-                            userPictures.setAdapter(adapter);
-                            userPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                @Override
-                                public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                                    Picture picture = (Picture) adapterView.getItemAtPosition(position);
-
-                                    Log.i(TAG, "Picture: " + picture);
-
-                                    // Start PictureActivity
-                                    Intent i = new Intent(UserActivity.this, PictureActivity.class);
-                                    i.putExtra(PICTURE_ID, picture.getId());
-                                    startActivity(i);
+                            mPictures = mUser.getPictures(); //TODO: retrieve pictures ordered by timestamp
+Log.d(TAG, "Pictures: " + mPictures);
+                            if (mPictures.isEmpty()){
+                                noPictures.setVisibility(View.VISIBLE);
+                                fullName.setText(mUser.getName() + " " + mUser.getSurname());
+                            }
+                            else {
+                                int picturesNumber = mPictures.size();
+                                if (mPictures.size() == 1) {
+                                    fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
+                                            picturesNumber + " " + getString(R.string.picture));
+                                } else {
+                                    fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
+                                            picturesNumber + " " + getString(R.string.pictures));
                                 }
-                            });
+
+                                final Picture[] pictures = mPictures.values().toArray(new Picture[picturesNumber]);
+
+                                ImageAdapter adapter = new ImageAdapter(UserActivity.this, mPictures);
+                                userPictures.setAdapter(adapter);
+                                userPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                    @Override
+                                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                                        Picture picture = (Picture) adapterView.getItemAtPosition(position);
+
+                                        Log.i(TAG, "Picture: " + picture);
+
+                                        // Start PictureActivity
+                                        Intent i = new Intent(UserActivity.this, PictureSliderActivity.class);
+                                        i.putExtra(PICTURES, pictures);
+                                        i.putExtra(POSITION, position);
+                                        startActivity(i);
+                                    }
+                                });
+                            }
                         }
 
                     }
