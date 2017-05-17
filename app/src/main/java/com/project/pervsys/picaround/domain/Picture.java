@@ -19,37 +19,25 @@ public class Picture {
     private String username;
     private String userIcon;
     private Place place;
+    private String pointId;
     private HashMap<String,String> likesList;
     private HashMap<String,String> viewsList;
+    private boolean inPlace;
 
     public Picture(){
         // Default constructor required for calls to DataSnapshot.getValue(Picture.class)
     }
 
-    public Picture(String name, String description, String path, String timestamp, String type,
-                   String userId, String username, Place place) {
-        this.name = name;
-        this.description = description;
-        this.path = path;
-        this.timestamp = timestamp;
-        this.type = type;
-        this.userId = userId;
-        this.username = username;
-        this.place = place;
-        this.likesList = new HashMap<>();
-        this.viewsList = new HashMap<>();
-    }
 
-
-    //TODO: remove this constructor
-    // temp constructor for simulating the upload of a picture
-    public Picture(String name, String description, String path, String userId, String username, String userIcon){
+    public Picture(String name, String description, String path, String userId, String username, String userIcon, String pointId){
         this.name = name;
         this.description = description;
         this.path = path;
         this.userId = userId;
         this.username = username;
         this.userIcon = userIcon;
+        this.pointId = pointId;
+        this.inPlace = true;
     }
 
     public String getId() {
@@ -58,6 +46,14 @@ public class Picture {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setPointId(String pointId){
+        this.pointId = pointId;
+    }
+
+    public String getPointId(){
+        return pointId;
     }
 
     public String getName() {
@@ -70,6 +66,10 @@ public class Picture {
 
     public String getDescription() {
         return description;
+    }
+
+    public boolean isInPlace(){
+        return inPlace;
     }
 
     public void setDescription(String description) {

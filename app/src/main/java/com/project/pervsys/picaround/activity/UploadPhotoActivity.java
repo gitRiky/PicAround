@@ -96,7 +96,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private int maxHeight;
     private long transferredBytes;
     private long totalBytes;
-    private File mFile;
     private boolean inUpload = false;
     private boolean uploadError = false;
     private DatabaseReference mDatabaseRef = null;
@@ -558,7 +557,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink: " + uri);
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
-                        mUser.getUid(), mUsername, profilePicture);
+                        mUser.getUid(), mUsername, profilePicture, mPlaceId);
                 picture.setTimestamp(mTimestamp);
                 DatabaseReference pushReference = mDatabaseRef.child(PICTURES).push();
                 String id = pushReference.getKey();
