@@ -925,10 +925,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             Log.i(TAG, "Picture: " + picture);
 
                             // Start PictureActivity
-                            Intent i = new Intent(context, PictureActivity.class);
-                            i.putExtra(PICTURE_ID, picture.getId());
-                            i.putExtra(USER_ID, picture.getUserId());
-                            i.putExtra(POINT_ID, point.getId());
+//                            Intent i = new Intent(context, PictureActivity.class);
+//                            i.putExtra(PICTURE_ID, picture.getId());
+//                            i.putExtra(USER_ID, picture.getUserId());
+//                            i.putExtra(POINT_ID, point.getId());
+//                            startActivity(i);
+
+                            // Start PictureSliderActivity
+                            Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
+                            i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
+                            i.putExtra(POSITION, position);
                             startActivity(i);
                         }
                     });
