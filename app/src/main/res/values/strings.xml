@@ -100,5 +100,7 @@
     <string name="no_picture_uploaded">No picture uploaded</string>
     <string name="pictures">pictures</string>
     <string name="picture">picture</string>
+    <string name="download">Save picture</string>
+    <string name="share">Share external</string>
 
 </resources>

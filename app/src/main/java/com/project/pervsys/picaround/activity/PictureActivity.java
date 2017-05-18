@@ -73,7 +73,7 @@ public class PictureActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
-        setContentView(R.layout.fragment_picture);
+        setContentView(R.layout.activity_picture);
 
         // Set toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -414,27 +414,7 @@ public class PictureActivity extends AppCompatActivity {
 
         //delete picture in user
         DatabaseReference usersRef = mDatabaseRef.child(USERS);
-        /* in case of users key = firebase auth id
-           usersRef.child(mOwnerId).child(PICTURES).child(mPictureId).setValue(null);
-         */
-        usersRef.orderByChild(ID).equalTo(mOwnerId)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for(DataSnapshot usersSnap : dataSnapshot.getChildren()){
-                            String userId = usersSnap.getKey();
-                            DatabaseReference picUserRef = mDatabaseRef.child(USERS)
-                                    .child(userId)
-                                    .child(PICTURES);
-                            picUserRef.child(mPictureId).setValue(null);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Log.e(TAG, "Error deleting picture's ref from Users");
-                    }
-                });
+        usersRef.child(mOwnerId).child(PICTURES).child(mPictureId).setValue(null);
 
         //delete picture in pictures
         DatabaseReference picturesRef = mDatabaseRef.child(PICTURES);
@@ -445,6 +425,7 @@ public class PictureActivity extends AppCompatActivity {
         String picName = mPicture.getName();
         storageReference.child(picName).delete();
         storageReference.child(THUMB_PREFIX + picName).delete();
+        storageReference.child(INTERM_PREFIX + picName).delete();
         Log.i(TAG, "Image deleted");
         Toast.makeText(this, getString(R.string.delete_picture_ok),
                 Toast.LENGTH_LONG).show();
