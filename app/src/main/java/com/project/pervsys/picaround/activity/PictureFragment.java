@@ -67,6 +67,7 @@ public class PictureFragment extends Fragment {
     private String mUserId;
     private PictureSliderActivity mActivity;
     private FirebaseUser mUser;
+    private ImageView mUserIconView;
     private RelativeLayout mUserLayout;
     private RelativeLayout mInfoLayout;
     private boolean visible = false;
@@ -88,7 +89,8 @@ public class PictureFragment extends Fragment {
         super.onCreate(savedInstanceState);
         mActivity = (PictureSliderActivity)getActivity();
         mUser = mActivity.mUser;
-        mUserId = mUser.getUid();
+        if (mUser != null)
+            mUserId = mUser.getUid();
         created = true;
         mDatabaseRef = mActivity.mDatabaseRef;
     }
@@ -101,7 +103,7 @@ public class PictureFragment extends Fragment {
         mUserLayout = (RelativeLayout) rootView.findViewById(R.id.user);
         mInfoLayout = (RelativeLayout) rootView.findViewById(R.id.info);
 
-        ImageView userIcon = (ImageView) rootView.findViewById(R.id.user_icon);
+        mUserIconView = (ImageView) rootView.findViewById(R.id.user_icon);
         TextView usernameView = (TextView) rootView.findViewById(R.id.username);
         TextView descriptionView = (TextView) rootView.findViewById(R.id.description);
         mViewsTextView = (TextView) rootView.findViewById(R.id.views);
@@ -147,12 +149,13 @@ public class PictureFragment extends Fragment {
         });
         pictureView.getController().setLongPressEnabled(true);
         registerForContextMenu(pictureView);
+
+
         Bundle bundle = getArguments();
-        Picture picture = bundle.getParcelable(PICTURE);
+        final Picture picture = bundle.getParcelable(PICTURE);
 
         mPictureId = picture.getId();
         String picturePath = picture.getPath();
-        String userIconPath = picture.getUserIcon();
         String username = picture.getUsername();
         String description = picture.getDescription();
 
@@ -162,7 +165,7 @@ public class PictureFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 Intent i = new Intent(mActivity, UserActivity.class);
-                i.putExtra(USER_ID, mUserId);
+                i.putExtra(USER_ID, picture.getUserId());
                 startActivity(i);
             }
         });
@@ -174,6 +177,11 @@ public class PictureFragment extends Fragment {
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
                         mPicture = dataSnapshot.getValue(Picture.class);
+
+                        Picasso.with(getContext())
+                                .load(mPicture.getUserIcon())
+                                .into(mUserIconView);
+
                         mViewsList = mPicture.getViewsList();
                         mLikesList = mPicture.getLikesList();
                         mViewsNumber = mPicture.getViews();
@@ -212,9 +220,6 @@ public class PictureFragment extends Fragment {
                     }
                 });
 
-        Picasso.with(getContext())
-                .load(userIconPath)
-                .into(userIcon);
 
         Picasso.with(getContext())
                 .load(picturePath)
@@ -290,7 +295,7 @@ public class PictureFragment extends Fragment {
         super.setUserVisibleHint(isVisibleToUser);
         if (isVisibleToUser) {
             visible = true;
-            if (created)
+            if (created && mUser != null)
                 checkViews();
         } else {
             visible = false;
