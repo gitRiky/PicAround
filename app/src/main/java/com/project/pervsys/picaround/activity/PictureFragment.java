@@ -63,6 +63,7 @@ public class PictureFragment extends Fragment {
     private RelativeLayout mInfoLayout;
     private boolean visible = false;
     private boolean created = false;
+    private String mDescription;
 
     public static PictureFragment newInstance(Picture picture){
         PictureFragment fragment = new PictureFragment();
@@ -140,9 +141,9 @@ public class PictureFragment extends Fragment {
         String userIconPath = picture.getUserIcon();
         mUserId = picture.getUserId();
         String username = picture.getUsername();
-        String description = picture.getDescription();
+        mDescription = picture.getDescription();
 
-        descriptionView.setText(description);
+        descriptionView.setText(mDescription);
         usernameView.setText(username);
         usernameView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -264,6 +265,7 @@ public class PictureFragment extends Fragment {
             increaseViews();
             setTextView(mViewsNumber, mViewsTextView);
         }
+        Log.d(TAG, mDescription + ": created=" + created + ", visible=" + visible + ", mActivity.visible=" + mActivity.visible);
         if (created && visible && mActivity.visible) {
             mUserLayout.setVisibility(View.VISIBLE);
             mInfoLayout.setVisibility(View.VISIBLE);

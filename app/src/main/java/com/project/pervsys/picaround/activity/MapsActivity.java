@@ -13,7 +13,9 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -103,6 +105,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
 
@@ -870,8 +873,19 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         Point point = (Point) marker.getTag();
         populateSlidingPanel(marker, this);
         mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
-        TextView tv = (TextView) findViewById(R.id.marker_details);
-        tv.setText(point.getLat() + "  " + point.getLon());
+
+        // Reverse geocode the coordinates
+        ArrayList<String> address = reverseGeocode(point.getLat(), point.getLon());
+        TextView titleTextView = (TextView) findViewById(R.id.marker_title);
+        TextView detailsTextView = (TextView) findViewById(R.id.marker_details);
+        TextView pictureNumberTextView = (TextView) findViewById(R.id.picture_number);
+
+        titleTextView.setText(address.get(0));
+        address.remove(0);
+        String details = TextUtils.join(", ", address);
+        detailsTextView.setText(details);
+
+
 
         // Calculate required horizontal shift for current screen density
         final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
@@ -889,6 +903,48 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         marker.showInfoWindow();
         return true;
+    }
+
+    private ArrayList<String> reverseGeocode(double lat, double lon) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
+
+        try {
+            addresses = geocoder.getFromLocation(
+                    lat,
+                    lon,
+                    // In this sample, get just a single address.
+                    1);
+        } catch (IOException ioException) {
+            // Catch network or other I/O problems.
+            Log.e(TAG, "ERROR in reverseGeocode", ioException);
+        } catch (IllegalArgumentException illegalArgumentException) {
+            // Catch invalid latitude or longitude values.
+            Log.e(TAG, "ERROR in reverseGeocode" + ". " +
+                    "Latitude = " + lat +
+                    ", Longitude = " +
+                    lon, illegalArgumentException);
+        }
+
+        ArrayList<String> addressFragments = new ArrayList<>();
+
+        // Handle case where no address was found.
+        if (addresses == null || addresses.size()  == 0) {
+            Log.e(TAG, "ERROR in reverseGeocode, address not found");
+            addressFragments.add("Address not found");
+        }
+        else {
+            Address address = addresses.get(0);
+
+            // Fetch the address lines using getAddressLine,
+            // join them, and send them to the thread.
+            for(int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
+                addressFragments.add(address.getAddressLine(i));
+                Log.d(TAG, "addressLine: " + address.getAddressLine(i));
+            }
+            Log.i(TAG, "Address Found");
+        }
+        return addressFragments;
     }
 
     private void populateSlidingPanel(Marker marker, final Context context) {
@@ -914,6 +970,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         Picture pic = picture.getValue(Picture.class);
                         pictures.put(picture.getKey(), pic);
                     }
+
+                    TextView pictureNumberTextView = (TextView) findViewById(R.id.picture_number);
+                    int pictureNumber = pictures.size();
+                    if (pictureNumber > 1)
+                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.pictures));
+                    else
+                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.picture));
 
                     ImageAdapter adapter = new ImageAdapter(context, pictures);
                     pointPictures.setAdapter(adapter);
