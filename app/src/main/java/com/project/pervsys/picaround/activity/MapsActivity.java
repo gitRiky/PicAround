@@ -12,8 +12,9 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Paint;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -31,7 +32,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -40,10 +40,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.GridLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,8 +49,8 @@ import com.miguelcatalan.materialsearchview.MaterialSearchView;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.Query;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterManager;
 import com.project.pervsys.picaround.R;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
@@ -91,8 +89,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.localDatabase.DBManager;
+import com.project.pervsys.picaround.utility.InfoWindowView;
+import com.project.pervsys.picaround.utility.MarkerClusterItem;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-import com.squareup.picasso.Picasso;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -101,12 +100,14 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
 
-public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
+public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, GoogleMap.InfoWindowAdapter {
 
 
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
@@ -150,6 +151,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private CameraPosition mCameraPosition;
     private InfoWindowView mInfoWindow = null;
     private Point mLastPoint;
+    private ClusterManager<MarkerClusterItem> mClusterManager;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -696,12 +698,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        mImageBitmap = savedInstanceState.getParcelable(BITMAP_STORAGE_KEY);
-        mImageView.setImageBitmap(mImageBitmap);
-        mImageView.setVisibility(
-                savedInstanceState.getBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY) ?
-                        ImageView.VISIBLE : ImageView.INVISIBLE
-        );
+//        mImageBitmap = savedInstanceState.getParcelable(BITMAP_STORAGE_KEY);
+//        mImageView.setImageBitmap(mImageBitmap);
+//        mImageView.setVisibility(
+//                savedInstanceState.getBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY) ?
+//                        ImageView.VISIBLE : ImageView.INVISIBLE
+//        );
     }
 
     /**
@@ -752,6 +754,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                if(mSlidingUpPanel != null)
+                    mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+            }
+        });
+
         Location location = null;
 
         // Restore previous configurations of the map, if available
@@ -781,18 +792,67 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
 
         //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
-        populatePoints();
-
-        // Set a listener for marker click.
-        mMap.setOnMarkerClickListener(this);
-
-        // Set a listener for infoWindow click.
-        mMap.setOnInfoWindowClickListener(this);
-
+        setUpClusterer();
         // Set InfoWindowAdapter
-        mMap.setInfoWindowAdapter(this);
+//        mMap.setInfoWindowAdapter(this);
     }
 
+    private void showPoint(Point point) {
+        populateSlidingPanel(point, this);
+        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+
+        // Reverse geocode the coordinates
+        String address = reverseGeocode(point.getLat(), point.getLon());
+        TextView tv = (TextView) findViewById(R.id.marker_details);
+        tv.setText(address);
+
+//        // Calculate required horizontal shift for current screen density
+//        final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
+//        // Calculate required vertical shift for current screen density
+//        final int dY = getResources().getDimensionPixelSize(R.dimen.map_dy);
+//        final Projection projection = mMap.getProjection();
+//        final android.graphics.Point markerPoint = projection.toScreenLocation(new LatLng(point.getLat(), point.getLon()));
+//        // Shift the point we will use to center the map
+//        markerPoint.offset(dX, dY);
+//        final LatLng newLatLng = projection.fromScreenLocation(markerPoint);
+//        // Smoothly move camera
+//        mMap.animateCamera(CameraUpdateFactory.newLatLng(newLatLng));
+//
+//        mMap.getUiSettings().setMapToolbarEnabled(true);
+    }
+
+    private void setUpClusterer() {
+        if(mMap == null)
+            return;
+
+        mClusterManager = new ClusterManager<MarkerClusterItem>(this, mMap);
+        mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MarkerClusterItem>() {
+            @Override
+            public boolean onClusterItemClick(MarkerClusterItem item) {
+                Point p = item.getPoint();
+                showPoint(p);
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(item.getPosition(), mMap.getCameraPosition().zoom);
+                mMap.animateCamera(cameraUpdate);
+                return true;
+            }
+        });
+
+        mClusterManager.setOnClusterClickListener(new ClusterManager.OnClusterClickListener<MarkerClusterItem>() {
+            @Override
+            public boolean onClusterClick(Cluster<MarkerClusterItem> cluster) {
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(cluster.getPosition(), mMap.getCameraPosition().zoom + 2);
+                mMap.animateCamera(cameraUpdate);
+                return true;
+            }
+        });
+
+        mMap.setOnCameraIdleListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
+
+        populatePoints();
+    }
+
+    // TODO: onResume should not call this !
     private void populatePoints() {
         // get all the points
         mDatabaseRef.child(POINTS).keepSynced(true);
@@ -804,11 +864,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
-                            mMap.addMarker(new MarkerOptions()
-                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
-                                    .position(new LatLng(p.getLat(), p.getLon())))
-                                    .setTag(p);
+                            MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
+                            mci.setPoint(p);
+                            if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+//                                Log.i(TAG, "The point " + mci + "has been added");
+                                mClusterManager.addItem(mci);
                             }
+//                            mMap.addMarker(new MarkerOptions()
+//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+//                                    .position(new LatLng(p.getLat(), p.getLon())))
+//                                    .setTag(p);
+                        }
 
                     }
 
@@ -862,37 +928,49 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         });
     }
 
-    /** Called when the user clicks a marker. */
-    @Override
-    public boolean onMarkerClick(final Marker marker) {
+    private String reverseGeocode(double lat, double lon) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
 
-        // Show the sliding panel
-        Point point = (Point) marker.getTag();
-        populateSlidingPanel(marker, this);
-        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
-        TextView tv = (TextView) findViewById(R.id.marker_details);
-        tv.setText(point.getLat() + "  " + point.getLon());
+        try {
+            addresses = geocoder.getFromLocation(
+                    lat,
+                    lon,
+                    // In this sample, get just a single address.
+                    1);
+        } catch (IOException ioException) {
+            // Catch network or other I/O problems.
+            Log.e(TAG, "ERROR in reverseGeocode", ioException);
+        } catch (IllegalArgumentException illegalArgumentException) {
+            // Catch invalid latitude or longitude values.
+            Log.e(TAG, "ERROR in reverseGeocode" + ". " +
+                    "Latitude = " + lat +
+                    ", Longitude = " +
+                    lon, illegalArgumentException);
+        }
 
-        // Calculate required horizontal shift for current screen density
-        final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
-        // Calculate required vertical shift for current screen density
-        final int dY = getResources().getDimensionPixelSize(R.dimen.map_dy);
-        final Projection projection = mMap.getProjection();
-        final android.graphics.Point markerPoint = projection.toScreenLocation(marker.getPosition());
-        // Shift the point we will use to center the map
-        markerPoint.offset(dX, dY);
-        final LatLng newLatLng = projection.fromScreenLocation(markerPoint);
-        // Smoothly move camera
-        mMap.animateCamera(CameraUpdateFactory.newLatLng(newLatLng));
+        // Handle case where no address was found.
+        if (addresses == null || addresses.size()  == 0) {
+            Log.e(TAG, "ERROR in reverseGeocode, address not found");
+            return "Address not found";
+            }
+        else {
+            Address address = addresses.get(0);
+            ArrayList<String> addressFragments = new ArrayList<String>();
 
-        mMap.getUiSettings().setMapToolbarEnabled(true);
-
-        marker.showInfoWindow();
-        return true;
+            // Fetch the address lines using getAddressLine,
+            // join them, and send them to the thread.
+            for(int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
+                addressFragments.add(address.getAddressLine(i));
+            }
+            Log.i(TAG, "Address Found");
+            return TextUtils.join(System.getProperty("line.separator"),
+                            addressFragments);
+        }
     }
 
-    private void populateSlidingPanel(Marker marker, final Context context) {
-
+    private void populateSlidingPanel(final Point point, final Context context) {
+        
         final Point point = (Point) marker.getTag();
 
         final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
@@ -946,18 +1024,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 // TODO: what to do here?
             }
         });
-    }
-
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
-        /*
-        // Start PointActivity
-        Point point = (Point) marker.getTag();
-        Intent i = new Intent(this, PointActivity.class);
-        i.putExtra(POINT_ID, point.getId());
-        startActivity(i);
-        */
     }
 
     @Override
@@ -1071,18 +1137,24 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     //start the gallery Intent
     private void selectPicture(){
-        if (Build.VERSION.SDK_INT <= 19) {
-            Intent intent = new Intent();
-            intent.setType(IMAGE_TYPE);
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(Intent.createChooser(intent,
-                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
-        } else if (Build.VERSION.SDK_INT > 19) {
-            Intent intent = new Intent(Intent.ACTION_PICK,
-                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(Intent.createChooser(intent,
-                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        } else {
+            if (Build.VERSION.SDK_INT <= 19) {
+                Intent intent = new Intent();
+                intent.setType(IMAGE_TYPE);
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(Intent.createChooser(intent,
+                        getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+            } else if (Build.VERSION.SDK_INT > 19) {
+                Intent intent = new Intent(Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(Intent.createChooser(intent,
+                        getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+            }
         }
     }
 
