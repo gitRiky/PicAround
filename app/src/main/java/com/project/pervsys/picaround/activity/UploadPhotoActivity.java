@@ -66,7 +66,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_HOR_LEFT = 3;
     private static final int PIC_VER_TOP = 6;
     private static final int PIC_VER_BOTTOM = 8;
-    private static final int COMPRESSION_QUALITY = 65;
+    private static final int COMPRESSION_QUALITY = 25;
+    private static final int INTERM_COMPRESSION_QUALITY = 5;
     private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
 
 
@@ -97,7 +98,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private long totalBytes;
     private boolean inUpload = false;
     private boolean uploadError = false;
-    private String mUserPushId;
     private DatabaseReference mDatabaseRef = null;
 
     @Override
@@ -142,23 +142,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUser.getUid())
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-
-                        for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
-                            mUserPushId = userSnap.getKey();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
-
+      
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             takeExifInfo(exif);
@@ -313,8 +297,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     Point toPut = new Point();
                     toPut.setLat(Double.parseDouble(mLatitude));
                     toPut.setLon(Double.parseDouble(mLongitude));
-                    DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                    DatabaseReference pushReference = databaseReference.child(PLACES).push();
+                    DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
                     mPlaceId = pushReference.getKey();
                     toPut.setId(mPlaceId);
                     pushReference.setValue(toPut);
@@ -327,13 +310,14 @@ public class UploadPhotoActivity extends AppCompatActivity {
                             .compressToFile(new File(mPhotoPath));
                     Uri thumbnailUri = Uri.fromFile(thumbnailFile);
                     String thumbnailId = THUMB_PREFIX + mPhotoId;
+                    Log.d(TAG, "thumbnail bytes: " + thumbnailFile.length());
                     StorageReference thumbRef = mStorageRef.child(thumbnailId);
                     thumbRef.putFile(thumbnailUri)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     Log.i(TAG, "Thumbnail successfully uploaded");
-                                    uploadPicture();
+                                    uploadIntPicture();
                                 }
                             })
                             .addOnFailureListener(new OnFailureListener() {
@@ -356,9 +340,44 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return false;
     }
 
+
+    private void uploadIntPicture() {
+        File compressedFile = new Compressor.Builder(this)
+                .setMaxHeight(photoH)
+                .setMaxWidth(photoW)
+                .setQuality(INTERM_COMPRESSION_QUALITY)
+                .setCompressFormat(Bitmap.CompressFormat.JPEG)
+                .build()
+                .compressToFile(new File(mPhotoPath));
+        Log.d(TAG, "InterPic bytes: " + compressedFile.length());
+        String intPhotoId = INTERM_PREFIX + mPhotoId;
+        final StorageReference riversRef = mStorageRef.child(intPhotoId);
+        riversRef.putFile(Uri.fromFile(compressedFile))
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Log.i(TAG, "Intermediate picture successfully uploaded");
+                        uploadPicture();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        Log.e(TAG, "Error during uploading the intermediate picture, "
+                                + exception.toString());
+                        Toast.makeText(getApplicationContext(),
+                                R.string.upload_failed,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+
+
     private void uploadPicture() {
         File compressedFile = new Compressor.Builder(this)
-                .setMaxHeight(photoW)
+                .setMaxHeight(photoH)
                 .setMaxWidth(photoW)
                 .setQuality(COMPRESSION_QUALITY)
                 .setCompressFormat(Bitmap.CompressFormat.JPEG)
@@ -366,9 +385,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 .compressToFile(new File(mPhotoPath));
         final Uri file = Uri.fromFile(compressedFile);
         totalBytes = compressedFile.length();
-
+        Log.d(TAG, "Picture bytes: " + totalBytes);
         final StorageReference riversRef = mStorageRef.child(mPhotoId);
-
         inUpload = true;
         showProgressBar();
         riversRef.putFile(file)
@@ -528,7 +546,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
         return true;
     }
 
-
     private void getPath(){
 
         Log.d(TAG, "getPath");
@@ -539,16 +556,15 @@ public class UploadPhotoActivity extends AppCompatActivity {
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink: " + uri);
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
-                        mUser.getUid(), mUsername, profilePicture);
+                        mUser.getUid(), mUsername, profilePicture, mPlaceId);
                 picture.setTimestamp(mTimestamp);
-                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-                DatabaseReference pushReference = databaseReference.child(PICTURES).push();
+                DatabaseReference pushReference = mDatabaseRef.child(PICTURES).push();
                 String id = pushReference.getKey();
                 picture.setId(id);
                 pushReference.setValue(picture);
 
-                databaseReference.child(PLACES).child(mPlaceId).child(PICTURE).child(id).setValue(picture);
-                databaseReference.child(USERS).child(mUserPushId).child(PICTURES).child(id).setValue(picture);
+                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURE).child(id).setValue(picture);
+                mDatabaseRef.child(USERS).child(mUser.getUid()).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
                         R.string.upload_ok,

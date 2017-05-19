@@ -68,6 +68,8 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleApiClient mGoogleApiClient;
     private LoginButton loginButton;
     private FirebaseAuth mAuth;
+    private FirebaseUser mUser;
+    private String mUserId;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private AuthCredential facebookCredentialToLink;
     private String facebookEmail;
@@ -77,8 +79,6 @@ public class LoginActivity extends AppCompatActivity {
     private User newUser;
     private String mUsername;
     private String mDate;
-    private FirebaseUser mUser;
-    private String mUserId;
     private DatabaseReference mDatabaseRef;
     private GoogleSignInAccount acct;
 
@@ -425,6 +425,7 @@ public class LoginActivity extends AppCompatActivity {
                                         profile.getLastName(), mDate,
                                         profile.getProfilePictureUri(100,100).toString(),
                                         mUserId);
+
                                 mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
                                 mDatabaseRef.child(USERNAMES).child(mUserId).setValue(mUsername.toLowerCase());
                                 Log.i(TAG, "User has been registered");
@@ -511,6 +512,7 @@ public class LoginActivity extends AppCompatActivity {
                                         acct.getFamilyName(), mDate,
                                         acct.getPhotoUrl().toString(),
                                         mUserId);
+
                                 mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
                                 mDatabaseRef.child(USERNAMES).child(mUserId).setValue(mUsername.toLowerCase());
                                 Log.i(TAG, "User has been registered");

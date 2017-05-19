@@ -1,122 +1,131 @@
 'use strict';
 
-// [START import]
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const gcs = require('@google-cloud/storage')();
-const spawn = require('child-process-promise').spawn;
 admin.initializeApp(functions.config().firebase);
-// [END import]
 
-// Keeps track of the length of the 'likes' child list
-// exports.countLikes = functions.database.ref('/pictures/{pictureId}/likesList/{likeId}').onWrite(event => {
-//   const collectionRef = event.data.ref.parent;
-//   const countRef = collectionRef.parent.child('likes');
-//
-//   // event.data.ref.parent.parent.child('likes').once("value", function(snapshot) {
-//   //   console.log("Likes1:",snapshot.val());
-//   // }, function (errorObject) {
-//   //   console.log("The read failed: " + errorObject.code);
-//   // });
-//   //
-//   // event.data.ref.parent.parent.child('likes').once('value').then(snapshot => {
-//   //   console.log("Likes2:",snapshot.val());
-//   // });
-//
-//
-//   // Return the promise from countRef.transaction() so our function
-//   // waits for this async event to complete before it exits.
-//   return countRef.transaction(current => {
-//     if (event.data.exists() && !event.data.previous.exists()) {
-//       return (current || 0) + 1;
-//     }
-//     else if (!event.data.exists() && event.data.previous.exists()) {
-//       return (current || 0) - 1;
-//     }
-//   });
-// });
-//
-// // Keeps track of the length of the 'views' child list
-// exports.countViews = functions.database.ref('/pictures/{pictureId}/viewsList/{viewId}').onWrite(event => {
-//   const collectionRef = event.data.ref.parent;
-//   const countRef = collectionRef.parent.child('views');
-//
-//   // Return the promise from countRef.transaction() so our function
-//   // waits for this async event to complete before it exits.
-//   return countRef.transaction(current => {
-//     if (event.data.exists() && !event.data.previous.exists()) {
-//       return (current || 0) + 1;
-//     }
-//     else if (!event.data.exists() && event.data.previous.exists()) {
-//       return (current || 0) - 1;
-//     }
-//   });
-// });
+const MIN_DIST = 0.001;
+const MAX_DIST = 1000000000000000;
+var points;
 
-
-
-
-
-
-
-// [START generateThumbnail]
-/**
- * When an image is uploaded in the Storage bucket We generate a thumbnail automatically using
- * ImageMagick.
- */
-// [START generateThumbnailTrigger]
-exports.generateThumbnail = functions.storage.object().onChange(event => {
-// [END generateThumbnailTrigger]
-  // [START eventAttributes]
-  const object = event.data; // The Storage object.
-
-  const fileBucket = object.bucket; // The Storage bucket that contains the file.
-  const filePath = object.name; // File path in the bucket.
-  const contentType = object.contentType; // File content type.
-  const resourceState = object.resourceState; // The resourceState is 'exists' or 'not_exists' (for file/folder deletions).
-  // [END eventAttributes]
-
-  // [START stopConditions]
-  // Exit if this is triggered on a file that is not an image.
-  if (!contentType.startsWith('image/')) {
-    console.log('This is not an image.');
-    return;
+class Point {
+  constructor(lat, lon){
+    this.id = null;
+    this.lat = lat;
+    this.lon = lon;
+    this.pictures = null;
   }
+}
 
-  // Get the file name.
-  const fileName = filePath.split('/').pop();
-  // Exit if the image is already a thumbnail.
-  if (fileName.startsWith('thumb_')) {
-    console.log('Already a Thumbnail.');
-    return;
+class Picture {
+  constructor(description, id, likes, views, popularity, name, path, timestamp, userIcon, userId, username){
+    this.id = id;
+    this.description = description;
+    this.likes = likes;
+    this.views = views;
+    this.popularity = popularity;
+    this.name = name;
+    this.path = path;
+    this.timestamp = timestamp;
+    this.userIcon = userIcon;
+    this.userId = userId;
+    this.username = username;
   }
+}
+var databaseRef = admin.database().ref();
+exports.aggregatePlaces = functions.https.onRequest((req, res) => {
 
-  // Exit if this is a move or deletion event.
-  if (resourceState === 'not_exists') {
-    console.log('This is a deletion event.');
-    return;
-  }
-  // [END stopConditions]
+  // read from the database
+  var ref = databaseRef.child("places");
+  ref.once("value", function(snapshot) {
+    // console.log("snapshot:" + snapshot);
+    var places = snapshot.val();
 
-  // [START thumbnailGeneration]
-  // Download file from bucket.
-  const bucket = gcs.bucket(fileBucket);
-  const tempFilePath = `/tmp/${fileName}`;
-  return bucket.file(filePath).download({
-    destination: tempFilePath
-  }).then(() => {
-    console.log('Image downloaded locally to', tempFilePath);
-    // Generate a thumbnail using ImageMagick.
-    return spawn('convert', [tempFilePath, '-thumbnail', '200x200>', tempFilePath]).then(() => {
-      console.log('Thumbnail created at', tempFilePath);
-      // We add a 'thumb_' prefix to thumbnails file name. That's where we'll upload the thumbnail.
-      const thumbFilePath = filePath.replace(/(\/)?([^\/]*)$/, `$1thumb_$2`);
-      // Uploading the thumbnail.
-      return bucket.upload(tempFilePath, {
-        destination: thumbFilePath
-      });
+    var ref = databaseRef.child("points");
+    ref.once("value", function(snapshot) {
+      points = snapshot.val();
+
+      aggregatePlaces(places, points);
     });
   });
-  // [END thumbnailGeneration]
+  console.log('Function successfully executed');
+  res.status(200).end();
 });
-// [END generateThumbnail]
+
+function aggregatePlaces(places, points){
+  for (var keyPlace in places){
+    var place = places[keyPlace];
+    var placeLat = parseFloat(place.lat);
+    var placeLon  = parseFloat(place.lon);
+    var minDist = MAX_DIST;
+    var minPointKey = null;
+
+    for (var keyPoint in points){
+      var point = points[keyPoint];
+      var pointLat = parseFloat(point.lat);
+      var pointLon = parseFloat(point.lon);
+      if ((placeLat <= pointLat+MIN_DIST) && (placeLat >= pointLat-MIN_DIST) &&
+          (placeLon <= pointLon+MIN_DIST) && (placeLon >= pointLon-MIN_DIST)){
+            var dist = computeDist(place, point);
+            if (dist < minDist){
+              minDist = dist;
+              minPointKey = keyPoint;
+            }
+      }
+    }
+    if (minPointKey === null)
+      createPoint(place);
+    else
+      merge(place, points[minPointKey]);
+  }
+}
+
+function merge(place, point){
+  var pic;
+  for (var key in place.picture)
+	  pic = place.picture[key];
+  var pushRef = databaseRef.child("points").child(point.id).child("pictures").child(pic.id);
+  if (pic != null){
+	pushRef.set(pic);
+  }
+
+  deletePlace(place.id);
+}
+
+function createPoint(place){
+  var toPut = new Point(place.lat, place.lon);
+  var pointsRef = databaseRef.child("points");
+  var pushRef = pointsRef.push();
+  toPut.id = pushRef.key;
+  toPut.pictures = place.picture;
+  points[place.id] = toPut;
+  pushRef.set(toPut);
+
+  deletePlace(place.id);
+}
+
+function computeDist(place, point){
+  var placeLat = place.lat;
+  var placeLon  = place.lon;
+  var pointLat = point.lat;
+  var pointLon = point.lon;
+  var diffLat = placeLat-pointLat;
+  var diffLon = placeLon-pointLon;
+  return diffLat*diffLat + diffLon*diffLon;
+}
+
+function hashCode(str){
+	var hash = 0;
+	if (str.length == 0) return hash;
+	for (i = 0; i < str.length; i++) {
+		char = str.charCodeAt(i);
+    hash = ((hash<<5)-hash)+char;
+    hash = hash & hash; // Convert to 32bit integer
+	}
+	return hash;
+}
+
+function deletePlace(placeId){
+  var placesRef = databaseRef.child("places");
+  placesRef.child(placeId).set(null);
+}

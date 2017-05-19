@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -44,6 +45,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.miguelcatalan.materialsearchview.MaterialSearchView;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.Query;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
@@ -119,9 +123,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ProgressDialog progress;
     private GoogleMap mMap;
     private ImageView mImageView;
+    private MaterialSearchView mSearchView;
     private SlidingUpPanelLayout mSlidingUpPanel;
 //    private MaterialSearchView mSearchView;
     private DBManager mDbManager;
+    private ArrayList<String> mUsernames;
+    private ArrayList<String> searchHistory;
+    private SearchAdapter mAdapter;
 
     private String mCurrentPhotoPath;
     private Bitmap mImageBitmap;
@@ -312,36 +320,62 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 invalidateOptionsMenu();
             }
         };
-//        mDbManager = new DBManager(MapsActivity.this);
-//        mSearchView = (MaterialSearchView) findViewById(R.id.search_view);
-//        mSearchView.setHint(getString(R.string.search_user));
-//        mSearchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
-//            @Override
-//            public boolean onQueryTextSubmit(String query) {
+        mDbManager = new DBManager(MapsActivity.this);
+        mSearchView = (MaterialSearchView) findViewById(R.id.search_view);
+        mSearchView.setVoiceSearch(true);
+
+        mUsernames = new ArrayList<>();
+
+        mAdapter = new SearchAdapter(MapsActivity.this, mUsernames, false);
+        mSearchView.setAdapter(mAdapter);
+        mSearchView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                String username = (String) adapterView.getItemAtPosition(i);
+                Intent intent = new Intent(MapsActivity.this, UserActivity.class);
+                intent.putExtra(USERNAME, username);
+                startActivity(intent);
+                mSearchView.closeSearch();
+            }
+        });
+
+        searchHistory = new ArrayList<>();
+        searchHistory.add("Sugg1");
+        searchHistory.add("Sugg2");
+
+        String[] arr = searchHistory.toArray(new String[searchHistory.size()]);
+//        mSearchView.setSuggestions(arr);
+
+        mSearchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
 //                search(query);
-//                return false;
-//            }
-//
-//            @Override
-//            public boolean onQueryTextChange(String newText) {
-//                search(newText);
-//                return false;
-//            }
-//        });
-//        mSearchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
-//            @Override
-//            public void onSearchViewShown() {
-//                Log.d(TAG, "onSearchViewShown()");
-//                if (mFloatingActionMenu.isOpened())
-//                    mFloatingActionMenu.close(true);
-//                populateUsernames();
-//            }
-//
-//            @Override
-//            public void onSearchViewClosed() {
-//                //Do some magic
-//            }
-//        });
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+//                if (!newText.isEmpty())
+                search(newText);
+                Log.d(TAG, "Usernames after query: " + mUsernames);
+                mAdapter.updateList(mUsernames, false);
+                return false;
+            }
+        });
+        mSearchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
+            @Override
+            public void onSearchViewShown() {
+                populateUsernames();
+                if (mFloatingActionMenu.isOpened())
+                    mFloatingActionMenu.close(true);
+            }
+
+            @Override
+            public void onSearchViewClosed() {
+
+            }
+        });
+
 
         // Set the Sliding up panel
         setSlidingUpPanel();
@@ -351,6 +385,18 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         mFloatingActionMenu = (FloatingActionMenu) findViewById(R.id.menu);
         mFloatingActionMenu.setClosedOnTouchOutside(true);
+
+        mFloatingActionMenu.setOnMenuButtonClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mSearchView.isSearchOpen())
+                    mSearchView.closeSearch();
+                if (mFloatingActionMenu.isOpened())
+                    mFloatingActionMenu.close(true);
+                else
+                    mFloatingActionMenu.open(true);
+            }
+        });
 
         FloatingActionButton cameraButton = (FloatingActionButton) findViewById(R.id.menu_item_camera);
         FloatingActionButton galleryButton = (FloatingActionButton) findViewById(R.id.menu_item_gallery);
@@ -414,8 +460,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
   
     private void getProfileInfo() {
-        String email = mUser.getEmail();
-        mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
+        mDatabaseRef.child(USERS).orderByKey().equalTo(mUser.getUid())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -569,6 +614,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     Log.i(TAG, "Photo taken from gallery in uploading");
                 if (resultCode == RESULT_CANCELED)
                     Log.i(TAG, "Photo upload cancelled");
+                break;
+            case MaterialSearchView.REQUEST_VOICE:
+                if (resultCode == RESULT_OK){
+                    ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    if (matches != null && matches.size() > 0) {
+                        String searchWrd = matches.get(0);
+                        if (!TextUtils.isEmpty(searchWrd)) {
+                            mSearchView.setQuery(searchWrd, false);
+                        }
+                    }
+                }
                 break;
         }
     }
@@ -914,6 +970,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     private void populateSlidingPanel(final Point point, final Context context) {
+        
+        final Point point = (Point) marker.getTag();
 
         final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
         final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
@@ -945,10 +1003,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             Log.i(TAG, "Picture: " + picture);
 
                             // Start PictureActivity
-                            Intent i = new Intent(context, PictureActivity.class);
-                            i.putExtra(PICTURE_ID, picture.getId());
-                            i.putExtra(USER_ID, picture.getUserId());
-                            i.putExtra(POINT_ID, point.getId());
+//                            Intent i = new Intent(context, PictureActivity.class);
+//                            i.putExtra(PICTURE_ID, picture.getId());
+//                            i.putExtra(USER_ID, picture.getUserId());
+//                            i.putExtra(POINT_ID, point.getId());
+//                            startActivity(i);
+
+                            // Start PictureSliderActivity
+                            Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
+                            i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
+                            i.putExtra(POSITION, position);
                             startActivity(i);
                         }
                     });
@@ -1020,8 +1084,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         String logged = getSharedPreferences(LOG_PREFERENCES, 0)
                 .getString(LOG_PREF_INFO, null);
 
-//        MenuItem item = menu.findItem(R.id.action_search);
-//        mSearchView.setMenuItem(item);
+        MenuItem item = menu.findItem(R.id.action_search);
+        mSearchView.setMenuItem(item);
 
         Log.i(TAG, "LOGGED WITH " + logged);
 
@@ -1157,9 +1221,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (mFloatingActionMenu.isOpened()){
             mFloatingActionMenu.close(true);
         }
-//        else if (mSearchView.isSearchOpen()) {
-//            mSearchView.closeSearch();
-//        }
+        else if (mSearchView.isSearchOpen()) {
+            mSearchView.closeSearch();
+        }
         else if (mSlidingUpPanel != null &&
                 (mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED ||
                         mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED)
@@ -1171,32 +1235,58 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
     }
 
-//    private void populateUsernames(){
-//        mDatabaseRef.child(USERNAMES)
-//                .addListenerForSingleValueEvent(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(DataSnapshot dataSnapshot) {
-//                        for (DataSnapshot child : dataSnapshot.getChildren()) {
-//                            String username = (String)child.getValue();
-//                            mDbManager.insert(username);
-//                        }
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(DatabaseError databaseError) {
-//                        //database error, e.g. permission denied (not logged with Firebase)
-//                        Log.e(TAG, databaseError.toString());
-//                    }
-//                });
-//    }
-//
-//    private void search(String text){
-//        Log.d(TAG, "------------ QUERY RESULTS:");
-//        Cursor result = mDbManager.query(text);
-//        result.moveToFirst();
-//        for (int i = 0; i < result.getCount(); i++) {
-//            String username = result.getString(result.getColumnIndex(USERNAME));
-//            Log.d(TAG, username);
+    private void populateUsernames(){
+        mDbManager.dropTable();
+        mDbManager.createTable();
+        mDatabaseRef.child(USERNAMES)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            String username = (String)child.getValue();
+                            mDbManager.insert(username);
+                        }
+                        Cursor result = mDbManager.query();
+                        result.moveToFirst();
+                        Log.d(TAG, "----- Usernames in the database:");
+                        for (int i = 0; i < result.getCount(); i++) {
+                            String username = result.getString(result.getColumnIndex(USERNAME));
+                            Log.d(TAG, username);
+                            result.moveToNext();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+    }
+
+    private void search(String text){
+        Log.d(TAG, "Usernames before query: " + mUsernames);
+        mDbManager.createTable();
+        mUsernames.clear();
+        Log.d(TAG, "Usernames before query (clear): " + mUsernames);
+        Log.d(TAG, "textEmpty="+ text.isEmpty() + ", Text=" + text);
+        Log.d(TAG, "------------ QUERY RESULTS:");
+        Cursor result = mDbManager.queryLike(text);
+//        if (result != null) {
+        result.moveToFirst();
+        for (int i = 0; i < result.getCount(); i++) {
+            String username = result.getString(result.getColumnIndex(USERNAME));
+            mUsernames.add(username);
+            Log.d(TAG, username);
+            result.moveToNext();
+        }
+        Log.d(TAG, "Usernames after query != null: " + mUsernames);
 //        }
-//    }
+//        else {
+//            Log.d(TAG, "RESULT NULL");
+//            Log.d(TAG, "Usernames after query == null: " + mUsernames);
+//        }
+        Log.d(TAG, "Usernames after query, before updateList: " + mUsernames);
+        mAdapter.updateList(mUsernames, false);
+    }
 }

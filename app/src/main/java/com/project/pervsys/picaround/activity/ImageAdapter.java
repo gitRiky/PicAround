@@ -15,6 +15,7 @@ import java.util.HashMap;
 
 public class ImageAdapter extends BaseAdapter{
 
+    private static final int GRID_SPACE = 24;
     private Context mContext;
     private HashMap<String,Picture> mPictures;
     private String[] mKeys;
@@ -49,7 +50,7 @@ public class ImageAdapter extends BaseAdapter{
         ImageView imageView;
         if (view == null){
             imageView = new ImageView(mContext);
-            int dim = viewGroup.getWidth()/3-20;
+            int dim = (viewGroup.getWidth()-GRID_SPACE)/3;
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dim, dim);
             imageView.setLayoutParams(layoutParams);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -65,4 +66,5 @@ public class ImageAdapter extends BaseAdapter{
 
         return imageView;
     }
+
 }

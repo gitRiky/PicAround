@@ -37,7 +37,8 @@
             <com.miguelcatalan.materialsearchview.MaterialSearchView
                 android:id="@+id/search_view"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                style="@style/MaterialSearchViewStyle"/>
         </FrameLayout>
 
         <android.support.design.widget.CoordinatorLayout
@@ -122,6 +123,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"/>
+            
     </LinearLayout>
 
 </com.sothree.slidinguppanel.SlidingUpPanelLayout>
