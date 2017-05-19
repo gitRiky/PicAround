@@ -72,11 +72,6 @@
             android:name=".activity.GetBasicInfoActivity"
             android:screenOrientation="portrait"/>
         <activity
-            android:name=".activity.PointActivity"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".activity.MapsActivity" />
-        <activity
             android:name=".activity.UploadPhotoActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -88,9 +83,8 @@
             android:name=".activity.PickLocationActivity"
             android:label="@string/title_activity_pick_location" />
         <activity
-            android:name=".activity.PictureActivity" />
-        <activity
-            android:name=".activity.PictureSliderActivity"/>
+            android:name=".activity.PictureSliderActivity"
+            android:parentActivityName=".activity.MapsActivity"/>
         <activity
             android:name=".activity.UserActivity"
             android:screenOrientation="portrait"/>

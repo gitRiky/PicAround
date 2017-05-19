@@ -2,16 +2,21 @@ package com.project.pervsys.picaround.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.transition.TransitionManager;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,9 +24,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.alexvasilkov.gestures.GestureController;
 import com.alexvasilkov.gestures.views.GestureImageView;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -29,6 +36,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
@@ -44,7 +53,6 @@ public class PictureFragment extends Fragment {
 
     private Picture mPicture;
     private String mPictureId;
-    private String mUserPushId;
     private int mViewsNumber;
     private int mLikesNumber;
     private HashMap<String,String> mViewsList;
@@ -53,17 +61,19 @@ public class PictureFragment extends Fragment {
     private TextView mLikesTextView;
     private TextView mViewsTextView;
     private TextView mPopularityTextView;
-    private String mUserId;
     private boolean mLike = false;
     private boolean localLike;
     private boolean increasedViews = false;
+    private String mUserId;
     private PictureSliderActivity mActivity;
     private FirebaseUser mUser;
+    private ImageView mUserIconView;
     private RelativeLayout mUserLayout;
     private RelativeLayout mInfoLayout;
     private boolean visible = false;
     private boolean created = false;
     private String mDescription;
+    private DatabaseReference mDatabaseRef;
 
     public static PictureFragment newInstance(Picture picture){
         PictureFragment fragment = new PictureFragment();
@@ -80,7 +90,10 @@ public class PictureFragment extends Fragment {
         super.onCreate(savedInstanceState);
         mActivity = (PictureSliderActivity)getActivity();
         mUser = mActivity.mUser;
+        if (mUser != null)
+            mUserId = mUser.getUid();
         created = true;
+        mDatabaseRef = mActivity.mDatabaseRef;
     }
 
     @Override
@@ -91,7 +104,7 @@ public class PictureFragment extends Fragment {
         mUserLayout = (RelativeLayout) rootView.findViewById(R.id.user);
         mInfoLayout = (RelativeLayout) rootView.findViewById(R.id.info);
 
-        ImageView userIcon = (ImageView) rootView.findViewById(R.id.user_icon);
+        mUserIconView = (ImageView) rootView.findViewById(R.id.user_icon);
         TextView usernameView = (TextView) rootView.findViewById(R.id.username);
         TextView descriptionView = (TextView) rootView.findViewById(R.id.description);
         mViewsTextView = (TextView) rootView.findViewById(R.id.views);
@@ -99,7 +112,7 @@ public class PictureFragment extends Fragment {
         mPopularityTextView = (TextView) rootView.findViewById(R.id.popularity);
         mLikeButton = (ImageButton) rootView.findViewById(R.id.like_button);
 
-        GestureImageView pictureView = (GestureImageView) rootView.findViewById(R.id.picture);
+        final GestureImageView pictureView = (GestureImageView) rootView.findViewById(R.id.picture);
         pictureView.getController().getSettings()
                 .setGravity(Gravity.CENTER);
         pictureView.getController().setOnGesturesListener(new GestureController.OnGestureListener() {
@@ -116,7 +129,9 @@ public class PictureFragment extends Fragment {
 
             @Override
             public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-                TransitionManager.beginDelayedTransition(transitionContainer);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    TransitionManager.beginDelayedTransition(transitionContainer);
+                }
                 mActivity.visible = !mActivity.visible;
                 mUserLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
                 mInfoLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
@@ -124,22 +139,24 @@ public class PictureFragment extends Fragment {
             }
 
             @Override
-            public void onLongPress(@NonNull MotionEvent e) {}
+            public void onLongPress(@NonNull MotionEvent e) {
+                mActivity.openContextMenu(pictureView);
+            }
 
             @Override
             public boolean onDoubleTap(@NonNull MotionEvent e) {
                 return false;
             }
         });
+        pictureView.getController().setLongPressEnabled(true);
+        registerForContextMenu(pictureView);
+
 
         Bundle bundle = getArguments();
-        Picture picture = bundle.getParcelable(PICTURE);
+        final Picture picture = bundle.getParcelable(PICTURE);
 
         mPictureId = picture.getId();
-        mUserPushId = picture.getUserId();
         String picturePath = picture.getPath();
-        String userIconPath = picture.getUserIcon();
-        mUserId = picture.getUserId();
         String username = picture.getUsername();
         mDescription = picture.getDescription();
 
@@ -149,7 +166,7 @@ public class PictureFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 Intent i = new Intent(mActivity, UserActivity.class);
-                i.putExtra(USER_ID, mUserId);
+                i.putExtra(USER_ID, picture.getUserId());
                 startActivity(i);
             }
         });
@@ -161,6 +178,11 @@ public class PictureFragment extends Fragment {
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
                         mPicture = dataSnapshot.getValue(Picture.class);
+
+                        Picasso.with(getContext())
+                                .load(mPicture.getUserIcon())
+                                .into(mUserIconView);
+
                         mViewsList = mPicture.getViewsList();
                         mLikesList = mPicture.getLikesList();
                         mViewsNumber = mPicture.getViews();
@@ -199,9 +221,6 @@ public class PictureFragment extends Fragment {
                     }
                 });
 
-        Picasso.with(getContext())
-                .load(userIconPath)
-                .into(userIcon);
 
         Picasso.with(getContext())
                 .load(picturePath)
@@ -261,6 +280,7 @@ public class PictureFragment extends Fragment {
             Log.i(TAG, "Increment views");
             mViewsNumber++;
             increasedViews = true;
+
             mViewsList.put(mUserId, mUserId);
             increaseViews();
             setTextView(mViewsNumber, mViewsTextView);
@@ -277,7 +297,7 @@ public class PictureFragment extends Fragment {
         super.setUserVisibleHint(isVisibleToUser);
         if (isVisibleToUser) {
             visible = true;
-            if (created)
+            if (created && mUser != null)
                 checkViews();
         } else {
             visible = false;
@@ -338,7 +358,7 @@ public class PictureFragment extends Fragment {
                 int views = picture.getViews();
                 //increase it by one
                 picture.setViews(views + 1);
-                picture.addView(mUser.getUid());
+                picture.addView(mUserId);
                 //store the new views value to db
                 mutableData.setValue(picture);
                 return Transaction.success(mutableData);
@@ -358,6 +378,7 @@ public class PictureFragment extends Fragment {
                 Picture picture = mutableData.getValue(Picture.class);
                 if (picture == null)
                     return Transaction.success(mutableData);
+                Log.d(TAG, "PICTURE: " + picture);
                 //get the number of likes
                 mLikesNumber = picture.getLikes();
                 //get views
@@ -370,6 +391,8 @@ public class PictureFragment extends Fragment {
                 picture.setPopularity(1 - popularity);
                 mutableData.setValue(picture);
                 // update popularity in places or points
+                Log.d(TAG, "UPDATE POPULARITY IN PLACE? " + picture.isInPlace());
+                Log.d(TAG, "POINT/PLACE ID = " + picture.getPointId());
                 if (picture.isInPlace()){
                     DatabaseReference placesRef = mActivity.mDatabaseRef
                             .child(PLACES).child(picture.getPointId())
@@ -406,12 +429,12 @@ public class PictureFragment extends Fragment {
                 if(localLike) {
                     //add the new like
                     picture.setLikes(mLikesNumber + 1);
-                    picture.addLike(mActivity.mUser.getUid());
+                    picture.addLike(mUserId);
                 }
                 else {
                     //remove one like
                     picture.setLikes(mLikesNumber - 1);
-                    picture.removeLike(mActivity.mUser.getUid());
+                    picture.removeLike(mUserId);
                 }
                 mutableData.setValue(picture);
                 return Transaction.success(mutableData);
@@ -422,5 +445,84 @@ public class PictureFragment extends Fragment {
                 Log.d(TAG, "onComplete Transaction updateLikes, error:" + databaseError);
             }
         });
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = mActivity.getMenuInflater();
+        inflater.inflate(R.menu.context_picture_menu, menu);
+        if (mPicture.getUserId().equals(mUserId))
+            menu.findItem(R.id.delete_picture).setVisible(true);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.delete_picture:
+                Log.i(TAG, "Selected delete");
+                startDeleteDialog();
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
+    }
+
+    private void startDeleteDialog() {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(mActivity)
+                .setTitle(R.string.delete_picture)
+                .setMessage(R.string.delete_picture_message)
+                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Log.i(TAG, "The current picture will be removed");
+                        deletePicture();
+                    }
+                }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //do nothing
+                    }
+                });
+        dialog.show();
+    }
+
+    private void deletePicture(){
+
+        //delete picture in places or in points
+        if (mPicture.isInPlace()){
+            final DatabaseReference placesRef = mDatabaseRef.child(PLACES);
+            placesRef.child(mPicture.getPointId()).child(PICTURES).child(mPictureId).setValue(null)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            //once deleted the picture, the associated place will be empty, so delete it
+                            placesRef.child(mPicture.getPointId()).setValue(null);
+                        }
+                    });
+        }
+        else {
+            DatabaseReference pointsRef = mDatabaseRef.child(POINTS);
+            pointsRef.child(mPicture.getPointId()).child(PICTURES).child(mPictureId).setValue(null);
+        }
+
+        //delete picture in user
+        DatabaseReference usersRef = mDatabaseRef.child(USERS);
+        usersRef.child(mUserId).child(PICTURES).child(mPictureId).setValue(null);
+
+        //delete picture in pictures
+        DatabaseReference picturesRef = mDatabaseRef.child(PICTURES);
+        picturesRef.child(mPictureId).setValue(null);
+
+        //delete picture from the storage
+        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+        String picName = mPicture.getName();
+        storageReference.child(picName).delete();
+        storageReference.child(THUMB_PREFIX + picName).delete();
+        storageReference.child(INTERM_PREFIX + picName).delete();
+        Log.i(TAG, "Image deleted");
+        Toast.makeText(getContext(), getString(R.string.delete_picture_ok),
+                Toast.LENGTH_LONG).show();
+
+        //start the mapsActivity
+        NavUtils.navigateUpFromSameTask(mActivity);
     }
 }
