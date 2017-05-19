@@ -970,8 +970,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     }
 
     private void populateSlidingPanel(final Point point, final Context context) {
-        
-        final Point point = (Point) marker.getTag();
 
         final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
         final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
