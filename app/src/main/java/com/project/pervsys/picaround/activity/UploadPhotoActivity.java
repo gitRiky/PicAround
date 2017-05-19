@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 
+import com.alexvasilkov.gestures.views.GestureImageView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
@@ -75,7 +76,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private FirebaseUser mUser;
     private StorageReference mStorageRef;
-    private ImageView mImageView;
+    private GestureImageView mImageView;
     private EditText mDescriptionField;
     private String mPhotoPath;
     private String mDescription;
@@ -137,7 +138,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mUsername = getIntent().getStringExtra(USERNAME);
         profilePicture = getIntent().getStringExtra(PROFILE_PICTURE);
         Log.d(TAG, "Started activity, photo's path = " + mPhotoPath);
-        mImageView = (ImageView) findViewById(R.id.image_to_upload);
+        mImageView = (GestureImageView) findViewById(R.id.image_to_upload);
         mDescriptionField = (EditText) findViewById(R.id.photo_description);
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
@@ -290,7 +291,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         switch(id){
             case R.id.upload:
                 Log.i(TAG, "Upload has been selected");
-                mDescription = mDescriptionField.getText().toString();
+                mDescription = mDescriptionField.getText().toString().trim();
                 if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
                     //put the photo into the storage

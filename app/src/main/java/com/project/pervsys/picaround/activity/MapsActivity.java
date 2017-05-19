@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Paint;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -935,7 +936,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ArrayList<String> reverseGeocode(double lat, double lon) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         List<Address> addresses = null;
-
+      
         try {
             addresses = geocoder.getFromLocation(
                     lat,
@@ -967,6 +968,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             // join them, and send them to the thread.
             for(int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
                 addressFragments.add(address.getAddressLine(i));
+                Log.d(TAG, "addressLine: " + address.getAddressLine(i));
             }
             Log.i(TAG, "Address Found");
         }

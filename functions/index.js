@@ -5,7 +5,7 @@ const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 
 const MIN_DIST = 0.001;
-const MAX_DIST = 1000000000000000;
+const MAX_DIST = 1000;
 var points;
 
 class Point {
@@ -32,6 +32,7 @@ class Picture {
     this.username = username;
   }
 }
+
 var databaseRef = admin.database().ref();
 exports.aggregatePlaces = functions.https.onRequest((req, res) => {
 
@@ -80,29 +81,77 @@ function aggregatePlaces(places, points){
   }
 }
 
-function merge(place, point){
-  var pic;
-  for (var key in place.picture)
-	  pic = place.picture[key];
-  var pushRef = databaseRef.child("points").child(point.id).child("pictures").child(pic.id);
-  if (pic != null){
-	pushRef.set(pic);
-  }
+// function merge(place, point){
+//   var pic;
+//   for (var key in place.picture)
+// 	  pic = place.picture[key];
+//   var pushRef = databaseRef.child("points").child(point.id).child("pictures").child(pic.id);
+//   if (pic != null){
+//     // assign pointID to picture
+//     pic.pointId = point.id;
+//     pic.inPlace = false;
+// 	  pushRef.set(pic);
+//   }
+//   // deletePlace(place.id);
+// }
 
+function merge(place, point){
+  var pushRef = databaseRef.child("points").child(point.id).child("pictures");
+  var picturesRef = databaseRef.child("pictures");
+  if (place.picture != null){
+    for (var key in place.picture){
+      // assign pointID to picture
+      place.picture[key].pointId = point.id;
+      place.picture[key].inPlace = false;
+      pushRef.child(key).set(place.picture[key]);
+	  //update the picture also in pictures
+	  picturesRef.child(place.picture[key].id).set(place.picture[key]);
+    }
+}
   deletePlace(place.id);
 }
+
+// function createPoint(place){
+//   var toPut = new Point(place.lat, place.lon);
+//   var pointsRef = databaseRef.child("points");
+//   var pushRef = pointsRef.push();
+//   toPut.id = pushRef.key;
+//   for (key in place.picture){
+//     // assign pointID to picture
+//     place.picture[key].pointId = toPut.id;
+//     place.picture[key].inPlace = false;
+//     toPut.pictures = place.picture;
+//     points[place.id] = toPut;
+//     pushRef.set(toPut);
+//
+//     deletePlace(place.id);
+//   }
+// }
+
 
 function createPoint(place){
+  points[hashCode(String(place.id))] = place;
   var toPut = new Point(place.lat, place.lon);
   var pointsRef = databaseRef.child("points");
+
   var pushRef = pointsRef.push();
   toPut.id = pushRef.key;
-  toPut.pictures = place.picture;
-  points[place.id] = toPut;
-  pushRef.set(toPut);
+  var picturesRef = databaseRef.child("pictures");
+  for (var key in place.picture){
+  // assign pointID to picture
+    place.picture[key].pointId = toPut.id;
+    place.picture[key].inPlace = false;
+    toPut.pictures = place.picture;
+    pushRef.set(toPut);
+	//update the picture also in pictures
+	picturesRef.child(place.picture[key].id).set(toPut);
 
-  deletePlace(place.id);
+    deletePlace(place.id);
+  }
 }
+
+
+
 
 function computeDist(place, point){
   var placeLat = place.lat;
@@ -117,8 +166,8 @@ function computeDist(place, point){
 function hashCode(str){
 	var hash = 0;
 	if (str.length == 0) return hash;
-	for (i = 0; i < str.length; i++) {
-		char = str.charCodeAt(i);
+	for (var i = 0; i < str.length; i++) {
+		var char = str.charCodeAt(i);
     hash = ((hash<<5)-hash)+char;
     hash = hash & hash; // Convert to 32bit integer
 	}

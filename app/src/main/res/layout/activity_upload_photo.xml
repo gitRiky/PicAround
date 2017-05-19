@@ -11,15 +11,21 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <ImageView
+
+        <com.alexvasilkov.gestures.views.GestureImageView
             android:id="@+id/image_to_upload"
             android:layout_width="match_parent"
-            android:layout_height="240dp"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:background="@color/cardview_dark_background"/>
+            android:layout_height="240dp" />
+
+        <!--<ImageView-->
+            <!--android:id="@+id/image_to_upload"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="240dp"-->
+            <!--android:layout_alignParentStart="true"-->
+            <!--android:layout_alignParentTop="true"-->
+            <!--android:adjustViewBounds="true"-->
+            <!--android:scaleType="fitCenter"-->
+            <!--android:background="@color/cardview_dark_background"/>-->
 
         <android.support.design.widget.TextInputLayout
             android:id="@+id/input_layout_description"
