@@ -802,9 +802,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
 
         // Reverse geocode the coordinates
-        String address = reverseGeocode(point.getLat(), point.getLon());
-        TextView tv = (TextView) findViewById(R.id.marker_details);
-        tv.setText(address);
+        ArrayList<String> address = reverseGeocode(point.getLat(), point.getLon());
+        TextView titleTextView = (TextView) findViewById(R.id.marker_title);
+        TextView detailsTextView = (TextView) findViewById(R.id.marker_details);
+        titleTextView.setText(address.get(0));
+        address.remove(0);
+        String details = TextUtils.join(", ", address);
+        detailsTextView.setText(details);
 
 //        // Calculate required horizontal shift for current screen density
 //        final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
@@ -928,7 +932,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         });
     }
 
-    private String reverseGeocode(double lat, double lon) {
+    private ArrayList<String> reverseGeocode(double lat, double lon) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         List<Address> addresses = null;
 
@@ -949,14 +953,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     lon, illegalArgumentException);
         }
 
+        ArrayList<String> addressFragments = new ArrayList<String>();
+
         // Handle case where no address was found.
         if (addresses == null || addresses.size()  == 0) {
             Log.e(TAG, "ERROR in reverseGeocode, address not found");
-            return "Address not found";
-            }
+            addressFragments.add("Address not found");
+        }
         else {
             Address address = addresses.get(0);
-            ArrayList<String> addressFragments = new ArrayList<String>();
 
             // Fetch the address lines using getAddressLine,
             // join them, and send them to the thread.
@@ -964,9 +969,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 addressFragments.add(address.getAddressLine(i));
             }
             Log.i(TAG, "Address Found");
-            return TextUtils.join(System.getProperty("line.separator"),
-                            addressFragments);
         }
+        return addressFragments;
     }
 
     private void populateSlidingPanel(final Point point, final Context context) {
@@ -990,6 +994,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         Picture pic = picture.getValue(Picture.class);
                         pictures.put(picture.getKey(), pic);
                     }
+
+                    TextView pictureNumberTextView = (TextView) findViewById(R.id.picture_number);
+                    int pictureNumber = pictures.size();
+                    if (pictureNumber > 1)
+                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.pictures));
+                    else
+                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.picture));
 
                     ImageAdapter adapter = new ImageAdapter(context, pictures);
                     pointPictures.setAdapter(adapter);
