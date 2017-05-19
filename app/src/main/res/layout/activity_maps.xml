@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="bottom"
-    sothree:umanoPanelHeight="68dp"
+    sothree:umanoPanelHeight="80dp"
     sothree:umanoShadowHeight="4dp"
     sothree:umanoParallaxOffset="100dp"
     sothree:umanoDragView="@+id/dragView"
@@ -102,27 +102,52 @@
         android:focusable="false"
         android:orientation="vertical">
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
-            android:orientation="horizontal">
+            android:layout_height="80dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="5dp">
+
+            <TextView
+                android:id="@+id/marker_title"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:textSize="18sp"
+                android:textColor="@color/primary_text_black"
+                android:maxLines="1"
+                android:gravity="center_vertical"
+                android:ellipsize="end"/>
 
             <TextView
                 android:id="@+id/marker_details"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center_vertical"
-                android:paddingLeft="10dp"
-                android:textSize="14sp" />
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:layout_below="@id/marker_title"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/picture_number"
+                android:layout_width="match_parent"
+                android:layout_height="32dp"
+                android:layout_below="@id/marker_details"
+                android:textSize="16sp"
+                android:textColor="@color/colorAccent"
+                android:maxLines="1"
+                android:textStyle="bold"
+                android:ellipsize="end"/>
+
+        </RelativeLayout>
 
         <GridView
             android:id="@+id/pictures_grid"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
+            android:layout_height="match_parent"
+            android:numColumns="3"
+            android:verticalSpacing="3dp"
+            android:horizontalSpacing="3dp"/>
             
     </LinearLayout>
 
