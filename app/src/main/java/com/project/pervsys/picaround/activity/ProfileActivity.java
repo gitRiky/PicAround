@@ -176,19 +176,20 @@ public class ProfileActivity extends AppCompatActivity {
         int month = Integer.parseInt(split[1]);
         int day = Integer.parseInt(split[2]);
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int currentMonth = Calendar.getInstance().get(Calendar.MONTH);
+        int currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1;
         int currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-        if (currentMonth > month)
+        if (currentMonth > month) {
             age = currentYear - year;
+        }
         else if (currentMonth == month) {
             if (currentDay >= day)
                 age = currentYear - year;
             else
                 age = currentYear - year - 1;
         }
-        else
+        else {
             age = currentYear - year - 1;
-
+        }
         return "" + age;
     }
 

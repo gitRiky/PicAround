@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround.activity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -90,6 +91,10 @@ public class UserActivity extends AppCompatActivity {
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        ProgressDialog progress = ApplicationClass.getProgress();
+                        if (progress != null)
+                            progress.dismiss();
 
                         for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
                             mUser = userSnap.getValue(User.class);

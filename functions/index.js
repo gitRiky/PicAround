@@ -81,53 +81,21 @@ function aggregatePlaces(places, points){
   }
 }
 
-// function merge(place, point){
-//   var pic;
-//   for (var key in place.picture)
-// 	  pic = place.picture[key];
-//   var pushRef = databaseRef.child("points").child(point.id).child("pictures").child(pic.id);
-//   if (pic != null){
-//     // assign pointID to picture
-//     pic.pointId = point.id;
-//     pic.inPlace = false;
-// 	  pushRef.set(pic);
-//   }
-//   // deletePlace(place.id);
-// }
-
 function merge(place, point){
   var pushRef = databaseRef.child("points").child(point.id).child("pictures");
   var picturesRef = databaseRef.child("pictures");
-  if (place.picture != null){
-    for (var key in place.picture){
+  if (place.pictures != null){
+    for (var key in place.pictures){
       // assign pointID to picture
-      place.picture[key].pointId = point.id;
-      place.picture[key].inPlace = false;
-      pushRef.child(key).set(place.picture[key]);
+      place.pictures[key].pointId = point.id;
+      place.pictures[key].inPlace = false;
+      pushRef.child(key).set(place.pictures[key]);
 	  //update the picture also in pictures
-	  picturesRef.child(place.picture[key].id).set(place.picture[key]);
+	  picturesRef.child(place.pictures[key].id).set(place.pictures[key]);
     }
 }
   deletePlace(place.id);
 }
-
-// function createPoint(place){
-//   var toPut = new Point(place.lat, place.lon);
-//   var pointsRef = databaseRef.child("points");
-//   var pushRef = pointsRef.push();
-//   toPut.id = pushRef.key;
-//   for (key in place.picture){
-//     // assign pointID to picture
-//     place.picture[key].pointId = toPut.id;
-//     place.picture[key].inPlace = false;
-//     toPut.pictures = place.picture;
-//     points[place.id] = toPut;
-//     pushRef.set(toPut);
-//
-//     deletePlace(place.id);
-//   }
-// }
-
 
 function createPoint(place){
   points[hashCode(String(place.id))] = place;
@@ -137,21 +105,18 @@ function createPoint(place){
   var pushRef = pointsRef.push();
   toPut.id = pushRef.key;
   var picturesRef = databaseRef.child("pictures");
-  for (var key in place.picture){
+  for (var key in place.pictures){
   // assign pointID to picture
-    place.picture[key].pointId = toPut.id;
-    place.picture[key].inPlace = false;
-    toPut.pictures = place.picture;
+    place.pictures[key].pointId = toPut.id;
+    place.pictures[key].inPlace = false;
+    toPut.pictures = place.pictures;
     pushRef.set(toPut);
 	//update the picture also in pictures
-	picturesRef.child(place.picture[key].id).set(toPut);
+	picturesRef.child(place.pictures[key].id).set(toPut);
 
     deletePlace(place.id);
   }
 }
-
-
-
 
 function computeDist(place, point){
   var placeLat = place.lat;
