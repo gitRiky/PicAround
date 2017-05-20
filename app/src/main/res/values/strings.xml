@@ -73,11 +73,11 @@
         <item>December</item>
     </string-array>
     <string name="invalid_date">Invalid date</string>
-    <string name="views" translatable="false">views</string>
+    <string name="views">views</string>
     <string name="likes">likes</string>
     <string name="popularity">popularity</string>
     <string name="confirm">continue</string>
-    <string name="view" translatable="false">view</string>
+    <string name="view">view</string>
     <string name="like">like</string>
     <string name="login_required">Login required</string>
     <string name="login_for_upload">You must be logged in order to upload a picture. Do you want to login?</string>
