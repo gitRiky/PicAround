@@ -872,7 +872,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             p.setType(POINT);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
                             mci.setPoint(p);
-                            if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+                            if(p.getId().equals(null)){
+                                Log.e(TAG, "ERROR, some point has null ID");
+                            }
+                            else if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
                                 mClusterManager.addItem(mci);
                             }
