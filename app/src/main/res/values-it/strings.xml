@@ -58,7 +58,7 @@
     <string name="search_user">Cerca utente</string>
     <string name="settings">Impostazioni</string>
     <string name="share">Condividi</string>
-    <string name="sign_in_with_facebook">Effettua il login con Facebook</string>
+    <string name="sign_in_with_facebook">Accedi con Facebook</string>
     <string name="start_gallery_intent_title">Seleziona immagine</string>
     <string name="surname_field">Cognome:</string>
     <string name="title_activity_maps">Mappa</string>
