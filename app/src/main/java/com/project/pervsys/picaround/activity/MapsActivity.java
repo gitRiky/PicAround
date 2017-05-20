@@ -46,7 +46,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.miguelcatalan.materialsearchview.MaterialSearchView;
+import com.claudiodegio.msv.OnSearchViewListener;
+import com.claudiodegio.msv.SuggestionMaterialSearchView;
+import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.Query;
@@ -103,6 +105,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -124,9 +127,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ProgressDialog progress;
     private GoogleMap mMap;
     private ImageView mImageView;
-    private MaterialSearchView mSearchView;
+
     private SlidingUpPanelLayout mSlidingUpPanel;
-//    private MaterialSearchView mSearchView;
+    private SuggestionMaterialSearchView mSearchView;
     private DBManager mDbManager;
     private ArrayList<String> mUsernames;
     private ArrayList<String> searchHistory;
@@ -143,6 +146,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String mProfilePicture;
     private List<String> thumbnails;
     private FloatingActionMenu mFloatingActionMenu;
+    private boolean populated = false;
 
     private FirebaseUser mUser;
     private FirebaseAuth mAuth;
@@ -321,62 +325,43 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 invalidateOptionsMenu();
             }
         };
+
         mDbManager = new DBManager(MapsActivity.this);
-        mSearchView = (MaterialSearchView) findViewById(R.id.search_view);
-        mSearchView.setVoiceSearch(true);
 
-        mUsernames = new ArrayList<>();
-
-        mAdapter = new SearchAdapter(MapsActivity.this, mUsernames, false);
-        mSearchView.setAdapter(mAdapter);
-        mSearchView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                String username = (String) adapterView.getItemAtPosition(i);
-                Intent intent = new Intent(MapsActivity.this, UserActivity.class);
-                intent.putExtra(USERNAME, username);
-                startActivity(intent);
-                mSearchView.closeSearch();
-            }
-        });
-
-        searchHistory = new ArrayList<>();
-        searchHistory.add("Sugg1");
-        searchHistory.add("Sugg2");
-
-        String[] arr = searchHistory.toArray(new String[searchHistory.size()]);
-//        mSearchView.setSuggestions(arr);
-
-        mSearchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-//                search(query);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-//                if (!newText.isEmpty())
-                search(newText);
-                Log.d(TAG, "Usernames after query: " + mUsernames);
-                mAdapter.updateList(mUsernames, false);
-                return false;
-            }
-        });
-        mSearchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
+        mSearchView = (SuggestionMaterialSearchView) findViewById(R.id.sv);
+        mSearchView.setOnSearchViewListener(new OnSearchViewListener() {
             @Override
             public void onSearchViewShown() {
                 populateUsernames();
-                if (mFloatingActionMenu.isOpened())
-                    mFloatingActionMenu.close(true);
+                mFloatingActionMenu.hideMenuButton(true);
             }
 
             @Override
             public void onSearchViewClosed() {
+                mFloatingActionMenu.showMenuButton(true);
+                mUsernames.clear();
+            }
 
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                if (mUsernames.contains(s)) {
+                    Intent intent = new Intent(MapsActivity.this, UserActivity.class);
+                    intent.putExtra(USERNAME, s);
+                    startActivity(intent);
+                    mSearchView.closeSearch();
+                }
+                else {
+                    Toast.makeText(MapsActivity.this, R.string.no_users_found, Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+
+            @Override
+            public void onQueryTextChange(String s) {
             }
         });
 
+        mUsernames = new ArrayList<>();
 
         // Set the Sliding up panel
         setSlidingUpPanel();
@@ -390,8 +375,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mFloatingActionMenu.setOnMenuButtonClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mSearchView.isSearchOpen())
-                    mSearchView.closeSearch();
                 if (mFloatingActionMenu.isOpened())
                     mFloatingActionMenu.close(true);
                 else
@@ -615,17 +598,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     Log.i(TAG, "Photo taken from gallery in uploading");
                 if (resultCode == RESULT_CANCELED)
                     Log.i(TAG, "Photo upload cancelled");
-                break;
-            case MaterialSearchView.REQUEST_VOICE:
-                if (resultCode == RESULT_OK){
-                    ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    if (matches != null && matches.size() > 0) {
-                        String searchWrd = matches.get(0);
-                        if (!TextUtils.isEmpty(searchWrd)) {
-                            mSearchView.setQuery(searchWrd, false);
-                        }
-                    }
-                }
                 break;
         }
     }
@@ -1232,7 +1204,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (mFloatingActionMenu.isOpened()){
             mFloatingActionMenu.close(true);
         }
-        else if (mSearchView.isSearchOpen()) {
+        else if (mSearchView.isOpen()) {
             mSearchView.closeSearch();
         }
         else if (mSlidingUpPanel != null &&
@@ -1259,12 +1231,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         }
                         Cursor result = mDbManager.query();
                         result.moveToFirst();
-                        Log.d(TAG, "----- Usernames in the database:");
                         for (int i = 0; i < result.getCount(); i++) {
                             String username = result.getString(result.getColumnIndex(USERNAME));
                             Log.d(TAG, username);
                             result.moveToNext();
+                            mUsernames.add(username);
                         }
+                        mSearchView.setSuggestAdapter(new SearchSuggestRvAdapter(MapsActivity.this, mUsernames));
                     }
 
                     @Override
@@ -1273,31 +1246,5 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         Log.e(TAG, databaseError.toString());
                     }
                 });
-    }
-
-    private void search(String text){
-        Log.d(TAG, "Usernames before query: " + mUsernames);
-        mDbManager.createTable();
-        mUsernames.clear();
-        Log.d(TAG, "Usernames before query (clear): " + mUsernames);
-        Log.d(TAG, "textEmpty="+ text.isEmpty() + ", Text=" + text);
-        Log.d(TAG, "------------ QUERY RESULTS:");
-        Cursor result = mDbManager.queryLike(text);
-//        if (result != null) {
-        result.moveToFirst();
-        for (int i = 0; i < result.getCount(); i++) {
-            String username = result.getString(result.getColumnIndex(USERNAME));
-            mUsernames.add(username);
-            Log.d(TAG, username);
-            result.moveToNext();
-        }
-        Log.d(TAG, "Usernames after query != null: " + mUsernames);
-//        }
-//        else {
-//            Log.d(TAG, "RESULT NULL");
-//            Log.d(TAG, "Usernames after query == null: " + mUsernames);
-//        }
-        Log.d(TAG, "Usernames after query, before updateList: " + mUsernames);
-        mAdapter.updateList(mUsernames, false);
     }
 }
