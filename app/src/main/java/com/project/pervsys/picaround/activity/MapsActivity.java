@@ -12,7 +12,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Paint;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -38,8 +41,19 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.claudiodegio.msv.OnSearchViewListener;
+import com.claudiodegio.msv.SuggestionMaterialSearchView;
+import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.Query;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterManager;
 import com.project.pervsys.picaround.R;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
@@ -69,6 +83,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -77,6 +92,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.localDatabase.DBManager;
+import com.project.pervsys.picaround.utility.InfoWindowView;
+import com.project.pervsys.picaround.utility.MarkerClusterItem;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -85,13 +103,15 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-
-import com.miguelcatalan.materialsearchview.MaterialSearchView;
+import java.util.Locale;
 
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
 
-public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, GoogleMap.InfoWindowAdapter {
+public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, GoogleMap.InfoWindowAdapter {
 
 
     private static final String BITMAP_STORAGE_KEY = "viewbitmap";
@@ -107,7 +127,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ProgressDialog progress;
     private GoogleMap mMap;
     private ImageView mImageView;
-    private MaterialSearchView mSearchView;
+
+    private SlidingUpPanelLayout mSlidingUpPanel;
+    private SuggestionMaterialSearchView mSearchView;
+
     private DBManager mDbManager;
     private ArrayList<String> mUsernames;
     private ArrayList<String> searchHistory;
@@ -124,6 +147,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String mProfilePicture;
     private List<String> thumbnails;
     private FloatingActionMenu mFloatingActionMenu;
+    private boolean populated = false;
 
     private FirebaseUser mUser;
     private FirebaseAuth mAuth;
@@ -133,6 +157,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private CameraPosition mCameraPosition;
     private InfoWindowView mInfoWindow = null;
     private Point mLastPoint;
+    private ClusterManager<MarkerClusterItem> mClusterManager;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -301,62 +326,46 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 invalidateOptionsMenu();
             }
         };
+
         mDbManager = new DBManager(MapsActivity.this);
-        mSearchView = (MaterialSearchView) findViewById(R.id.search_view);
-        mSearchView.setVoiceSearch(true);
 
-        mUsernames = new ArrayList<>();
-
-        mAdapter = new SearchAdapter(MapsActivity.this, mUsernames, false);
-        mSearchView.setAdapter(mAdapter);
-        mSearchView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                String username = (String) adapterView.getItemAtPosition(i);
-                Intent intent = new Intent(MapsActivity.this, UserActivity.class);
-                intent.putExtra(USERNAME, username);
-                startActivity(intent);
-                mSearchView.closeSearch();
-            }
-        });
-
-        searchHistory = new ArrayList<>();
-        searchHistory.add("Sugg1");
-        searchHistory.add("Sugg2");
-
-        String[] arr = searchHistory.toArray(new String[searchHistory.size()]);
-//        mSearchView.setSuggestions(arr);
-
-        mSearchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-//                search(query);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-//                if (!newText.isEmpty())
-                    search(newText);
-                Log.d(TAG, "Usernames after query: " + mUsernames);
-                mAdapter.updateList(mUsernames, false);
-                return false;
-            }
-        });
-        mSearchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
+        mSearchView = (SuggestionMaterialSearchView) findViewById(R.id.sv);
+        mSearchView.setOnSearchViewListener(new OnSearchViewListener() {
             @Override
             public void onSearchViewShown() {
                 populateUsernames();
-                if (mFloatingActionMenu.isOpened())
-                    mFloatingActionMenu.close(true);
+                mFloatingActionMenu.hideMenuButton(true);
             }
 
             @Override
             public void onSearchViewClosed() {
+                mFloatingActionMenu.showMenuButton(true);
+                mUsernames.clear();
+            }
 
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                if (mUsernames.contains(s)) {
+                    Intent intent = new Intent(MapsActivity.this, UserActivity.class);
+                    intent.putExtra(USERNAME, s);
+                    startActivity(intent);
+                    mSearchView.closeSearch();
+                }
+                else {
+                    Toast.makeText(MapsActivity.this, R.string.no_users_found, Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+
+            @Override
+            public void onQueryTextChange(String s) {
             }
         });
 
+        mUsernames = new ArrayList<>();
+
+        // Set the Sliding up panel
+        setSlidingUpPanel();
 
         // Set file settings
         mAlbumStorageDirFactory = new AlbumStorageDirFactory();
@@ -367,8 +376,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mFloatingActionMenu.setOnMenuButtonClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mSearchView.isSearchOpen())
-                    mSearchView.closeSearch();
                 if (mFloatingActionMenu.isOpened())
                     mFloatingActionMenu.close(true);
                 else
@@ -408,31 +415,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 Log.d(TAG, "First usage, mUsername = " + mUsername + "\nProfile picture :" + mProfilePicture );
             }
             else {
-                String email = mUser.getEmail();
-                mDatabaseRef.child(USERS).orderByChild(EMAIL).equalTo(email)
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
-                                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                    if (child != null) {
-                                        Log.i(TAG, "Username obtained");
-                                        User user = child.getValue(User.class);
-                                        Log.d(TAG, user.toString());
-                                        mUsername = user.getUsername();
-                                        mProfilePicture = user.getProfilePicture();
-                                        if (progress != null)
-                                            progress.dismiss();
-                                    } else
-                                        Log.e(TAG, "Cannot obtain the mUsername");
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-                                //database error, e.g. permission denied (not logged with Firebase)
-                                Log.e(TAG, databaseError.toString());
-                            }
-                        });
+                getProfileInfo();
             }
         }
 
@@ -451,10 +434,42 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 .build();                   // Creates a CameraPosition from the builder
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+    }
+
+    private void setSlidingUpPanel() {
+        mSlidingUpPanel = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+    }
+  
+    private void getProfileInfo() {
+        mDatabaseRef.child(USERS).orderByKey().equalTo(mUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            if (child != null) {
+                                User user = child.getValue(User.class);
+                                Log.d(TAG, user.toString());
+                                mUsername = user.getUsername();
+                                mProfilePicture = user.getProfilePicture();
+                                Log.i(TAG, "Username= " + mUsername
+                                        + ", profilePicturePath = " + mProfilePicture);
+                                if (progress != null)
+                                    progress.dismiss();
+                            } else
+                                Log.e(TAG, "Cannot obtain profile info");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
     }
 
     @Override
@@ -470,6 +485,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         // TODO: The app executes populatePoints() in onResume() also !
         if (mMap != null)
             populatePoints();
+
+        String newProfilePicturePath = ApplicationClass.getNewProfilePicturePath();
+        if (newProfilePicturePath != null){
+            Log.i(TAG, "Profile image has been updated");
+            mProfilePicture = newProfilePicturePath;
+            ApplicationClass.setNewProfilePicturePath(null);
+        }
     }
 
     /* Remove the location listener updates when Activity is paused */
@@ -523,13 +545,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "Permission given");
 
+                    setupGPS(this);
                     mProvider = mLocationManager.getBestProvider(new Criteria(), true);
-                    if (mProvider != null) {
-                        mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
-                        mMap.setMyLocationEnabled(true);
-                        setupGPS(this);
-                    }
+                    mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
+                    mMap.setMyLocationEnabled(true);
                 }
             }
             break;
@@ -578,17 +599,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     Log.i(TAG, "Photo taken from gallery in uploading");
                 if (resultCode == RESULT_CANCELED)
                     Log.i(TAG, "Photo upload cancelled");
-                break;
-            case MaterialSearchView.REQUEST_VOICE:
-                if (resultCode == RESULT_OK){
-                    ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    if (matches != null && matches.size() > 0) {
-                        String searchWrd = matches.get(0);
-                        if (!TextUtils.isEmpty(searchWrd)) {
-                            mSearchView.setQuery(searchWrd, false);
-                        }
-                    }
-                }
                 break;
         }
     }
@@ -662,12 +672,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        mImageBitmap = savedInstanceState.getParcelable(BITMAP_STORAGE_KEY);
-        mImageView.setImageBitmap(mImageBitmap);
-        mImageView.setVisibility(
-                savedInstanceState.getBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY) ?
-                        ImageView.VISIBLE : ImageView.INVISIBLE
-        );
+//        mImageBitmap = savedInstanceState.getParcelable(BITMAP_STORAGE_KEY);
+//        mImageView.setImageBitmap(mImageBitmap);
+//        mImageView.setVisibility(
+//                savedInstanceState.getBoolean(IMAGEVIEW_VISIBILITY_STORAGE_KEY) ?
+//                        ImageView.VISIBLE : ImageView.INVISIBLE
+//        );
     }
 
     /**
@@ -718,6 +728,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                if(mSlidingUpPanel != null)
+                    mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+            }
+        });
+
         Location location = null;
 
         // Restore previous configurations of the map, if available
@@ -725,20 +744,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+            Log.i(TAG, "Permission asked");
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSIONS_REQUEST_FINE_LOCATION);
-            if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        PERMISSIONS_REQUEST_COARSE_LOCATION);
-            }
         }
         else{
+            Log.i(TAG, "Permission not asked");
+            setupGPS(this);
             mProvider = mLocationManager.getBestProvider(new Criteria(), true);
             mLocationManager.requestLocationUpdates(mProvider, MIN_TIME_LOCATION_UPDATE, MIN_DISTANCE_LOCATION_UPDATE, this);
             mMap.setMyLocationEnabled(true);
-            setupGPS(this);
             location = mLocationManager.getLastKnownLocation(mProvider);
         }
 
@@ -750,18 +766,71 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         }
 
         //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
-        populatePoints();
-
-        // Set a listener for marker click.
-        mMap.setOnMarkerClickListener(this);
-
-        // Set a listener for infoWindow click.
-        mMap.setOnInfoWindowClickListener(this);
-
+        setUpClusterer();
         // Set InfoWindowAdapter
-        mMap.setInfoWindowAdapter(this);
+//        mMap.setInfoWindowAdapter(this);
     }
 
+    private void showPoint(Point point) {
+        populateSlidingPanel(point, this);
+        mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+
+        // Reverse geocode the coordinates
+        ArrayList<String> address = reverseGeocode(point.getLat(), point.getLon());
+        TextView titleTextView = (TextView) findViewById(R.id.marker_title);
+        TextView detailsTextView = (TextView) findViewById(R.id.marker_details);
+        titleTextView.setText(address.get(0));
+        address.remove(0);
+        String details = TextUtils.join(", ", address);
+        detailsTextView.setText(details);
+
+//        // Calculate required horizontal shift for current screen density
+//        final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
+//        // Calculate required vertical shift for current screen density
+//        final int dY = getResources().getDimensionPixelSize(R.dimen.map_dy);
+//        final Projection projection = mMap.getProjection();
+//        final android.graphics.Point markerPoint = projection.toScreenLocation(new LatLng(point.getLat(), point.getLon()));
+//        // Shift the point we will use to center the map
+//        markerPoint.offset(dX, dY);
+//        final LatLng newLatLng = projection.fromScreenLocation(markerPoint);
+//        // Smoothly move camera
+//        mMap.animateCamera(CameraUpdateFactory.newLatLng(newLatLng));
+//
+//        mMap.getUiSettings().setMapToolbarEnabled(true);
+    }
+
+    private void setUpClusterer() {
+        if(mMap == null)
+            return;
+
+        mClusterManager = new ClusterManager<MarkerClusterItem>(this, mMap);
+        mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MarkerClusterItem>() {
+            @Override
+            public boolean onClusterItemClick(MarkerClusterItem item) {
+                Point p = item.getPoint();
+                showPoint(p);
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(item.getPosition(), mMap.getCameraPosition().zoom);
+                mMap.animateCamera(cameraUpdate);
+                return true;
+            }
+        });
+
+        mClusterManager.setOnClusterClickListener(new ClusterManager.OnClusterClickListener<MarkerClusterItem>() {
+            @Override
+            public boolean onClusterClick(Cluster<MarkerClusterItem> cluster) {
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(cluster.getPosition(), mMap.getCameraPosition().zoom + 2);
+                mMap.animateCamera(cameraUpdate);
+                return true;
+            }
+        });
+
+        mMap.setOnCameraIdleListener(mClusterManager);
+        mMap.setOnMarkerClickListener(mClusterManager);
+
+        populatePoints();
+    }
+
+    // TODO: onResume should not call this !
     private void populatePoints() {
         // get all the points
         mDatabaseRef.child(POINTS).keepSynced(true);
@@ -773,11 +842,17 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
-                            mMap.addMarker(new MarkerOptions()
-                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
-                                    .position(new LatLng(p.getLat(), p.getLon())))
-                                    .setTag(p);
+                            MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
+                            mci.setPoint(p);
+                            if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+//                                Log.i(TAG, "The point " + mci + "has been added");
+                                mClusterManager.addItem(mci);
                             }
+//                            mMap.addMarker(new MarkerOptions()
+//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+//                                    .position(new LatLng(p.getLat(), p.getLon())))
+//                                    .setTag(p);
+                        }
 
                     }
 
@@ -831,36 +906,108 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         });
     }
 
-    /** Called when the user clicks a marker. */
-    @Override
-    public boolean onMarkerClick(final Marker marker) {
+    private ArrayList<String> reverseGeocode(double lat, double lon) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses = null;
+      
+        try {
+            addresses = geocoder.getFromLocation(
+                    lat,
+                    lon,
+                    // In this sample, get just a single address.
+                    1);
+        } catch (IOException ioException) {
+            // Catch network or other I/O problems.
+            Log.e(TAG, "ERROR in reverseGeocode", ioException);
+        } catch (IllegalArgumentException illegalArgumentException) {
+            // Catch invalid latitude or longitude values.
+            Log.e(TAG, "ERROR in reverseGeocode" + ". " +
+                    "Latitude = " + lat +
+                    ", Longitude = " +
+                    lon, illegalArgumentException);
+        }
 
-        // Calculate required horizontal shift for current screen density
-        final int dX = getResources().getDimensionPixelSize(R.dimen.map_dx);
-        // Calculate required vertical shift for current screen density
-        final int dY = getResources().getDimensionPixelSize(R.dimen.map_dy);
-        final Projection projection = mMap.getProjection();
-        final android.graphics.Point markerPoint = projection.toScreenLocation(marker.getPosition());
-        // Shift the point we will use to center the map
-        markerPoint.offset(dX, dY);
-        final LatLng newLatLng = projection.fromScreenLocation(markerPoint);
-        // Smoothly move camera
-        mMap.animateCamera(CameraUpdateFactory.newLatLng(newLatLng));
+        ArrayList<String> addressFragments = new ArrayList<String>();
 
-        mMap.getUiSettings().setMapToolbarEnabled(true);
+        // Handle case where no address was found.
+        if (addresses == null || addresses.size()  == 0) {
+            Log.e(TAG, "ERROR in reverseGeocode, address not found");
+            addressFragments.add("Address not found");
+        }
+        else {
+            Address address = addresses.get(0);
 
-        marker.showInfoWindow();
-
-        return true;
+            // Fetch the address lines using getAddressLine,
+            // join them, and send them to the thread.
+            for(int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
+                addressFragments.add(address.getAddressLine(i));
+                Log.d(TAG, "addressLine: " + address.getAddressLine(i));
+            }
+            Log.i(TAG, "Address Found");
+        }
+        return addressFragments;
     }
 
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        // Start PointActivity
-        Point point = (Point) marker.getTag();
-        Intent i = new Intent(this, PointActivity.class);
-        i.putExtra(POINT_ID, point.getId());
-        startActivity(i);
+    private void populateSlidingPanel(final Point point, final Context context) {
+
+        final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
+        final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
+
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        databaseRef.child(POINTS).keepSynced(true);
+
+        Query photos;
+        photos = databaseRef.child(POINTS).child(point.getId()).child(PICTURES)
+                .orderByChild(POPULARITY);
+
+        photos.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                for (DataSnapshot photoSnap : dataSnapshot.getChildren()) {
+                    for (DataSnapshot picture : dataSnapshot.getChildren()) {
+                        Picture pic = picture.getValue(Picture.class);
+                        pictures.put(picture.getKey(), pic);
+                    }
+
+                    TextView pictureNumberTextView = (TextView) findViewById(R.id.picture_number);
+                    int pictureNumber = pictures.size();
+                    if (pictureNumber > 1)
+                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.pictures));
+                    else
+                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.picture));
+
+                    ImageAdapter adapter = new ImageAdapter(context, pictures);
+                    pointPictures.setAdapter(adapter);
+                    pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                            Picture picture = (Picture) adapterView.getItemAtPosition(position);
+
+                            Log.i(TAG, "Picture: " + picture);
+
+                            // Start PictureActivity
+//                            Intent i = new Intent(context, PictureActivity.class);
+//                            i.putExtra(PICTURE_ID, picture.getId());
+//                            i.putExtra(USER_ID, picture.getUserId());
+//                            i.putExtra(POINT_ID, point.getId());
+//                            startActivity(i);
+
+                            // Start PictureSliderActivity
+                            Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
+                            i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
+                            i.putExtra(POSITION, position);
+                            startActivity(i);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // TODO: what to do here?
+            }
+        });
     }
 
     @Override
@@ -870,7 +1017,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     @Override
     public View getInfoContents(Marker marker) {
-
         Point point = (Point) marker.getTag();
         if(mInfoWindow != null && mLastPoint.equals(point)) {
             View toReturn = mInfoWindow;
@@ -926,12 +1072,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mSearchView.setMenuItem(item);
 
         Log.i(TAG, "LOGGED WITH " + logged);
-        //if the user is not logged, then add login to the menu
+
         if(logged != null && !logged.equals(NOT_LOGGED))
-            menu.add(R.string.logout);
-            //if the user is logged, then add logout to the menu
+            menu.findItem(R.id.logout).setVisible(true);
         else
-            menu.add(R.string.login);
+            menu.findItem(R.id.login).setVisible(true);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -960,40 +1105,41 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
-//            case R.id.action_search:
-//                mSearchView.openSearch();
-//                return true;
+            case R.id.login:
+                getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                        .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
+                startLogin();
+                return true;
+            case R.id.logout:
+                Log.i(TAG, "Logout has been selected");
+                prepareLogOut();
+                return true;
+
             default:
-                String title = (String) item.getTitle();
-                if (title.equals(getResources().getString(R.string.login))) {
-                    Log.i(TAG, "Login has been selected");
-                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
-                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
-                    startLogin();
-                    return true;
-                } else {
-                    Log.i(TAG, "Logout has been selected");
-                    Toast.makeText(this, "Selected logout", Toast.LENGTH_SHORT).show();
-                    prepareLogOut();
-                }
+                return super.onOptionsItemSelected(item);
         }
-        return false;
     }
 
     //start the gallery Intent
     private void selectPicture(){
-        if (Build.VERSION.SDK_INT <= 19) {
-            Intent intent = new Intent();
-            intent.setType(IMAGE_TYPE);
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(Intent.createChooser(intent,
-                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
-        } else if (Build.VERSION.SDK_INT > 19) {
-            Intent intent = new Intent(Intent.ACTION_PICK,
-                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(Intent.createChooser(intent,
-                    getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        } else {
+            if (Build.VERSION.SDK_INT <= 19) {
+                Intent intent = new Intent();
+                intent.setType(IMAGE_TYPE);
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(Intent.createChooser(intent,
+                        getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+            } else if (Build.VERSION.SDK_INT > 19) {
+                Intent intent = new Intent(Intent.ACTION_PICK,
+                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(Intent.createChooser(intent,
+                        getString(R.string.start_gallery_intent_title)), REQUEST_PICK_IMAGE);
+            }
         }
     }
 
@@ -1060,8 +1206,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         if (mFloatingActionMenu.isOpened()){
             mFloatingActionMenu.close(true);
         }
-        else if (mSearchView.isSearchOpen()) {
+        else if (mSearchView.isOpen()) {
             mSearchView.closeSearch();
+        }
+        else if (mSlidingUpPanel != null &&
+                (mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED ||
+                        mSlidingUpPanel.getPanelState() == SlidingUpPanelLayout.PanelState.COLLAPSED)
+                ) {
+            mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
         }
         else  {
             super.onBackPressed();
@@ -1081,12 +1233,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         }
                         Cursor result = mDbManager.query();
                         result.moveToFirst();
-                        Log.d(TAG, "----- Usernames in the database:");
                         for (int i = 0; i < result.getCount(); i++) {
                             String username = result.getString(result.getColumnIndex(USERNAME));
                             Log.d(TAG, username);
                             result.moveToNext();
+                            mUsernames.add(username);
                         }
+                        mSearchView.setSuggestAdapter(new SearchSuggestRvAdapter(MapsActivity.this, mUsernames));
                     }
 
                     @Override
@@ -1122,4 +1275,5 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         Log.d(TAG, "Usernames after query, before updateList: " + mUsernames);
         mAdapter.updateList(mUsernames, false);
     }
+
 }

@@ -5,11 +5,23 @@
         android:id="@+id/profile"
         android:title="@string/profile"/>
     <item
+        android:id="@+id/delete_picture"
+        android:title="@string/delete"
+        android:visible="false" />
+    <item
         android:id="@+id/help"
         android:title="@string/help" />
     <item
         android:id="@+id/info"
         android:title="@string/info" />
+    <item
+        android:id="@+id/login"
+        android:title="@string/login"
+        android:visible="false" />
+    <item
+        android:id="@+id/logout"
+        android:title="@string/logout"
+        android:visible="false" />
     <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_search_white_24dp"

@@ -6,7 +6,6 @@ import android.util.Log;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 @IgnoreExtraProperties
 
@@ -93,7 +92,6 @@ public class User {
 
     public HashMap<String, Picture> getPictures() {
         if (pictures == null){
-            Log.d("User", "pictures == null");
             return new HashMap<>();
         }
         return pictures;

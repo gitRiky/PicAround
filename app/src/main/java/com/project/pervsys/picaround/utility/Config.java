@@ -12,6 +12,7 @@ public class Config {
     public static final String POINTS = "points";
     public static final String USERS = "users";
     public static final String USERNAMES = "usernames";
+    public static final String USERNAME = "username";
     public static final String DATE = "date";
     public static final String PICTURES = "pictures";
     public static final String LATITUDE = "latitude";
@@ -23,15 +24,19 @@ public class Config {
     public static final String USER_ID = "userId";
     public static final String ID = "id";
     public static final String POINT_ID = "pointId";
+    public static final String POSITION = "position";
+    public static final String PLACES = "places";
     public static final String LIKES_LIST = "likesList";
     public static final String VIEWS_LIST = "viewsList";
     public static final String PHOTO_PATH = "photoPath";
     public static final String EMAIL = "email";
     public static final String PROFILE_PICTURE = "profilePicture";
-    public static final String USERNAME = "username";
+    public static final String PICTURE = "picture";
     public static final int THUMBNAILS_NUMBER = 6;
     public static final int NUM_COLUMN_INFOWINDOW = 3;
     public static final String THUMB_PREFIX = "thumb_";
+    public static final String INTERM_PREFIX = "small_";
+
 
 
     public static final int RC_SIGN_IN = 1;

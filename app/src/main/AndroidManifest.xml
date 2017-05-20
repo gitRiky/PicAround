@@ -46,7 +46,9 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.LoginActivity">
+        <activity
+            android:name=".activity.LoginActivity"
+            android:screenOrientation="portrait">>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -66,21 +68,30 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_maps"
             android:launchMode="singleTop" />
-        <activity android:name=".activity.GetBasicInfoActivity" />
         <activity
-            android:name=".activity.PointActivity"
-            android:launchMode="singleTop"
-            android:parentActivityName=".activity.MapsActivity" />
-        <activity android:name=".activity.UploadPhotoActivity" />
+            android:name=".activity.GetBasicInfoActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activity.UploadPhotoActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".activity.PickLocationActivity"
             android:label="@string/title_activity_pick_location" />
         <activity
-            android:name=".activity.PictureActivity"/>
-        <activity android:name=".activity.UserActivity"/>
+            android:name=".activity.PictureSliderActivity"
+            android:parentActivityName=".activity.MapsActivity"/>
+        <activity
+            android:name=".activity.UserActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".activity.ProfileActivity"
             android:label="@string/title_activity_profile"
+            android:screenOrientation="portrait"
             android:parentActivityName=".activity.MapsActivity"
             android:theme="@style/AppTheme"/>
     </application>

@@ -1,4 +1,4 @@
-package com.project.pervsys.picaround.activity;
+package com.project.pervsys.picaround.utility;
 
 import android.content.Context;
 import android.net.Uri;

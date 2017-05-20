@@ -1,29 +1,43 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_marginTop="20dp"
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="5dp">
 
-    <RelativeLayout
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:paddingTop="5dp">
+    <TextView
+        android:id="@+id/marker_title"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:textSize="18sp"
+        android:textColor="@color/primary_text_black"
+        android:text="Via del Corso 125"
+        android:maxLines="1"
+        android:gravity="center_vertical"
+        android:ellipsize="end"/>
 
-        <GridLayout
-            android:id="@+id/info_pictures"
-            android:layout_width="match_parent"
-            android:layout_height="125dp"
-            android:columnCount="3">
-        </GridLayout>
+    <TextView
+        android:id="@+id/marker_details"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_below="@id/marker_title"
+        android:textSize="14sp"
+        android:text="00184 Roma, Italia"
+        android:maxLines="1"
+        android:ellipsize="end"/>
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/info_pictures"
-            android:layout_alignParentRight="true"
-            android:text="@string/open"
-            android:backgroundTint="@color/transparent"
-            android:textColor="@color/colorAccent"/>
+    <TextView
+        android:id="@+id/picture_number"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:layout_below="@id/marker_details"
+        android:textSize="16sp"
+        android:textColor="@color/colorAccent"
+        android:maxLines="1"
+        android:text="14 photos"
+        android:textStyle="bold"
+        android:ellipsize="end"/>
 
-    </RelativeLayout>
-
-</LinearLayout>
-
+</RelativeLayout>

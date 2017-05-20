@@ -19,7 +19,6 @@
         android:padding="16dp"
         android:textColor="@color/primary_text_black"
         android:textSize="16sp"
-        android:text="renferal"
         android:drawablePadding="20dp"/>
 
 </RelativeLayout>

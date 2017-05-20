@@ -15,11 +15,12 @@
         android:layout_height="wrap_content"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
-        android:paddingTop="20dp"
+        android:paddingTop="18dp"
         android:paddingBottom="20dp">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/user_icon"
+            android:layout_marginTop="2dp"
             android:layout_width="44dp"
             android:layout_height="44dp"/>
 
@@ -29,7 +30,6 @@
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/user_icon"
             android:layout_marginStart="10dp"
-            android:layout_marginTop="2dp"
             android:textSize="18sp"
             android:textColor="@color/primary_text_black"/>
 
@@ -60,6 +60,6 @@
         android:layout_height="match_parent"
         android:numColumns="3"
         android:verticalSpacing="3dp"
-        android:horizontalSpacing="3dp"/>
+        android:horizontalSpacing="3dp" />
 
 </LinearLayout>

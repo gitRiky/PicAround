@@ -47,14 +47,14 @@ public class DBManager {
 //        if (queryString.isEmpty())
 //            return null;
 //        else {
-            SQLiteDatabase db = mDbHelper.getReadableDatabase();
-            Cursor cursor = db.query(
-                    USERNAMES,
-                    new String[]{USERNAME},
-                    USERNAME + " LIKE '%" + queryString + "%'",
-                    null, null, null, null, null);
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        Cursor cursor = db.query(
+                USERNAMES,
+                new String[]{USERNAME},
+                USERNAME + " LIKE '%" + queryString + "%'",
+                null, null, null, null, null);
 
-            return cursor;
+        return cursor;
 //        }
     }
 

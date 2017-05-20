@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround.activity;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.animation.ValueAnimatorCompat;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -42,6 +44,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.project.pervsys.picaround.R;
+import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.User;
 import com.squareup.picasso.Picasso;
 
@@ -70,6 +73,7 @@ public class ProfileActivity extends AppCompatActivity {
     private StorageReference mStorageRef;
     private User mUser;
     private String mUserId;
+    private ProgressDialog progress;
 
 
 
@@ -172,19 +176,20 @@ public class ProfileActivity extends AppCompatActivity {
         int month = Integer.parseInt(split[1]);
         int day = Integer.parseInt(split[2]);
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int currentMonth = Calendar.getInstance().get(Calendar.MONTH);
+        int currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1;
         int currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-        if (currentMonth > month)
+        if (currentMonth > month) {
             age = currentYear - year;
+        }
         else if (currentMonth == month) {
             if (currentDay >= day)
                 age = currentYear - year;
             else
                 age = currentYear - year - 1;
         }
-        else
+        else {
             age = currentYear - year - 1;
-
+        }
         return "" + age;
     }
 
@@ -199,6 +204,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
         return false;
     }
+
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v,
                                     ContextMenu.ContextMenuInfo menuInfo) {
@@ -278,6 +284,7 @@ public class ProfileActivity extends AppCompatActivity {
     //TODO: when a profile image is updated, the pictures loaded before have the older profile image
     //we have to fix it
     private void uploadImage(){
+        startProgressBar();
         Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
         String photoId = mUser.getUsername() + "_" + timestamp.toString().replace(" ", "_").replace(".",":");
         mStorageRef =  FirebaseStorage.getInstance().getReference().child(photoId);
@@ -293,6 +300,11 @@ public class ProfileActivity extends AppCompatActivity {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception exception) {
+                        Toast.makeText(getApplicationContext(),
+                                R.string.upload_failed, Toast.LENGTH_LONG)
+                                .show();
+                        if (progress != null)
+                            progress.dismiss();
                         Log.e(TAG, "Error during the upload, " + exception.toString());
                     }
                 });
@@ -301,11 +313,41 @@ public class ProfileActivity extends AppCompatActivity {
     private void getPhotoPath(){
         mStorageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override
-            public void onSuccess(Uri uri) {
+            public void onSuccess(final Uri uri) {
                 Log.d(TAG, "Uri: " + uri);
+                ApplicationClass.setNewProfilePicturePath(uri.toString());
+
+                //update profile picture in the users root
                 mUser.setProfilePicture(uri.toString());
                 DatabaseReference pushRef = mDatabaseRef.child(USERS).child(mUserId);
                 pushRef.setValue(mUser);
+
+                //update profile picture of all the photos already taken
+                mDatabaseRef.child(PICTURES).orderByChild(USER_ID).equalTo(mUser.getId())
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
+                                    Picture picture = userSnap.getValue(Picture.class);
+                                    Log.d(TAG, "Name: " + picture.getName());
+                                    picture.setUserIcon(uri.toString());
+                                    mDatabaseRef.child(PICTURES).child(picture.getId())
+                                            .setValue(picture);
+                                }
+                                if (progress != null)
+                                    progress.dismiss();
+                                Log.i(TAG, "All the pictures with UserId = " +
+                                        mUser.getId() + " have been updated");
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+                                Log.e(TAG, "Error during the update of pictures, " +
+                                        databaseError.toString());
+                                if (progress != null)
+                                    progress.dismiss();
+                            }
+                        });
             }
         });
     }
@@ -341,5 +383,14 @@ public class ProfileActivity extends AppCompatActivity {
                 cursor.close();
             }
         }
+    }
+
+    private void startProgressBar(){
+        progress = new ProgressDialog(this);
+        progress.setMessage(getString(R.string.loading));
+        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progress.setIndeterminate(true);
+        progress.setCanceledOnTouchOutside(false);
+        progress.show();
     }
 }

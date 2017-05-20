@@ -1,5 +1,6 @@
 package com.project.pervsys.picaround.activity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -73,7 +74,7 @@ public class UserActivity extends AppCompatActivity {
         }
         else if (mUsername != null){
             orderByParameter = USERNAME;
-            equalToParameter = mUsername;
+            equalToParameter = mUsername.toLowerCase();
         }
 
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
@@ -91,6 +92,10 @@ public class UserActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
 
+                        ProgressDialog progress = ApplicationClass.getProgress();
+                        if (progress != null)
+                            progress.dismiss();
+
                         for (DataSnapshot userSnap : dataSnapshot.getChildren()) {
                             mUser = userSnap.getValue(User.class);
                             username.setText(mUser.getUsername());
@@ -99,7 +104,9 @@ public class UserActivity extends AppCompatActivity {
                                     .load(mUser.getProfilePicture())
                                     .into(userIcon);
 
-                            mPictures = mUser.getPictures();
+                            mPictures = mUser.getPictures(); //TODO: retrieve pictures ordered by timestamp
+Log.d(TAG, "Pictures: " + mPictures);
+
                             if (mPictures.isEmpty()){
                                 noPictures.setVisibility(View.VISIBLE);
                                 fullName.setText(mUser.getName() + " " + mUser.getSurname());
@@ -109,11 +116,14 @@ public class UserActivity extends AppCompatActivity {
                                 if (mPictures.size() == 1) {
                                     fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
                                             picturesNumber + " " + getString(R.string.picture));
-                                }
-                                else {
+
+                                } else {
                                     fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
                                             picturesNumber + " " + getString(R.string.pictures));
                                 }
+
+                                final Picture[] pictures = mPictures.values().toArray(new Picture[picturesNumber]);
+
                                 ImageAdapter adapter = new ImageAdapter(UserActivity.this, mPictures);
                                 userPictures.setAdapter(adapter);
                                 userPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -124,8 +134,10 @@ public class UserActivity extends AppCompatActivity {
                                         Log.i(TAG, "Picture: " + picture);
 
                                         // Start PictureActivity
-                                        Intent i = new Intent(UserActivity.this, PictureActivity.class);
-                                        i.putExtra(PICTURE_ID, picture.getId());
+
+                                        Intent i = new Intent(UserActivity.this, PictureSliderActivity.class);
+                                        i.putExtra(PICTURES, pictures);
+                                        i.putExtra(POSITION, position);
                                         startActivity(i);
                                     }
                                 });
@@ -179,7 +191,7 @@ public class UserActivity extends AppCompatActivity {
                 finish();
                 return true;
             default:
-                return true;
+                return onOptionsItemSelected(item);
         }
     }
 
