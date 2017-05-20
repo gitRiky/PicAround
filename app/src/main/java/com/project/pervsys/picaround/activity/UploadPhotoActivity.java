@@ -301,6 +301,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
                     mPlaceId = pushReference.getKey();
                     toPut.setId(mPlaceId);
+                    Log.d(TAG, "toPut " + toPut);
                     pushReference.setValue(toPut);
 
                     //save the image as username_timestamp
@@ -564,7 +565,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 picture.setId(id);
                 pushReference.setValue(picture);
 
-                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURE).child(id).setValue(picture);
+                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURES).child(id).setValue(picture);
                 mDatabaseRef.child(USERS).child(mUser.getUid()).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),

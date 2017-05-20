@@ -98,14 +98,14 @@ function aggregatePlaces(places, points){
 function merge(place, point){
   var pushRef = databaseRef.child("points").child(point.id).child("pictures");
   var picturesRef = databaseRef.child("pictures");
-  if (place.picture != null){
-    for (var key in place.picture){
+  if (place.pictures != null){
+    for (var key in place.pictures){
       // assign pointID to picture
-      place.picture[key].pointId = point.id;
-      place.picture[key].inPlace = false;
-      pushRef.child(key).set(place.picture[key]);
+      place.pictures[key].pointId = point.id;
+      place.pictures[key].inPlace = false;
+      pushRef.child(key).set(place.pictures[key]);
 	  //update the picture also in pictures
-	  picturesRef.child(place.picture[key].id).set(place.picture[key]);
+	  picturesRef.child(place.pictures[key].id).set(place.pictures[key]);
     }
 }
   deletePlace(place.id);
@@ -137,14 +137,14 @@ function createPoint(place){
   var pushRef = pointsRef.push();
   toPut.id = pushRef.key;
   var picturesRef = databaseRef.child("pictures");
-  for (var key in place.picture){
+  for (var key in place.pictures){
   // assign pointID to picture
-    place.picture[key].pointId = toPut.id;
-    place.picture[key].inPlace = false;
-    toPut.pictures = place.picture;
+    place.pictures[key].pointId = toPut.id;
+    place.pictures[key].inPlace = false;
+    toPut.pictures = place.pictures;
     pushRef.set(toPut);
 	//update the picture also in pictures
-	picturesRef.child(place.picture[key].id).set(toPut);
+	picturesRef.child(place.pictures[key].id).set(toPut.pictures[key]);
 
     deletePlace(place.id);
   }
