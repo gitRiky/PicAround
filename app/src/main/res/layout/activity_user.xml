@@ -7,7 +7,22 @@
     android:layout_height="match_parent"
     tools:context="com.project.pervsys.picaround.activity.UserActivity">
 
-    <include layout="@layout/toolbar"></include>
+    <FrameLayout
+        android:id="@+id/toolbar_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <include layout="@layout/toolbar"></include>
+
+        <com.claudiodegio.msv.SuggestionMaterialSearchView
+            android:id="@+id/sv"
+            android:elevation="5dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </com.claudiodegio.msv.SuggestionMaterialSearchView>
+
+    </FrameLayout>
+
 
     <RelativeLayout
         android:id="@+id/user"

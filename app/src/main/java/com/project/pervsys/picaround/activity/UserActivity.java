@@ -2,6 +2,7 @@ package com.project.pervsys.picaround.activity;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.database.Cursor;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,10 +28,16 @@ import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.User;
+import com.project.pervsys.picaround.localDatabase.DBManager;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+
+import com.claudiodegio.msv.OnSearchViewListener;
+import com.claudiodegio.msv.SuggestionMaterialSearchView;
+import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
 
 
 import static com.project.pervsys.picaround.utility.Config.*;
@@ -43,6 +50,9 @@ public class UserActivity extends AppCompatActivity {
     private String mUsername;
     private User mUser;
     private HashMap<String,Picture> mPictures;
+    private SuggestionMaterialSearchView mSearchView;
+    private DBManager mDbManager;
+    private ArrayList<String> mUsernames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +92,43 @@ public class UserActivity extends AppCompatActivity {
         final TextView fullName = (TextView) findViewById(R.id.user_fullname);
         final TextView noPictures = (TextView) findViewById(R.id.no_pictures);
         final GridView userPictures = (GridView) findViewById(R.id.user_pictures);
+
+        mDbManager = new DBManager(UserActivity.this);
+
+        mSearchView = (SuggestionMaterialSearchView) findViewById(R.id.sv);
+        mSearchView.setOnSearchViewListener(new OnSearchViewListener() {
+            @Override
+            public void onSearchViewShown() {
+                populateUsernames();
+//                mFloatingActionMenu.hideMenuButton(true);
+            }
+
+            @Override
+            public void onSearchViewClosed() {
+//                mFloatingActionMenu.showMenuButton(true);
+                mUsernames.clear();
+            }
+
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                if (mUsernames.contains(s)) {
+                    Intent intent = new Intent(UserActivity.this, UserActivity.class);
+                    intent.putExtra(USERNAME, s);
+                    startActivity(intent);
+                    mSearchView.closeSearch();
+                }
+                else {
+                    Toast.makeText(UserActivity.this, R.string.no_users_found, Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+
+            @Override
+            public void onQueryTextChange(String s) {
+            }
+        });
+
+        mUsernames = new ArrayList<>();
 
         mPictures = new HashMap<>();
 
@@ -158,6 +205,10 @@ Log.d(TAG, "Pictures: " + mPictures);
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
+
+        MenuItem item = menu.findItem(R.id.action_search);
+        mSearchView.setMenuItem(item);
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -217,5 +268,35 @@ Log.d(TAG, "Pictures: " + mPictures);
             age = currentYear - year - 1;
 
         return age;
+    }
+
+    private void populateUsernames(){
+        mDbManager.dropTable();
+        mDbManager.createTable();
+        mDatabaseRef.child(USERNAMES)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            String username = (String)child.getValue();
+                            mDbManager.insert(username);
+                        }
+                        Cursor result = mDbManager.query();
+                        result.moveToFirst();
+                        for (int i = 0; i < result.getCount(); i++) {
+                            String username = result.getString(result.getColumnIndex(USERNAME));
+                            Log.d(TAG, username);
+                            result.moveToNext();
+                            mUsernames.add(username);
+                        }
+                        mSearchView.setSuggestAdapter(new SearchSuggestRvAdapter(UserActivity.this, mUsernames));
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
     }
 }

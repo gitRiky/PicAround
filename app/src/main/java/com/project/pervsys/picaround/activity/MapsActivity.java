@@ -133,7 +133,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private DBManager mDbManager;
     private ArrayList<String> mUsernames;
-    private ArrayList<String> searchHistory;
     private SearchAdapter mAdapter;
 
     private String mCurrentPhotoPath;
