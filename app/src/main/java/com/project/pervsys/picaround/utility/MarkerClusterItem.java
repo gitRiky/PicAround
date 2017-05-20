@@ -1,8 +1,11 @@
 package com.project.pervsys.picaround.utility;
 
 
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
+import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Point;
 
 public class MarkerClusterItem implements ClusterItem {
@@ -64,5 +67,10 @@ public class MarkerClusterItem implements ClusterItem {
     @Override
     public String getSnippet() {
         return mSnippet;
+    }
+
+    public BitmapDescriptor getIcon(){
+        //TODO: change this from static to dynamic loading of icons
+        return BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE);
     }
 }

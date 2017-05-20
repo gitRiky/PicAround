@@ -92,6 +92,7 @@ import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.localDatabase.DBManager;
 import com.project.pervsys.picaround.utility.InfoWindowView;
 import com.project.pervsys.picaround.utility.MarkerClusterItem;
+import com.project.pervsys.picaround.utility.MarkerIconRenderer;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import static com.project.pervsys.picaround.utility.Config.*;
@@ -851,6 +852,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             }
         });
 
+        mClusterManager.setRenderer(new MarkerIconRenderer(this, mMap, mClusterManager));
+
         mMap.setOnCameraIdleListener(mClusterManager);
         mMap.setOnMarkerClickListener(mClusterManager);
 
@@ -872,7 +875,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             p.setType(POINT);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
                             mci.setPoint(p);
-                            if(p.getId().equals(null)){
+                            if(p.getId() == null){
                                 Log.e(TAG, "ERROR, some point has null ID");
                             }
                             else if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
