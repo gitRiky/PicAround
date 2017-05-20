@@ -186,28 +186,4 @@ Log.d(TAG, "Pictures: " + mPictures);
                 return onOptionsItemSelected(item);
         }
     }
-
-    private int getAge(String date){
-        //date in format yyyy/mm/dd
-        int age;
-        String[] split = date.split("/");
-        int year = Integer.parseInt(split[0]);
-        int month = Integer.parseInt(split[1]);
-        int day = Integer.parseInt(split[2]);
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int currentMonth = Calendar.getInstance().get(Calendar.MONTH);
-        int currentDay = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-        if (currentMonth > month)
-            age = currentYear - year;
-        else if (currentMonth == month) {
-            if (currentDay >= day)
-                age = currentYear - year;
-            else
-                age = currentYear - year - 1;
-        }
-        else
-            age = currentYear - year - 1;
-
-        return age;
-    }
 }

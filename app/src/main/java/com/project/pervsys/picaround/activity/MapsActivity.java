@@ -869,6 +869,38 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         // each child is a single point
                         for(DataSnapshot child : dataSnapshot.getChildren()){
                             Point p = child.getValue(Point.class);
+                            p.setType(POINT);
+                            MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
+                            mci.setPoint(p);
+                            if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+//                                Log.i(TAG, "The point " + mci + "has been added");
+                                mClusterManager.addItem(mci);
+                            }
+//                            mMap.addMarker(new MarkerOptions()
+//                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
+//                                    .position(new LatLng(p.getLat(), p.getLon())))
+//                                    .setTag(p);
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+
+        // get all the places
+        mDatabaseRef.child(PLACES).keepSynced(true);
+        mDatabaseRef.child(PLACES)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        // each child is a single point
+                        for(DataSnapshot child : dataSnapshot.getChildren()){
+                            Point p = child.getValue(Point.class);
+                            p.setType(PLACE);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
                             mci.setPoint(p);
                             if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
@@ -981,53 +1013,57 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
 
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
-        databaseRef.child(POINTS).keepSynced(true);
-
         Query photos;
-        photos = databaseRef.child(POINTS).child(point.getId()).child(PICTURES)
-                .orderByChild(POPULARITY);
+
+        if (point.getType().equals(PLACE)){
+            databaseRef.child(PLACES).keepSynced(true);
+            photos = databaseRef.child(PLACES).child(point.getId()).child(PICTURES);
+        }
+        else {
+            databaseRef.child(POINTS).keepSynced(true);
+            photos = databaseRef.child(POINTS).child(point.getId()).child(PICTURES)
+                    .orderByChild(POPULARITY);
+        }
 
         photos.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
-                for (DataSnapshot photoSnap : dataSnapshot.getChildren()) {
-                    for (DataSnapshot picture : dataSnapshot.getChildren()) {
-                        Picture pic = picture.getValue(Picture.class);
-                        pictures.put(picture.getKey(), pic);
-                    }
+                for (DataSnapshot picture : dataSnapshot.getChildren()) {
+                    Picture pic = picture.getValue(Picture.class);
+                    pictures.put(picture.getKey(), pic);
+                }
 
-                    TextView pictureNumberTextView = (TextView) findViewById(R.id.picture_number);
-                    int pictureNumber = pictures.size();
-                    if (pictureNumber > 1)
-                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.pictures));
-                    else
-                        pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.picture));
+                TextView pictureNumberTextView = (TextView) findViewById(R.id.picture_number);
+                int pictureNumber = pictures.size();
+                if (pictureNumber > 1)
+                    pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.pictures));
+                else
+                    pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.picture));
 
-                    ImageAdapter adapter = new ImageAdapter(context, pictures);
-                    pointPictures.setAdapter(adapter);
-                    pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                            Picture picture = (Picture) adapterView.getItemAtPosition(position);
+                ImageAdapter adapter = new ImageAdapter(context, pictures);
+                pointPictures.setAdapter(adapter);
+                pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                        Picture picture = (Picture) adapterView.getItemAtPosition(position);
 
-                            Log.i(TAG, "Picture: " + picture);
+                        Log.i(TAG, "Picture: " + picture);
 
-                            // Start PictureActivity
+                        // Start PictureActivity
 //                            Intent i = new Intent(context, PictureActivity.class);
 //                            i.putExtra(PICTURE_ID, picture.getId());
 //                            i.putExtra(USER_ID, picture.getUserId());
 //                            i.putExtra(POINT_ID, point.getId());
 //                            startActivity(i);
 
-                            // Start PictureSliderActivity
-                            Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
-                            i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
-                            i.putExtra(POSITION, position);
-                            startActivity(i);
-                        }
-                    });
-                }
+                        // Start PictureSliderActivity
+                        Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
+                        i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
+                        i.putExtra(POSITION, position);
+                        startActivity(i);
+                    }
+                });
             }
 
             @Override

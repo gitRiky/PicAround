@@ -32,6 +32,7 @@ public class Point {
     private List<Integer> places;
     private List<String> thumbnails;
 
+
     public Point(){
         // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
@@ -67,6 +68,7 @@ public class Point {
     public void setLon(double lon) {
         this.lon = lon;
     }
+
 
     public String getDescription() {
         return description;
