@@ -70,7 +70,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_VER_TOP = 6;
     private static final int PIC_VER_BOTTOM = 8;
     private static final int COMPRESSION_QUALITY = 25;
-    private static final int INTERM_COMPRESSION_QUALITY = 5;
+    private static final int INTERM_COMPRESSION_QUALITY = 15;
     private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
 
 
@@ -303,6 +303,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
                     mPlaceId = pushReference.getKey();
                     toPut.setId(mPlaceId);
+                    Log.d(TAG, "toPut " + toPut);
                     pushReference.setValue(toPut);
 
                     //save the image as username_timestamp
@@ -571,7 +572,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 picture.setId(id);
                 pushReference.setValue(picture);
 
-                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURE).child(id).setValue(picture);
+                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURES).child(id).setValue(picture);
                 mDatabaseRef.child(USERS).child(mUser.getUid()).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),

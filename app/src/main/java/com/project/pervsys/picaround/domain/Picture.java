@@ -21,11 +21,10 @@ public class Picture implements Parcelable {
     private String userId;
     private String username;
     private String userIcon;
-    private Place place;
     private String pointId;
     private boolean inPlace;
-    private HashMap<String,String> likesList;
-    private HashMap<String,String> viewsList;
+    private HashMap<String,Boolean> likesList;
+    private HashMap<String,Boolean> viewsList;
 
 
     public Picture(){
@@ -140,13 +139,6 @@ public class Picture implements Parcelable {
         this.username = username;
     }
 
-    public Place getPlace() {
-        return place;
-    }
-
-    public void setPlace(Place place) {
-        this.place = place;
-    }
 
     public String getUserIcon() {
         return userIcon;
@@ -156,39 +148,39 @@ public class Picture implements Parcelable {
         this.userIcon = userIcon;
     }
 
-    public HashMap<String, String> getLikesList() {
+    public HashMap<String, Boolean> getLikesList() {
         return likesList;
     }
 
     public void addView(String id){
         if (viewsList == null)
             viewsList = new HashMap<>();
-        viewsList.put(id, id);
+        viewsList.put(id, true);
     }
 
     public boolean isInPlace(){
         return inPlace;
     }
 
-    public void setLikesList(HashMap<String, String> likesList) {
+    public void setLikesList(HashMap<String, Boolean> likesList) {
         this.likesList = likesList;
     }
 
     public void addLike(String id){
        if (likesList == null)
            likesList = new HashMap<>();
-       likesList.put(id, id);
+       likesList.put(id, true);
    }
 
     public void removeLike(String id){
        likesList.remove(id);
    }
 
-    public HashMap<String, String> getViewsList() {
+    public HashMap<String, Boolean> getViewsList() {
         return viewsList;
     }
 
-    public void setViewsList(HashMap<String, String> viewsList) {
+    public void setViewsList(HashMap<String, Boolean> viewsList) {
         this.viewsList = viewsList;
     }
 
@@ -223,7 +215,6 @@ public class Picture implements Parcelable {
                 ", userId='" + userId + '\'' +
                 ", username='" + username + '\'' +
                 ", userIcon='" + userIcon + '\'' +
-                ", place=" + place +
                 ", pointId='" + pointId + '\'' +
                 ", inPlace=" + inPlace +
                 ", likesList=" + likesList +
@@ -244,7 +235,6 @@ public class Picture implements Parcelable {
         userId = in.readString();
         username = in.readString();
         userIcon = in.readString();
-        place = (Place) in.readValue(Place.class.getClassLoader());
         likesList = (HashMap) in.readValue(HashMap.class.getClassLoader());
         viewsList = (HashMap) in.readValue(HashMap.class.getClassLoader());
     }
@@ -268,7 +258,6 @@ public class Picture implements Parcelable {
         dest.writeString(userId);
         dest.writeString(username);
         dest.writeString(userIcon);
-        dest.writeValue(place);
         dest.writeValue(likesList);
         dest.writeValue(viewsList);
     }

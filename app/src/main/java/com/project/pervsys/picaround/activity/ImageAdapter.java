@@ -5,6 +5,8 @@ import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -12,9 +14,12 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
-
+import static com.project.pervsys.picaround.utility.Config.*;
 import java.util.HashMap;
 
 import static java.security.AccessController.getContext;
@@ -25,6 +30,8 @@ public class ImageAdapter extends BaseAdapter{
     private Context mContext;
     private HashMap<String,Picture> mPictures;
     private String[] mKeys;
+    private String mPath;
+    private static final String TAG = "ImageAdapter";
 
     public ImageAdapter(Context context, HashMap<String,Picture> pictures) {
         this.mContext = context;
@@ -51,9 +58,8 @@ public class ImageAdapter extends BaseAdapter{
     public View getView(int i, View view, ViewGroup viewGroup) {
 
         Picture picture = (Picture) ((GridView) viewGroup).getItemAtPosition(i);
-        String path = picture.getPath();
+        final ImageView imageView;
 
-        ImageView imageView;
         if (view == null){
             imageView = new ImageView(mContext);
             int dim = (viewGroup.getWidth()-GRID_SPACE)/3;
@@ -64,11 +70,20 @@ public class ImageAdapter extends BaseAdapter{
         else
             imageView = (ImageView) view;
 
-        Picasso.with(mContext)
-                .load(path)
-                .fit()
-                .centerInside()
-                .into(imageView);
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference pathReference = storage.getReference()
+                .child(INTERM_PREFIX + picture.getName());
+        pathReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+            @Override
+            public void onSuccess(Uri uri) {
+                mPath = uri.toString();
+                Picasso.with(mContext)
+                        .load(mPath)
+                        .fit()
+                        .centerInside()
+                        .into(imageView);
+            }
+        });
 
         return imageView;
     }

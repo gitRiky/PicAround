@@ -55,8 +55,8 @@ public class PictureFragment extends Fragment {
     private String mPictureId;
     private int mViewsNumber;
     private int mLikesNumber;
-    private HashMap<String,String> mViewsList;
-    private HashMap<String,String> mLikesList;
+    private HashMap<String,Boolean> mViewsList;
+    private HashMap<String,Boolean> mLikesList;
     private ImageButton mLikeButton;
     private TextView mLikesTextView;
     private TextView mViewsTextView;
@@ -196,7 +196,7 @@ public class PictureFragment extends Fragment {
                         if (mUser != null){
                             if (visible)
                                 checkViews();
-                            if (mLikesList.containsValue(mUser.getUid())){
+                            if (mLikesList.containsKey(mUser.getUid())){
                                 mLike = true;
                             }
                             localLike = mLike;
@@ -276,12 +276,12 @@ public class PictureFragment extends Fragment {
     }
 
     private void checkViews() {
-        if (!mViewsList.containsValue(mUser.getUid())){
+        if (!mViewsList.containsKey(mUser.getUid())){
             Log.i(TAG, "Increment views");
             mViewsNumber++;
             increasedViews = true;
 
-            mViewsList.put(mUserId, mUserId);
+            mViewsList.put(mUserId, true);
             increaseViews();
             setTextView(mViewsNumber, mViewsTextView);
         }
@@ -396,7 +396,7 @@ public class PictureFragment extends Fragment {
                 if (picture.isInPlace()){
                     DatabaseReference placesRef = mActivity.mDatabaseRef
                             .child(PLACES).child(picture.getPointId())
-                            .child(PICTURE).child(mPictureId);
+                            .child(PICTURES).child(mPictureId);
                     placesRef.setValue(picture);
                 }
                 else {

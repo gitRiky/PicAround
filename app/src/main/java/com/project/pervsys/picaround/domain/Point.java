@@ -31,10 +31,13 @@ public class Point {
     private String type;
     private List<Integer> places;
     private List<String> thumbnails;
+    private double popularity;
+
 
     public Point(){
         // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
+
 
     public String getId() {
         return id;
@@ -67,6 +70,7 @@ public class Point {
     public void setLon(double lon) {
         this.lon = lon;
     }
+
 
     public String getDescription() {
         return description;
@@ -116,6 +120,14 @@ public class Point {
         this.thumbnails = thumbnails;
     }
 
+    public void setPopularity(double popularity){
+        this.popularity = popularity;
+    }
+
+    public double getPopularity(){
+        return popularity;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -144,6 +156,7 @@ public class Point {
                 ", category='" + category + '\'' +
                 ", type='" + type + '\'' +
                 ", places=" + places +
+                ", popularity=" + popularity +
                 ", thumbnails=" + thumbnails +
                 '}';
     }

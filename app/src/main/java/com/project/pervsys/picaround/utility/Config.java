@@ -10,6 +10,7 @@ public class Config {
     public static final String LOCATION_EXTRA = "location";
     public static final String SHARED_MAP_POSITION = "sharedmapposition";
     public static final String POINTS = "points";
+    public static final String POINT = "point";
     public static final String USERS = "users";
     public static final String USERNAMES = "usernames";
     public static final String USERNAME = "username";
@@ -26,6 +27,7 @@ public class Config {
     public static final String POINT_ID = "pointId";
     public static final String POSITION = "position";
     public static final String PLACES = "places";
+    public static final String PLACE = "place";
     public static final String LIKES_LIST = "likesList";
     public static final String VIEWS_LIST = "viewsList";
     public static final String PHOTO_PATH = "photoPath";
