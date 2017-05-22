@@ -68,7 +68,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private static final int PIC_VER_TOP = 6;
     private static final int PIC_VER_BOTTOM = 8;
     private static final int COMPRESSION_QUALITY = 25;
-    private static final int INTERM_COMPRESSION_QUALITY = 5;
+    private static final int INTERM_COMPRESSION_QUALITY = 15;
     private static final int NOT_BAR_SLEEP = 1000; //in milliseconds
 
 

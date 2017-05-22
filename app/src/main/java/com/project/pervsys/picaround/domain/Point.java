@@ -38,13 +38,6 @@ public class Point {
         // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
 
-    public double getPopularity() {
-        return popularity;
-    }
-
-    public void setPopularity(double popularity) {
-        this.popularity = popularity;
-    }
 
     public String getId() {
         return id;
@@ -125,6 +118,14 @@ public class Point {
 
     public void setThumbnails(List<String> thumbnails) {
         this.thumbnails = thumbnails;
+    }
+
+    public void setPopularity(double popularity){
+        this.popularity = popularity;
+    }
+
+    public double getPopularity(){
+        return popularity;
     }
 
     @Override
