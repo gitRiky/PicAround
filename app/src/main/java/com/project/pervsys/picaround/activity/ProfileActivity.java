@@ -190,7 +190,6 @@ public class ProfileActivity extends AppCompatActivity {
         else {
             age = currentYear - year - 1;
         }
-
         return "" + age;
     }
 

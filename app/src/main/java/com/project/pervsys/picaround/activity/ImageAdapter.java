@@ -1,6 +1,10 @@
 package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.TypedValue;
 import android.net.Uri;
 import android.util.Log;
 import android.view.View;
@@ -17,6 +21,8 @@ import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
 import static com.project.pervsys.picaround.utility.Config.*;
 import java.util.HashMap;
+
+import static java.security.AccessController.getContext;
 
 public class ImageAdapter extends BaseAdapter{
 

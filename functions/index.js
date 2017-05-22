@@ -109,20 +109,6 @@ function aggregatePlaces(places, points){
   }
 }
 
-// function merge(place, point){
-//   var pic;
-//   for (var key in place.picture)
-// 	  pic = place.picture[key];
-//   var pushRef = databaseRef.child("points").child(point.id).child("pictures").child(pic.id);
-//   if (pic != null){
-//     // assign pointID to picture
-//     pic.pointId = point.id;
-//     pic.inPlace = false;
-// 	  pushRef.set(pic);
-//   }
-//   // deletePlace(place.id);
-// }
-
 function merge(place, point){
   var pushRef = databaseRef.child("points").child(point.id).child("pictures");
   var picturesRef = databaseRef.child("pictures");
@@ -139,24 +125,6 @@ function merge(place, point){
   deletePlace(place.id);
   mergedPlaces++;
 }
-
-// function createPoint(place){
-//   var toPut = new Point(place.lat, place.lon);
-//   var pointsRef = databaseRef.child("points");
-//   var pushRef = pointsRef.push();
-//   toPut.id = pushRef.key;
-//   for (key in place.picture){
-//     // assign pointID to picture
-//     place.picture[key].pointId = toPut.id;
-//     place.picture[key].inPlace = false;
-//     toPut.pictures = place.picture;
-//     points[place.id] = toPut;
-//     pushRef.set(toPut);
-//
-//     deletePlace(place.id);
-//   }
-// }
-
 
 function createPoint(place){
   var toPut = new Point(place.lat, place.lon);
@@ -178,9 +146,6 @@ function createPoint(place){
 	newPoints++;
   }
 }
-
-
-
 
 function computeDist(place, point){
   var placeLat = place.lat;
