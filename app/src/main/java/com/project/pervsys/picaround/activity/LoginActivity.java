@@ -49,6 +49,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.User;
+import com.project.pervsys.picaround.utility.Config;
+
 import static com.project.pervsys.picaround.utility.Config.*;
 
 import org.json.JSONException;
@@ -63,6 +65,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String FIELDS = "fields";
     private static final String NEEDED_FB_INFO = "name,email";
     private static final String TAG = "LoginActivity";
+    public static final int PROFILE_PICTURE_DIM = 200;
 
     private CallbackManager callbackManager;
     private GoogleApiClient mGoogleApiClient;
@@ -332,7 +335,13 @@ public class LoginActivity extends AppCompatActivity {
                         } else {
                             // email not registered
                             Log.i(TAG, "User not registered");
+                            Profile profile = Profile.getCurrentProfile();
+                            String fullName = profile.getName();
+                            String profilePicture = profile.getProfilePictureUri(PROFILE_PICTURE_DIM,PROFILE_PICTURE_DIM)
+                                    .toString();
                             Intent i = new Intent(LoginActivity.this, GetBasicInfoActivity.class);
+                            i.putExtra(FULL_NAME, fullName);
+                            i.putExtra(PROFILE_PICTURE, profilePicture);
                             firstLog = true;
                             if (progress != null)
                                 progress.dismiss();
@@ -362,7 +371,11 @@ public class LoginActivity extends AppCompatActivity {
                         } else {
                             // email not registered
                             Log.i(TAG, "User not registered");
+                            String fullName = acct.getDisplayName();
+                            String profilePicture = acct.getPhotoUrl().toString();
                             Intent i = new Intent(LoginActivity.this, GetBasicInfoActivity.class);
+                            i.putExtra(FULL_NAME, fullName);
+                            i.putExtra(PROFILE_PICTURE, profilePicture);
                             firstLog = true;
                             if (progress != null)
                                 progress.dismiss();
@@ -423,7 +436,7 @@ public class LoginActivity extends AppCompatActivity {
                                 mUserId = mUser.getUid();
                                 newUser = new User(mUsername, facebookEmail, profile.getFirstName(),
                                         profile.getLastName(), mDate,
-                                        profile.getProfilePictureUri(100,100).toString(),
+                                        profile.getProfilePictureUri(PROFILE_PICTURE_DIM,PROFILE_PICTURE_DIM).toString(),
                                         mUserId);
 
                                 mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
@@ -604,7 +617,7 @@ public class LoginActivity extends AppCompatActivity {
             }
             else {
                 i.putExtra(PROFILE_PICTURE,
-                        Profile.getCurrentProfile().getProfilePictureUri(100, 100).toString());
+                        Profile.getCurrentProfile().getProfilePictureUri(PROFILE_PICTURE_DIM, PROFILE_PICTURE_DIM).toString());
             }
         }
         Log.d(TAG, "First log = " + firstLog);

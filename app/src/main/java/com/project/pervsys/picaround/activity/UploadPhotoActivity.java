@@ -316,7 +316,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     String thumbnailId = THUMB_PREFIX + mPhotoId;
                     Log.d(TAG, "thumbnail bytes: " + thumbnailFile.length());
                     StorageReference thumbRef = mStorageRef.child(thumbnailId);
-                    Toast.makeText(this, "Uploading picture...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.uploading_picture, Toast.LENGTH_SHORT).show();
                     thumbRef.putFile(thumbnailUri)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override

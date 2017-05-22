@@ -103,5 +103,9 @@
     <string name="download">Save picture</string>
     <string name="share">Share external</string>
     <string name="no_users_found">No users found</string>
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="uploading_picture">Uploading picture...</string>
+    <string name="birthday">Birthday</string>
 
 </resources>
