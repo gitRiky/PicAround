@@ -12,7 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -47,8 +47,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.Query;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
@@ -70,14 +68,11 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -92,6 +87,7 @@ import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.localDatabase.DBManager;
 import com.project.pervsys.picaround.utility.InfoWindowView;
 import com.project.pervsys.picaround.utility.MarkerClusterItem;
+import com.project.pervsys.picaround.utility.MarkerIconRenderer;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import static com.project.pervsys.picaround.utility.Config.*;
@@ -101,7 +97,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -834,7 +829,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mClusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MarkerClusterItem>() {
             @Override
             public boolean onClusterItemClick(MarkerClusterItem item) {
-                Point p = item.getPoint();
+                Point p = item.getmPoint();
                 showPoint(p);
                 CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(item.getPosition(), mMap.getCameraPosition().zoom);
                 mMap.animateCamera(cameraUpdate);
@@ -851,13 +846,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             }
         });
 
+        mClusterManager.setRenderer(new MarkerIconRenderer(this, mMap, mClusterManager));
+
         mMap.setOnCameraIdleListener(mClusterManager);
         mMap.setOnMarkerClickListener(mClusterManager);
 
         populatePoints();
     }
 
-    // TODO: onResume should not call this !
     private void populatePoints() {
         // get all the points
         mDatabaseRef.child(POINTS).keepSynced(true);
@@ -871,8 +867,24 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             Point p = child.getValue(Point.class);
                             p.setType(POINT);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
-                            mci.setPoint(p);
-                            if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+                            mci.setmPoint(p);
+                            double popularity = 1 - p.getPopularity();
+
+                            if(popularity <= 0.20 )
+                                mci.setIcon(R.mipmap.marker_blue_popularity);
+                            else if(popularity > 0.20 && popularity <= 0.40)
+                                mci.setIcon(R.mipmap.marker_azure_popularity);
+                            else if(popularity > 0.40 && popularity <= 0.60)
+                                mci.setIcon(R.mipmap.marker_green_popularity);
+                            else if(popularity > 0.60 && popularity <= 0.80)
+                                mci.setIcon(R.mipmap.marker_yellow_popularity);
+                            else
+                                mci.setIcon(R.mipmap.marker_red_popularity);
+
+                            if(p.getId() == null){
+                                Log.e(TAG, "ERROR, some point has null ID");
+                            }
+                            else if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
                                 mClusterManager.addItem(mci);
                             }
@@ -902,7 +914,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             Point p = child.getValue(Point.class);
                             p.setType(PLACE);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
-                            mci.setPoint(p);
+                            mci.setmPoint(p);
                             if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
                                 mClusterManager.addItem(mci);

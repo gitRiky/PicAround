@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">PicAround</string>
-    <string name="facebook_app_id">1895338284044111</string>
+    <string name="app_name" translatable="false">PicAround</string>
+    <string name="facebook_app_id" translatable="false">1895338284044111</string>
     <string name="logout">Logout</string>
     <string name="login">Login</string>
-    <string name="fb_login_protocol_scheme">fb1895338284044111</string>
+    <string name="fb_login_protocol_scheme" translatable="false">fb1895338284044111</string>
     <string name="no_login_text"><u>NO, THANKS</u></string>
     <string name="continue_mex">Continue</string>
     <string name="auth_error">Authentication Error! Please try again verifying your credentials</string>
@@ -34,7 +34,7 @@
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
          AIzaSyDlw4SqqMWqXS5kOjqhy1i351H2BnxW4tg
     </string>  <!-- TODO: change API key -->
-    <string name="album_name">PicAround</string>
+    <string name="album_name" translatable="false">PicAround</string>
     <string name="exit">Exit</string>
     <string name="registration_exit">Do you really want to exit from the registration?</string>
     <string name="registration">Registration</string>
@@ -87,7 +87,7 @@
     <string name="title_activity_profile">ProfileActivity</string>
     <string name="update_profile_image">Update profile picture</string>
     <string name="dialog_update_profile_image_mex">Do you really want to update your profile picture?</string>
-    <string name="not_logged_mex">You are not logged in! Please perform the login in order to start this activity</string>
+    <string name="not_logged_mex">You are not logged in! Please login to start the activity</string>
     <string name="name_field">Name:</string>
     <string name="surname_field">Surname:</string>
     <string name="age_field">Age:</string>

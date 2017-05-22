@@ -1,6 +1,8 @@
 package com.project.pervsys.picaround.utility;
 
 
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
 import com.project.pervsys.picaround.domain.Point;
@@ -10,7 +12,8 @@ public class MarkerClusterItem implements ClusterItem {
     private LatLng mPosition;
     private String mTitle;
     private String mSnippet;
-    private Point point;
+    private Point mPoint;
+    private BitmapDescriptor mIcon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
 
     public MarkerClusterItem(double lat, double lng) {
         mPosition = new LatLng(lat, lng);
@@ -24,7 +27,7 @@ public class MarkerClusterItem implements ClusterItem {
 
     @Override
     public String toString(){
-        return point.toString();
+        return mPoint.toString();
     }
 
     @Override
@@ -34,21 +37,21 @@ public class MarkerClusterItem implements ClusterItem {
 
         MarkerClusterItem that = (MarkerClusterItem) o;
 
-        return point != null ? point.equals(that.point) : that.point == null;
+        return mPoint != null ? mPoint.equals(that.mPoint) : that.mPoint == null;
 
     }
 
     @Override
     public int hashCode() {
-        return point != null ? point.hashCode() : 0;
+        return mPoint != null ? mPoint.hashCode() : 0;
     }
 
-    public void setPoint(Point o){
-        point = o;
+    public void setmPoint(Point o){
+        mPoint = o;
     }
 
-    public Point getPoint(){
-        return point;
+    public Point getmPoint(){
+        return mPoint;
     }
 
     @Override
@@ -64,5 +67,14 @@ public class MarkerClusterItem implements ClusterItem {
     @Override
     public String getSnippet() {
         return mSnippet;
+    }
+
+    public BitmapDescriptor getIcon(){
+        //TODO: change this from static to dynamic loading of icons
+        return mIcon;
+    }
+
+    public void setIcon(int resource){
+        mIcon = BitmapDescriptorFactory.fromResource(resource);
     }
 }
