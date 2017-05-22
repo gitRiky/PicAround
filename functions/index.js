@@ -7,6 +7,8 @@ admin.initializeApp(functions.config().firebase);
 const MIN_DIST = 0.001;
 const MAX_DIST = 1000;
 var points;
+var newPoints = 0;
+var mergedPlaces = 0;
 
 class Point {
   constructor(lat, lon){
@@ -14,6 +16,7 @@ class Point {
     this.lat = lat;
     this.lon = lon;
     this.pictures = null;
+	this.popularity = 0.;
   }
 }
 
@@ -45,13 +48,33 @@ exports.aggregatePlaces = functions.https.onRequest((req, res) => {
     var ref = databaseRef.child("points");
     ref.once("value", function(snapshot) {
       points = snapshot.val();
-
       aggregatePlaces(places, points);
     });
+  });
+  var updatedPoints;
+  var pointsRef = databaseRef.child("points");
+  pointsRef.once("value", function(snapshot){
+	  updatedPoints = snapshot.val();
+	  updatePopularity(updatedPoints);
   });
   console.log('Function successfully executed');
   res.status(200).end();
 });
+
+function updatePopularity(points){
+	var pointsRef = databaseRef.child("points");
+	for (var key in points){
+		var counter = 0;
+		var popularity = 0;
+		var pictures = points[key].pictures;
+		for (var picKey in pictures){
+			popularity += pictures[picKey].popularity;
+			counter++;
+		}
+		points[key].popularity = popularity / counter;
+		pointsRef.child(key).child("popularity").set(points[key].popularity);
+	}
+}
 
 function aggregatePlaces(places, points){
   for (var keyPlace in places){
@@ -74,10 +97,15 @@ function aggregatePlaces(places, points){
             }
       }
     }
-    if (minPointKey === null)
+    if (minPointKey === null){
       createPoint(place);
-    else
+	  newPoints++;
+	}
+    else{
       merge(place, points[minPointKey]);
+	  mergedPlaces++;
+	}
+	console.log("Created " + newPoints + " points and aggregated " + mergedPlaces + " places");
   }
 }
 
@@ -107,8 +135,9 @@ function merge(place, point){
 	  //update the picture also in pictures
 	  picturesRef.child(place.pictures[key].id).set(place.pictures[key]);
     }
-}
+  }
   deletePlace(place.id);
+  mergedPlaces++;
 }
 
 // function createPoint(place){
@@ -130,12 +159,11 @@ function merge(place, point){
 
 
 function createPoint(place){
-  points[hashCode(String(place.id))] = place;
   var toPut = new Point(place.lat, place.lon);
   var pointsRef = databaseRef.child("points");
-
   var pushRef = pointsRef.push();
   toPut.id = pushRef.key;
+  points[hashCode(String(place.id))] = toPut;
   var picturesRef = databaseRef.child("pictures");
   for (var key in place.pictures){
   // assign pointID to picture
@@ -147,6 +175,7 @@ function createPoint(place){
 	picturesRef.child(place.pictures[key].id).set(toPut.pictures[key]);
 
     deletePlace(place.id);
+	newPoints++;
   }
 }
 

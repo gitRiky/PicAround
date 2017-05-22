@@ -29,6 +29,7 @@ public class Point {
     private String icon;
     private String category;
     private String type;
+    private double popularity;
     private List<Integer> places;
     private List<String> thumbnails;
 
@@ -116,6 +117,14 @@ public class Point {
 
     public void setThumbnails(List<String> thumbnails) {
         this.thumbnails = thumbnails;
+    }
+
+    public void setPopularity(double popularity){
+        this.popularity = popularity;
+    }
+
+    public double getPopularity(){
+        return popularity;
     }
 
     @Override
