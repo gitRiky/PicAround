@@ -29,7 +29,6 @@ public class Point {
     private String icon;
     private String category;
     private String type;
-    private double popularity;
     private List<Integer> places;
     private List<String> thumbnails;
     private double popularity;
@@ -39,13 +38,6 @@ public class Point {
         // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
 
-    public double getPopularity() {
-        return popularity;
-    }
-
-    public void setPopularity(double popularity) {
-        this.popularity = popularity;
-    }
 
     public String getId() {
         return id;
