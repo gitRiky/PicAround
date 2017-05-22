@@ -34,11 +34,13 @@
 
             <include layout="@layout/toolbar"></include>
 
-            <com.miguelcatalan.materialsearchview.MaterialSearchView
-                android:id="@+id/search_view"
+            <com.claudiodegio.msv.SuggestionMaterialSearchView
+                android:id="@+id/sv"
+                android:elevation="5dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                style="@style/MaterialSearchViewStyle"/>
+                android:layout_height="wrap_content">
+            </com.claudiodegio.msv.SuggestionMaterialSearchView>
+
         </FrameLayout>
 
         <android.support.design.widget.CoordinatorLayout

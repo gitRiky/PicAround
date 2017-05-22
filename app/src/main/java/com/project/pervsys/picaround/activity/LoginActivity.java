@@ -428,6 +428,7 @@ public class LoginActivity extends AppCompatActivity {
 
                                 mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
                                 mDatabaseRef.child(USERNAMES).child(mUserId).setValue(mUsername.toLowerCase());
+
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)
@@ -515,6 +516,7 @@ public class LoginActivity extends AppCompatActivity {
 
                                 mDatabaseRef.child(USERS).child(mUserId).setValue(newUser);
                                 mDatabaseRef.child(USERNAMES).child(mUserId).setValue(mUsername.toLowerCase());
+
                                 Log.i(TAG, "User has been registered");
                             }
                             if (progress != null)

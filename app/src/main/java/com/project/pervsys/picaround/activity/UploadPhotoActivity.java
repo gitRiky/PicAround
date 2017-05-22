@@ -1,6 +1,8 @@
 package com.project.pervsys.picaround.activity;
 
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -314,6 +316,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     String thumbnailId = THUMB_PREFIX + mPhotoId;
                     Log.d(TAG, "thumbnail bytes: " + thumbnailFile.length());
                     StorageReference thumbRef = mStorageRef.child(thumbnailId);
+                    Toast.makeText(this, "Uploading picture...", Toast.LENGTH_SHORT).show();
                     thumbRef.putFile(thumbnailUri)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
@@ -423,13 +426,18 @@ public class UploadPhotoActivity extends AppCompatActivity {
     }
 
     private void showProgressBar(){
-        mNotifyManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(this);
         mBuilder.setContentTitle(getString(R.string.upload_prog_bar_title))
                 .setContentText(getString(R.string.upload_prog_bar_text))           //TODO: change the icon
                 .setSmallIcon(R.drawable.btn_google_signin_light_normal_xxxhdpi)
                 .setAutoCancel(true);
+
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addNextIntent(new Intent(this, MapsActivity.class));
+        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(resultPendingIntent);
+
         new Thread(
                 new Runnable() {
                     @Override
@@ -472,7 +480,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
         ).start();
     }
-
 
     private void setPic() {
 
