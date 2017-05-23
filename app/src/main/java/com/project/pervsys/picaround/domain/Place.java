@@ -1,24 +1,49 @@
 package com.project.pervsys.picaround.domain;
 
+import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
 public class Place {
 
     private String id;
-    private String address;
+    private String name;
     private double lat;
     private double lon;
-    private String pointId;
+    private String type;
+    private HashMap<String, Picture> pictures;
+    private double popularity;
+
 
     public Place(){
-        // Default constructor required for calls to DataSnapshot.getValue(Place.class)
+        // Default constructor required for calls to DataSnapshot.getValue(Point.class)
     }
 
-    public Place(String id, String address, double lat, double lon, String pointId) {
-        this.id = id;
-        this.address = address;
-        this.lat = lat;
-        this.lon = lon;
-        this.pointId = pointId;
+    public void addPicture(Picture picture){
+        if (pictures == null)
+            pictures = new HashMap<>();
+        pictures.put(picture.getId(), picture);
     }
+
+    public HashMap<String, Picture> getPictures(){
+        return pictures;
+    }
+
 
     public String getId() {
         return id;
@@ -28,12 +53,12 @@ public class Place {
         this.id = id;
     }
 
-    public String getAddress() {
-        return address;
+    public String getName() {
+        return name;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public double getLat() {
@@ -52,12 +77,22 @@ public class Place {
         this.lon = lon;
     }
 
-    public String getPointId() {
-        return pointId;
+
+    public String getType() {
+        return type;
     }
 
-    public void setPointId(String pointId) {
-        this.pointId = pointId;
+    public void setType(String type) {
+        this.type = type;
+    }
+
+
+    public void setPopularity(double popularity){
+        this.popularity = popularity;
+    }
+
+    public double getPopularity(){
+        return popularity;
     }
 
     @Override
@@ -78,12 +113,13 @@ public class Place {
 
     @Override
     public String toString() {
-        return "Place{" +
+        return "Point{" +
                 "id='" + id + '\'' +
-                ", address='" + address + '\'' +
+                ", name='" + name + '\'' +
                 ", lat=" + lat +
                 ", lon=" + lon +
-                ", pointId='" + pointId + '\'' +
+                ", type='" + type + '\'' +
+                ", popularity=" + popularity +
                 '}';
     }
 }

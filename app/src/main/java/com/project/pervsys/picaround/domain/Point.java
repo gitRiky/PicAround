@@ -25,12 +25,7 @@ public class Point {
     private String name;
     private double lat;
     private double lon;
-    private String description;
-    private String icon;
-    private String category;
     private String type;
-    private List<Integer> places;
-    private List<String> thumbnails;
     private double popularity;
 
 
@@ -72,14 +67,6 @@ public class Point {
     }
 
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public String getType() {
         return type;
     }
@@ -88,37 +75,6 @@ public class Point {
         this.type = type;
     }
 
-    public String getIcon() {
-        return icon;
-    }
-
-    public void setIcon(String icon) {
-        this.icon = icon;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public List<Integer> getPlaces() {
-        return places;
-    }
-
-    public void setPlaces(List<Integer> places) {
-        this.places = places;
-    }
-
-    public List<String> getThumbnails() {
-        return thumbnails;
-    }
-
-    public void setThumbnails(List<String> thumbnails) {
-        this.thumbnails = thumbnails;
-    }
 
     public void setPopularity(double popularity){
         this.popularity = popularity;
@@ -151,13 +107,8 @@ public class Point {
                 ", name='" + name + '\'' +
                 ", lat=" + lat +
                 ", lon=" + lon +
-                ", description='" + description + '\'' +
-                ", icon='" + icon + '\'' +
-                ", category='" + category + '\'' +
                 ", type='" + type + '\'' +
-                ", places=" + places +
                 ", popularity=" + popularity +
-                ", thumbnails=" + thumbnails +
                 '}';
     }
 }

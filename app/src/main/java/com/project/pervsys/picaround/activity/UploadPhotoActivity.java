@@ -58,6 +58,7 @@ import id.zelory.compressor.Compressor;
 
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
 
 import static com.project.pervsys.picaround.utility.Config.*;
@@ -296,15 +297,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 mDescription = mDescriptionField.getText().toString().trim();
                 if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
-                    //put the photo into the storage
-                    Point toPut = new Point();
-                    toPut.setLat(Double.parseDouble(mLatitude));
-                    toPut.setLon(Double.parseDouble(mLongitude));
-                    DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
-                    mPlaceId = pushReference.getKey();
-                    toPut.setId(mPlaceId);
-                    Log.d(TAG, "toPut " + toPut);
-                    pushReference.setValue(toPut);
 
                     //save the image as username_timestamp
                     mPhotoId = mUsername + SEPARATOR + mTimestamp;
@@ -316,7 +308,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     String thumbnailId = THUMB_PREFIX + mPhotoId;
                     Log.d(TAG, "thumbnail bytes: " + thumbnailFile.length());
                     StorageReference thumbRef = mStorageRef.child(thumbnailId);
-                    Toast.makeText(this, "Uploading picture...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.uploading_picture, Toast.LENGTH_SHORT).show();
                     thumbRef.putFile(thumbnailUri)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
@@ -564,15 +556,34 @@ public class UploadPhotoActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink: " + uri);
+
+                //create the new Place
+                Place toPut = new Place();
+                toPut.setLat(Double.parseDouble(mLatitude));
+                toPut.setLon(Double.parseDouble(mLongitude));
+                DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
+                mPlaceId = pushReference.getKey();
+                toPut.setId(mPlaceId);
+                Log.d(TAG, "toPut " + toPut);
+
+                //create the Picture object
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
                         mUser.getUid(), mUsername, profilePicture, mPlaceId);
                 picture.setTimestamp(mTimestamp);
-                DatabaseReference pushReference = mDatabaseRef.child(PICTURES).push();
-                String id = pushReference.getKey();
+                DatabaseReference pictureRef = mDatabaseRef.child(PICTURES).push();
+                String id = pictureRef.getKey();
                 picture.setId(id);
-                pushReference.setValue(picture);
 
-                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURES).child(id).setValue(picture);
+                //the db stores the popularity as 1 - popularity,
+                //i.e. the minimum popularity is 1
+                picture.setPopularity(1);
+
+                //add the picture to the place and send to db both picture and place
+                toPut.addPicture(picture);
+                pushReference.setValue(toPut);
+                pictureRef.setValue(picture);
+
+                //add the picture to Users
                 mDatabaseRef.child(USERS).child(mUser.getUid()).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
