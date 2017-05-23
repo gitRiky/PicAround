@@ -315,9 +315,9 @@ public class GetBasicInfoActivity extends AppCompatActivity {
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
             mDay = String.valueOf(day);
-            mMonth = String.valueOf(month);
+            mMonth = String.valueOf(month+1);
             mYear = String.valueOf(year);
-            mDatePicker.setText(year + "/" + month + "/" + day);
+            mDatePicker.setText(mYear + "/" + mMonth + "/" + mDay);
         }
     }
 }

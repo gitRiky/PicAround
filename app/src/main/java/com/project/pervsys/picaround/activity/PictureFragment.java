@@ -70,6 +70,7 @@ public class PictureFragment extends Fragment {
     private ImageView mUserIconView;
     private RelativeLayout mUserLayout;
     private RelativeLayout mInfoLayout;
+    private RelativeLayout mBackgroundGradientLayout;
     private boolean visible = false;
     private boolean created = false;
     private String mDescription;
@@ -103,6 +104,8 @@ public class PictureFragment extends Fragment {
         final RelativeLayout transitionContainer = (RelativeLayout) rootView.findViewById(R.id.transition_container);
         mUserLayout = (RelativeLayout) rootView.findViewById(R.id.user);
         mInfoLayout = (RelativeLayout) rootView.findViewById(R.id.info);
+        mBackgroundGradientLayout = (RelativeLayout) rootView.findViewById(R.id.background_gradient);
+
 
         mUserIconView = (ImageView) rootView.findViewById(R.id.user_icon);
         TextView usernameView = (TextView) rootView.findViewById(R.id.username);
@@ -135,6 +138,7 @@ public class PictureFragment extends Fragment {
                 mActivity.visible = !mActivity.visible;
                 mUserLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
                 mInfoLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
+                mBackgroundGradientLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
                 return false;
             }
 
@@ -289,6 +293,7 @@ public class PictureFragment extends Fragment {
         if (created && visible && mActivity.visible) {
             mUserLayout.setVisibility(View.VISIBLE);
             mInfoLayout.setVisibility(View.VISIBLE);
+            mBackgroundGradientLayout.setVisibility(View.VISIBLE);
         }
     }
 
