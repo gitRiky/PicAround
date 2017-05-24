@@ -46,6 +46,7 @@ import com.google.firebase.storage.UploadTask;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.User;
+import com.project.pervsys.picaround.utility.Functions;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
@@ -233,7 +234,7 @@ public class ProfileActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo has been picked");
                     Uri photoUri = data.getData();
-                    String currentPhotoPath = getRealPathFromURI(this, photoUri);
+                    String currentPhotoPath = Functions.getRealPathFromURI(this, photoUri);
                     mCompressedFile = Compressor.getDefault(this)
                             .compressToFile(new File(currentPhotoPath));
                     Log.d(TAG, "Path: " + currentPhotoPath);
@@ -250,7 +251,6 @@ public class ProfileActivity extends AppCompatActivity {
                 break;
         }
     }
-
 
     private void startConfirmDialog(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -281,10 +281,8 @@ public class ProfileActivity extends AppCompatActivity {
 
     }
 
-    //TODO: when a profile image is updated, the pictures loaded before have the older profile image
-    //we have to fix it
     private void uploadImage(){
-        startProgressBar();
+        progress = Functions.startProgressBar(this);
         Timestamp timestamp = new Timestamp(Calendar.getInstance().getTimeInMillis());
         String photoId = mUser.getUsername() + "_" + timestamp.toString().replace(" ", "_").replace(".",":");
         mStorageRef =  FirebaseStorage.getInstance().getReference().child(photoId);
@@ -370,27 +368,4 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private String getRealPathFromURI(Context context, Uri contentUri) {
-        Cursor cursor = null;
-        try {
-            String[] proj = { MediaStore.Images.Media.DATA };
-            cursor = context.getContentResolver().query(contentUri,  proj, null, null, null);
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            cursor.moveToFirst();
-            return cursor.getString(column_index);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-    }
-
-    private void startProgressBar(){
-        progress = new ProgressDialog(this);
-        progress.setMessage(getString(R.string.loading));
-        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        progress.setIndeterminate(true);
-        progress.setCanceledOnTouchOutside(false);
-        progress.show();
-    }
 }
