@@ -353,6 +353,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         // Take orientation
         orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
+        Log.d(TAG, "orientation: " + orientation);
     }
 
     @Override
@@ -707,7 +708,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
                 //create the Picture object
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
-                        mUser.getUid(), mUsername, profilePicture, mPlaceId);
+                        mUser.getUid(), mUsername, profilePicture, mPlaceId,
+                        Double.parseDouble(mLatitude), Double.parseDouble(mLongitude));
                 picture.setTimestamp(mTimestamp);
                 DatabaseReference pictureRef = mDatabaseRef.child(PICTURES).push();
                 String id = pictureRef.getKey();

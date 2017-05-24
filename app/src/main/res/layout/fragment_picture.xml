@@ -12,6 +12,28 @@
         android:layout_height="match_parent" />
 
     <RelativeLayout
+        android:id="@+id/background_gradient"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/top_gradient_bg" >
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/bottom_gradient_bg" >
+        </FrameLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
         android:id="@+id/user"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,23 +47,40 @@
 
         <TextView
             android:id="@+id/username"
-            android:layout_width="wrap_content"
+            android:layout_width="130dp"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/user_icon"
             android:layout_marginStart="10dp"
             android:layout_centerVertical="true"
             android:textSize="18sp"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:textColor="@color/white"/>
 
-        <TextView
-            android:id="@+id/popularity"
+        <LinearLayout
+            android:id="@+id/location_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:gravity="end"
-            android:textColor="@color/white"
-            android:textSize="18sp"/>
+            android:layout_centerVertical="true">
+
+            <TextView
+                android:id="@+id/location"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:ellipsize="end"
+                android:textColor="@color/white"
+                android:textSize="18sp"/>
+
+            <ImageView
+                android:id="@+id/place_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:src="@drawable/ic_place_white_24dp"/>
+        </LinearLayout>
 
     </RelativeLayout>
 

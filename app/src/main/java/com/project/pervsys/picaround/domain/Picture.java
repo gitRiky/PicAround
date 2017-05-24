@@ -23,6 +23,8 @@ public class Picture implements Parcelable {
     private String userIcon;
     private String pointId;
     private boolean inPlace;
+    private double lat;
+    private double lon;
     private HashMap<String,Boolean> likesList;
     private HashMap<String,Boolean> viewsList;
 
@@ -31,7 +33,8 @@ public class Picture implements Parcelable {
         // Default constructor required for calls to DataSnapshot.getValue(Picture.class)
     }
 
-    public Picture(String name, String description, String path, String userId, String username, String userIcon, String pointId){
+    public Picture(String name, String description, String path, String userId, String username,
+                   String userIcon, String pointId, double lat, double lon){
 
         this.name = name;
         this.description = description;
@@ -41,6 +44,8 @@ public class Picture implements Parcelable {
         this.userIcon = userIcon;
         this.pointId = pointId;
         this.inPlace = true;
+        this.lat = lat;
+        this.lon = lon;
     }
 
     public String getId() {
@@ -139,7 +144,6 @@ public class Picture implements Parcelable {
         this.username = username;
     }
 
-
     public String getUserIcon() {
         return userIcon;
     }
@@ -167,14 +171,14 @@ public class Picture implements Parcelable {
     }
 
     public void addLike(String id){
-       if (likesList == null)
-           likesList = new HashMap<>();
-       likesList.put(id, true);
-   }
+        if (likesList == null)
+            likesList = new HashMap<>();
+        likesList.put(id, true);
+    }
 
     public void removeLike(String id){
-       likesList.remove(id);
-   }
+        likesList.remove(id);
+    }
 
     public HashMap<String, Boolean> getViewsList() {
         return viewsList;
@@ -182,6 +186,22 @@ public class Picture implements Parcelable {
 
     public void setViewsList(HashMap<String, Boolean> viewsList) {
         this.viewsList = viewsList;
+    }
+
+    public double getLat() {
+        return lat;
+    }
+
+    public void setLat(double lat) {
+        this.lat = lat;
+    }
+
+    public double getLon() {
+        return lon;
+    }
+
+    public void setLon(double lon) {
+        this.lon = lon;
     }
 
     @Override
@@ -217,10 +237,13 @@ public class Picture implements Parcelable {
                 ", userIcon='" + userIcon + '\'' +
                 ", pointId='" + pointId + '\'' +
                 ", inPlace=" + inPlace +
+                ", lat=" + lat +
+                ", lon=" + lon +
                 ", likesList=" + likesList +
                 ", viewsList=" + viewsList +
                 '}';
     }
+
 
     protected Picture(Parcel in) {
         id = in.readString();
@@ -235,6 +258,10 @@ public class Picture implements Parcelable {
         userId = in.readString();
         username = in.readString();
         userIcon = in.readString();
+        pointId = in.readString();
+        inPlace = in.readByte() != 0x00;
+        lat = in.readDouble();
+        lon = in.readDouble();
         likesList = (HashMap) in.readValue(HashMap.class.getClassLoader());
         viewsList = (HashMap) in.readValue(HashMap.class.getClassLoader());
     }
@@ -258,6 +285,10 @@ public class Picture implements Parcelable {
         dest.writeString(userId);
         dest.writeString(username);
         dest.writeString(userIcon);
+        dest.writeString(pointId);
+        dest.writeByte((byte) (inPlace ? 0x01 : 0x00));
+        dest.writeDouble(lat);
+        dest.writeDouble(lon);
         dest.writeValue(likesList);
         dest.writeValue(viewsList);
     }

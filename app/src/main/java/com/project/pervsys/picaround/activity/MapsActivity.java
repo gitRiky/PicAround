@@ -858,15 +858,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             double popularity = 1 - p.getPopularity();
 
                             if(popularity <= 0.20 )
-                                mci.setIcon(R.mipmap.marker_blue_popularity);
+                                mci.setIcon(R.drawable.marker_blue_popularity);
                             else if(popularity > 0.20 && popularity <= 0.40)
-                                mci.setIcon(R.mipmap.marker_azure_popularity);
+                                mci.setIcon(R.drawable.marker_azure_popularity);
                             else if(popularity > 0.40 && popularity <= 0.60)
-                                mci.setIcon(R.mipmap.marker_green_popularity);
+                                mci.setIcon(R.drawable.marker_green_popularity);
                             else if(popularity > 0.60 && popularity <= 0.80)
-                                mci.setIcon(R.mipmap.marker_yellow_popularity);
+                                mci.setIcon(R.drawable.marker_yellow_popularity);
                             else
-                                mci.setIcon(R.mipmap.marker_red_popularity);
+                                mci.setIcon(R.drawable.marker_red_popularity);
 
                             if(p.getId() == null){
                                 Log.e(TAG, "ERROR, some point has null ID");
@@ -902,6 +902,20 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             p.setType(PLACE);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
                             mci.setmPoint(p);
+
+                            double popularity = 1 - p.getPopularity();
+
+                            if(popularity <= 0.20 )
+                                mci.setIcon(R.drawable.marker_place_blue_popularity);
+                            else if(popularity > 0.20 && popularity <= 0.40)
+                                mci.setIcon(R.drawable.marker_place_azure_popularity);
+                            else if(popularity > 0.40 && popularity <= 0.60)
+                                mci.setIcon(R.drawable.marker_place_green_popularity);
+                            else if(popularity > 0.60 && popularity <= 0.80)
+                                mci.setIcon(R.drawable.marker_place_yellow_popularity);
+                            else
+                                mci.setIcon(R.drawable.marker_place_red_popularity);
+
                             if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
                                 mClusterManager.addItem(mci);
