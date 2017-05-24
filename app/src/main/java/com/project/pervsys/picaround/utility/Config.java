@@ -39,7 +39,7 @@ public class Config {
     public static final String THUMB_PREFIX = "thumb_";
     public static final String INTERM_PREFIX = "small_";
     public static final String FULL_NAME = "full_name";
-
+    public static final int NUM_SUGGESTED_ADDRESSES = 5;
 
 
     public static final int RC_SIGN_IN = 1;

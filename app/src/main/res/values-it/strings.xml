@@ -80,12 +80,13 @@
     <string name="username_with_spaces">Lo username non può contenere degli spazi</string>
     <string name="yes">Si</string>
     <string name="welcome_to_picaround">Benvenuto in\nPicAround!</string>
-    <string name="view" translatable="false">visualizzazioni</string>
-    <string name="views">visualizzazioni</string>
     <string name="camera">Fotocamera</string>
     <string name="birthday">Data di nascita</string>
     <string name="gallery">Galleria</string>
     <string name="no_users_found">Nessun utente trovato</string>
-    <string name="uploading_picture">Caricamento foto...</string>
-    <string name="address_not_found">Indirizzo non disponibile</string>
+    <string name="view">visualizzazione</string>
+    <string name="views">visualizzazioni</string>
+    <string name="uploading_picture">Caricamento foto &#8230;</string>
+    <string name="address_not_found">Indirizzo sconosciuto</string>
+
 </resources>

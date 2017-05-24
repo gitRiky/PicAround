@@ -100,6 +100,16 @@
 
         </TableLayout>
 
+        <ImageButton
+            android:id="@+id/rotate_button"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="10dp"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="@color/transparent"
+            android:src="@drawable/ic_rotate_right_white_24dp" />
     </RelativeLayout>
 
 </LinearLayout>

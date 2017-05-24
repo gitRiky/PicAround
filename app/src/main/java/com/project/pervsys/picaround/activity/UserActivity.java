@@ -180,7 +180,7 @@ Log.d(TAG, "Pictures: " + mPictures);
 
                                         Log.i(TAG, "Picture: " + picture);
 
-                                        // Start PictureActivity
+                                        // Start PictureSliderActivity
 
                                         Intent i = new Intent(UserActivity.this, PictureSliderActivity.class);
                                         i.putExtra(PICTURES, pictures);
