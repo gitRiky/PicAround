@@ -328,8 +328,10 @@ public class UploadPhotoActivity extends AppCompatActivity {
                                 }
                             });
 
-                    Intent i = getIntent();
-                    setResult(RESULT_OK, i);
+                    Intent data = new Intent();
+                    String location = mLatitude + "," + mLongitude;
+                    data.putExtra(LOCATION_EXTRA, location);
+                    setResult(RESULT_OK, data);
                     finish();
                 }
                 return true;

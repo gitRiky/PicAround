@@ -1,21 +1,28 @@
 package com.project.pervsys.picaround.activity;
 
-import android.*;
 import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 
+import com.claudiodegio.msv.OnSearchViewListener;
+import com.claudiodegio.msv.SuggestionMaterialSearchView;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -24,9 +31,12 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.project.pervsys.picaround.R;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
 import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
-import static com.project.pervsys.picaround.utility.Config.PERMISSIONS_REQUEST_COARSE_LOCATION;
-import static com.project.pervsys.picaround.utility.Config.PERMISSIONS_REQUEST_FINE_LOCATION;
+import static com.project.pervsys.picaround.utility.Config.NUM_SUGGESTED_ADDRESSES;
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
 
 public class PickLocationActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -34,6 +44,7 @@ public class PickLocationActivity extends AppCompatActivity implements OnMapRead
     private GoogleMap mMap;
     private FloatingActionButton mPickLocation;
     private CameraPosition mCameraPosition;
+    private SuggestionMaterialSearchView mSearchView;
 
 
     Button.OnClickListener mPickListener =
@@ -61,7 +72,7 @@ public class PickLocationActivity extends AppCompatActivity implements OnMapRead
         setContentView(R.layout.activity_pick_location);
 
         // Set toolbar
-        Toolbar toolbar = (Toolbar) findViewById(R.id.include_toolbar_pick_location);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.app_name);
 
@@ -79,6 +90,76 @@ public class PickLocationActivity extends AppCompatActivity implements OnMapRead
         double latitude = Double.parseDouble(settings.getString("latitude", "0"));
         double longitude = Double.parseDouble(settings.getString("longitude", "0"));
         float zoom = Float.parseFloat(settings.getString("zoom", "0"));
+
+        mSearchView = (SuggestionMaterialSearchView) findViewById(R.id.sv);
+        mSearchView.setOnSearchViewListener(new OnSearchViewListener() {
+            @Override
+            public void onSearchViewShown() {
+                mPickLocation.setVisibility(View.INVISIBLE);
+                findViewById(R.id.marker_centered).setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onSearchViewClosed() {
+                mPickLocation.setVisibility(View.VISIBLE);
+                findViewById(R.id.marker_centered).setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                Geocoder geoCoder = new Geocoder(getBaseContext(), Locale.getDefault());
+                try
+                {
+                    List<Address> addresses = geoCoder.getFromLocationName(s, NUM_SUGGESTED_ADDRESSES);
+                    if (addresses.size() > 0)
+                    {
+                        Double lat = addresses.get(0).getLatitude();
+                        Double lon = addresses.get(0).getLongitude();
+
+                        Log.d("lat-long", "" + lat + "......." + lon);
+                        final LatLng address = new LatLng(lat, lon);
+
+                        // Move the camera instantly with a zoom of 15.
+                        if(mMap != null) {
+                            CameraPosition posAddr = new CameraPosition.Builder()
+                                    .target(address)
+                                    .zoom(15)
+                                    .build();
+                            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(posAddr));
+                        }
+                    }
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+                mSearchView.closeSearch();
+                return true;
+            }
+
+            @Override
+            public void onQueryTextChange(String s) {
+//                Geocoder geoCoder = new Geocoder(getBaseContext(), Locale.getDefault());
+//                try
+//                {
+//                    String[] adds = new String[NUM_SUGGESTED_ADDRESSES];
+//                    List<Address> addresses = geoCoder.getFromLocationName(s, NUM_SUGGESTED_ADDRESSES);
+//
+//                    int i = 0;
+//                    for(Address addr : addresses){
+//                        adds[i] = addr.getLocality() + ", " + addr.getCountryName();
+//                        i++;
+//                    }
+//
+//                    SuggestionMaterialSearchView sugg = (SuggestionMaterialSearchView) mSearchView;
+//                    sugg.setSuggestion(adds, true);
+//                }
+//                catch (IOException e)
+//                {
+//                    e.printStackTrace();
+//                }
+            }
+        });
 
         LatLng startPosition = new LatLng(latitude, longitude);
 
@@ -116,5 +197,24 @@ public class PickLocationActivity extends AppCompatActivity implements OnMapRead
             mMap.setMyLocationEnabled(true);
         }
         mPickLocation.setOnClickListener(mPickListener);
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.pick_location_menu, menu);
+        MenuItem item = menu.findItem(R.id.action_search);
+        mSearchView.setMenuItem(item);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public void onBackPressed(){
+        if (mSearchView.isOpen()) {
+            mSearchView.closeSearch();
+        }
+        else{
+            super.onBackPressed();
+        }
     }
 }

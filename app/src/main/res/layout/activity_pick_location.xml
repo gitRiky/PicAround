@@ -5,16 +5,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content" android:layout_height="wrap_content" >
 
-    <include layout="@layout/toolbar"
-        android:id="@+id/include_toolbar_pick_location"/>
-
     <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="com.project.pervsys.picaround.activity.PickLocationActivity"
-        android:layout_below="@id/include_toolbar_pick_location" />
+        android:layout_below="@id/toolbar_container" />
 
     <ImageView
         android:id="@+id/marker_centered"
@@ -35,5 +32,20 @@
         map:fabSize="normal"
         map:layout_anchorGravity="bottom|right"
         map:useCompatPadding="true" />
+
+    <FrameLayout
+        android:id="@+id/toolbar_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <include layout="@layout/toolbar" />
+
+        <com.claudiodegio.msv.SuggestionMaterialSearchView
+            android:id="@+id/sv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="5dp"></com.claudiodegio.msv.SuggestionMaterialSearchView>
+
+    </FrameLayout>
 
 </RelativeLayout>

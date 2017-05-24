@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Camera;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Criteria;
@@ -569,8 +570,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             //upload of a photo taken by the application's camera
             //in this case, if the upload is cancelled, then the image is deleted
             case REQUEST_UPLOAD_PHOTO:
-                if (resultCode == RESULT_OK)
+                if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo in uploading");
+                    String[] latLong = data.getStringExtra(LOCATION_EXTRA).split(",");
+                    Double lat = Double.parseDouble(latLong[0]);
+                    Double lon = Double.parseDouble(latLong[1]);
+                    if(mMap != null){
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 15));
+                    }
+                }
                 if (resultCode == RESULT_CANCELED) {
                     Log.i(TAG, "Photo upload cancelled");
                     File f = new File(mCurrentPhotoPath);
@@ -592,8 +600,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             //upload of a photo taken from gallery
             //in this case, no deletion needed
             case REQUEST_UPLOAD_PHOTO_FROM_GALLERY:
-                if (resultCode == RESULT_OK)
+                if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo taken from gallery in uploading");
+                    String[] latLong = data.getStringExtra(LOCATION_EXTRA).split(",");
+                    Double lat = Double.parseDouble(latLong[0]);
+                    Double lon = Double.parseDouble(latLong[1]);
+                    if(mMap != null){
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 15));
+                    }
+                }
                 if (resultCode == RESULT_CANCELED)
                     Log.i(TAG, "Photo upload cancelled");
                 break;
@@ -955,7 +970,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ArrayList<String> reverseGeocode(double lat, double lon) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         List<Address> addresses = null;
-      
+        ArrayList<String> addressFragments = new ArrayList<String>();
+
         try {
             addresses = geocoder.getFromLocation(
                     lat,
@@ -964,21 +980,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     1);
         } catch (IOException ioException) {
             // Catch network or other I/O problems.
-            Log.e(TAG, "ERROR in reverseGeocode", ioException);
+            addressFragments.add(getString(R.string.address_not_found));
+            Log.e(TAG, "ERROR in reverseGeocode, IOException");
+            return addressFragments;
         } catch (IllegalArgumentException illegalArgumentException) {
             // Catch invalid latitude or longitude values.
             Log.e(TAG, "ERROR in reverseGeocode" + ". " +
                     "Latitude = " + lat +
                     ", Longitude = " +
-                    lon, illegalArgumentException);
+                    lon);
+            addressFragments.add(getString(R.string.address_not_found));
+            return addressFragments;
         }
-
-        ArrayList<String> addressFragments = new ArrayList<String>();
 
         // Handle case where no address was found.
         if (addresses == null || addresses.size()  == 0) {
             Log.e(TAG, "ERROR in reverseGeocode, address not found");
-            addressFragments.add("Address not found");
+            addressFragments.add(getString(R.string.address_not_found));
         }
         else {
             Address address = addresses.get(0);
@@ -1036,13 +1054,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         Picture picture = (Picture) adapterView.getItemAtPosition(position);
 
                         Log.i(TAG, "Picture: " + picture);
-
-                        // Start PictureActivity
-//                            Intent i = new Intent(context, PictureActivity.class);
-//                            i.putExtra(PICTURE_ID, picture.getId());
-//                            i.putExtra(USER_ID, picture.getUserId());
-//                            i.putExtra(POINT_ID, point.getId());
-//                            startActivity(i);
 
                         // Start PictureSliderActivity
                         Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
