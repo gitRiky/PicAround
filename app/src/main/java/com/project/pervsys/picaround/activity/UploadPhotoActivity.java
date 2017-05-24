@@ -30,7 +30,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -103,6 +105,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private boolean inUpload = false;
     private boolean uploadError = false;
     private DatabaseReference mDatabaseRef = null;
+    private Bitmap mRotatedBitmap;
+    private int rotationDegrees = 0;
+    private Bitmap mNewRotatedBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,6 +140,19 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
             }
         };
+        ImageButton rotateButton = (ImageButton) findViewById(R.id.rotate_button);
+        rotateButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    rotationDegrees += 90;
+                    if (rotationDegrees == 360) {
+                        rotationDegrees = 0;
+                        setPic(false);
+                    }
+                    setPic(true);
+                }
+        });
+
         mUser = mAuth.getCurrentUser();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
@@ -156,7 +174,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
 
         //set the image into imageView
-        setPic();
+        setPic(false);
         if (mLatitude == null || mLongitude == null  || mLatitude.equals(DEFAULT_LAT + "") || mLongitude.equals(DEFAULT_LNG + "") || !isDouble(mLatitude) || !isDouble(mLongitude)) {
             Log.d(TAG, "Position not available in the metadata");
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
@@ -473,7 +491,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         ).start();
     }
 
-    private void setPic() {
+    private void setPic(boolean rotate) {
 
 		/* Get the size of the image */
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
@@ -490,12 +508,15 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         //Use the matrix for rotate the image
         Matrix matrix = new Matrix();
-        matrix.postRotate(getRotation());
-        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
+        if (rotate)
+            matrix.postRotate(getRotation() + rotationDegrees);
+        else
+            matrix.postRotate(getRotation());
+        mRotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
 
         //Scale the bitmap without changing the proportions
-        int width = rotatedBitmap.getWidth();
-        int height = rotatedBitmap.getHeight();
+        int width = mRotatedBitmap.getWidth();
+        int height = mRotatedBitmap.getHeight();
         double scale;
         if (width >= height)
             scale = (double) width / height;
@@ -503,27 +524,66 @@ public class UploadPhotoActivity extends AppCompatActivity {
             scale = (double) height / width;
         maxWidth = this.getResources().getDisplayMetrics().widthPixels;
         maxHeight = (width*bitmap.getHeight())/bitmap.getWidth();
-        if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP) {
-            if (width > maxHeight || height > maxWidth) {
-                if (height > maxWidth) {
-                    height = maxWidth;
-                    width = (int) (height / scale);
+        if (!rotate) {
+            if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP) {
+                if (width > maxHeight || height > maxWidth) {
+                    if (height > maxWidth) {
+                        height = maxWidth;
+                        width = (int) (height / scale);
+                    }
                 }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
+            } else {
+                if (width > maxWidth || height > maxHeight) {
+                    if (width > maxWidth) {
+                        width = maxWidth;
+                        height = (int) (width / scale);
+                    }
+                }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
             }
-            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
         }
         else {
-            if (width > maxWidth || height > maxHeight) {
-                if (width > maxWidth) {
-                    width = maxWidth;
-                    height = (int) (width / scale);
+            if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP ) {
+                if (rotationDegrees == 90 || rotationDegrees == 270) {
+                    if (width > maxWidth || height > maxHeight) {
+                        if (width > maxWidth) {
+                            width = maxWidth;
+                            height = (int) (width / scale);
+                        }
+                    }
                 }
+                else {
+                    if (width > maxHeight || height > maxWidth) {
+                        if (height > maxWidth) {
+                            height = maxWidth;
+                            width = (int) (height / scale);
+                        }
+                    }
+                }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
+            } else {
+                if (rotationDegrees == 90 || rotationDegrees == 270) {
+                    if (width > maxHeight || height > maxWidth) {
+                        if (height > maxWidth) {
+                            height = maxWidth;
+                            width = (int) (height / scale);
+                        }
+                    }
+                }
+                else {
+                    if (width > maxWidth || height > maxHeight) {
+                        if (width > maxWidth) {
+                            width = maxWidth;
+                            height = (int) (width / scale);
+                        }
+                    }
+                }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
             }
-            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
         }
-
         //set image into the imageView
-        mImageView.setImageBitmap(rotatedBitmap);
+        mImageView.setImageBitmap(mRotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
 
@@ -604,4 +664,5 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     }
                 });
     }
+
 }
