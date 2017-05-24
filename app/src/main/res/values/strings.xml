@@ -107,8 +107,7 @@
     <string name="gallery">Gallery</string>
     <string name="camera">Camera</string>
     <string name="birthday">Birthday</string>
-    <string name="uploading_picture">Uploading picture &#8230;</string>
-    <string name="ok">Ok</string>
     <string name="user">User</string>
-
+    <string name="uploading_picture">Uploading picture&#8230;</string>
+    <string name="ok">Ok</string>
 </resources>
