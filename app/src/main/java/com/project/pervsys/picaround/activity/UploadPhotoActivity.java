@@ -4,7 +4,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -17,8 +19,10 @@ import com.google.firebase.storage.OnProgressListener;
 
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
@@ -62,6 +66,7 @@ import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
+import com.project.pervsys.picaround.domain.User;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -107,7 +112,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private DatabaseReference mDatabaseRef = null;
     private Bitmap mRotatedBitmap;
     private int rotationDegrees = 0;
-    private Bitmap mNewRotatedBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,7 +168,37 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-      
+        Intent i = getIntent();
+        if (i.getAction() != null) {
+            if (i.getAction().equals("android.intent.action.SEND")) {
+                Log.d(TAG, "ACTIVITY STARTED FROM OUTSIDE");
+                Uri photoUri = (Uri) i.getExtras().get(Intent.EXTRA_STREAM);
+                mPhotoPath = getRealPathFromURI(this, photoUri);
+                mUser = mAuth.getCurrentUser();
+                if (mUser != null) {
+                    getProfileInfo();
+                } else {
+                    Log.i(TAG, "The user is not logged in, he cannot share pictures");
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                            .setMessage("You are not logged in, you cannot share pictures")
+                            .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    finish();
+                                }
+                            })
+                            .setCancelable(false);
+                    dialog.show();
+                }
+            }
+        }
+        else {
+            if (mAuth.getCurrentUser() != null)
+                mUser = mAuth.getCurrentUser();
+            mPhotoPath = i.getStringExtra(PHOTO_PATH);
+            mUsername = i.getStringExtra(USERNAME);
+            profilePicture = i.getStringExtra(PROFILE_PICTURE);
+        }
+
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             takeExifInfo(exif);
@@ -183,6 +217,49 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         Log.i(TAG, "Photo put into the imageView");
     }
+
+    private void getProfileInfo() {
+        mDatabaseRef.child(USERS).orderByKey().equalTo(mUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            if (child != null) {
+                                User user = child.getValue(User.class);
+                                Log.d(TAG, user.toString());
+                                mUsername = user.getUsername();
+                                profilePicture = user.getProfilePicture();
+                                Log.i(TAG, "Username= " + mUsername
+                                        + ", profilePicturePath = " + profilePicture);
+                            } else
+                                Log.e(TAG, "Cannot obtain profile info");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+    }
+
+
+    public String getRealPathFromURI(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = {MediaStore.Images.Media.DATA};
+            cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){
