@@ -80,7 +80,8 @@
     <string name="username_with_spaces">Il Nickname non può contenere degli spazi</string>
     <string name="yes">Si</string>
     <string name="welcome_to_picaround">Benvenuto in PicAround !</string>
-    <string name="view">visualizzazioni</string>
+    <string name="view">visualizzazione</string>
     <string name="views">visualizzazioni</string>
     <string name="address_not_found">Indirizzo sconosciuto</string>
+    <string name="uploading_picture">Caricamento foto &#8230;</string>
 </resources>
