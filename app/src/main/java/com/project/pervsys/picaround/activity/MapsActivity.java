@@ -125,7 +125,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private ProgressDialog progress;
     private GoogleMap mMap;
-    private ImageView mImageView;
 
     private SlidingUpPanelLayout mSlidingUpPanel;
     private SuggestionMaterialSearchView mSearchView;
@@ -143,9 +142,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private String mUsername;
     private String mProfilePicture;
-    private List<String> thumbnails;
     private FloatingActionMenu mFloatingActionMenu;
-    private boolean populated = false;
 
     private FirebaseUser mUser;
     private FirebaseAuth mAuth;
