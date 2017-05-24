@@ -209,6 +209,9 @@ Log.d(TAG, "Pictures: " + mPictures);
         MenuItem item = menu.findItem(R.id.action_search);
         mSearchView.setMenuItem(item);
 
+        MenuItem userItem = menu.findItem(R.id.user);
+        userItem.setVisible(false);
+
         return super.onCreateOptionsMenu(menu);
     }
 

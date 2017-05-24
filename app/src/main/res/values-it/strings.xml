@@ -88,5 +88,6 @@
     <string name="views">visualizzazioni</string>
     <string name="uploading_picture">Caricamento foto &#8230;</string>
     <string name="address_not_found">Indirizzo sconosciuto</string>
+    <string name="user">Utente</string>
 
 </resources>

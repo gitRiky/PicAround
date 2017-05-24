@@ -1182,6 +1182,11 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                 startLogin();
                 return true;
+            case R.id.user:
+                Intent i = new Intent(this, UserActivity.class);
+                i.putExtra(USER_ID, mUser.getUid());
+                startActivity(i);
+                return true;
             case R.id.logout:
                 Log.i(TAG, "Logout has been selected");
                 prepareLogOut();
