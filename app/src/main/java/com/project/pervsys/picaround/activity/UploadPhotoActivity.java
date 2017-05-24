@@ -4,7 +4,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -17,8 +19,10 @@ import com.google.firebase.storage.OnProgressListener;
 
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
@@ -30,7 +34,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -58,7 +64,9 @@ import id.zelory.compressor.Compressor;
 
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Place;
 import com.project.pervsys.picaround.domain.Point;
+import com.project.pervsys.picaround.domain.User;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -102,6 +110,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
     private boolean inUpload = false;
     private boolean uploadError = false;
     private DatabaseReference mDatabaseRef = null;
+    private Bitmap mRotatedBitmap;
+    private int rotationDegrees = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,6 +144,19 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 }
             }
         };
+        ImageButton rotateButton = (ImageButton) findViewById(R.id.rotate_button);
+        rotateButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    rotationDegrees += 90;
+                    if (rotationDegrees == 360) {
+                        rotationDegrees = 0;
+                        setPic(false);
+                    }
+                    setPic(true);
+                }
+        });
+
         mUser = mAuth.getCurrentUser();
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mPhotoPath = getIntent().getStringExtra(PHOTO_PATH);
@@ -145,7 +168,37 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-      
+        Intent i = getIntent();
+        if (i.getAction() != null) {
+            if (i.getAction().equals("android.intent.action.SEND")) {
+                Log.d(TAG, "ACTIVITY STARTED FROM OUTSIDE");
+                Uri photoUri = (Uri) i.getExtras().get(Intent.EXTRA_STREAM);
+                mPhotoPath = getRealPathFromURI(this, photoUri);
+                mUser = mAuth.getCurrentUser();
+                if (mUser != null) {
+                    getProfileInfo();
+                } else {
+                    Log.i(TAG, "The user is not logged in, he cannot share pictures");
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                            .setMessage("You are not logged in, you cannot share pictures")
+                            .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    finish();
+                                }
+                            })
+                            .setCancelable(false);
+                    dialog.show();
+                }
+            }
+        }
+        else {
+            if (mAuth.getCurrentUser() != null)
+                mUser = mAuth.getCurrentUser();
+            mPhotoPath = i.getStringExtra(PHOTO_PATH);
+            mUsername = i.getStringExtra(USERNAME);
+            profilePicture = i.getStringExtra(PROFILE_PICTURE);
+        }
+
         try {
             ExifInterface exif = new ExifInterface(mPhotoPath);
             takeExifInfo(exif);
@@ -155,7 +208,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         }
 
         //set the image into imageView
-        setPic();
+        setPic(false);
         if (mLatitude == null || mLongitude == null  || mLatitude.equals(DEFAULT_LAT + "") || mLongitude.equals(DEFAULT_LNG + "") || !isDouble(mLatitude) || !isDouble(mLongitude)) {
             Log.d(TAG, "Position not available in the metadata");
             Intent pickLocationIntent = new Intent(this, PickLocationActivity.class);
@@ -164,6 +217,49 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         Log.i(TAG, "Photo put into the imageView");
     }
+
+    private void getProfileInfo() {
+        mDatabaseRef.child(USERS).orderByKey().equalTo(mUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            if (child != null) {
+                                User user = child.getValue(User.class);
+                                Log.d(TAG, user.toString());
+                                mUsername = user.getUsername();
+                                profilePicture = user.getProfilePicture();
+                                Log.i(TAG, "Username= " + mUsername
+                                        + ", profilePicturePath = " + profilePicture);
+                            } else
+                                Log.e(TAG, "Cannot obtain profile info");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //database error, e.g. permission denied (not logged with Firebase)
+                        Log.e(TAG, databaseError.toString());
+                    }
+                });
+    }
+
+
+    public String getRealPathFromURI(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = {MediaStore.Images.Media.DATA};
+            cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){
@@ -296,15 +392,6 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 mDescription = mDescriptionField.getText().toString().trim();
                 if(checkDescription()) {
                     Log.d(TAG, "Ready for sending data to db");
-                    //put the photo into the storage
-                    Point toPut = new Point();
-                    toPut.setLat(Double.parseDouble(mLatitude));
-                    toPut.setLon(Double.parseDouble(mLongitude));
-                    DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
-                    mPlaceId = pushReference.getKey();
-                    toPut.setId(mPlaceId);
-                    Log.d(TAG, "toPut " + toPut);
-                    pushReference.setValue(toPut);
 
                     //save the image as username_timestamp
                     mPhotoId = mUsername + SEPARATOR + mTimestamp;
@@ -316,7 +403,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     String thumbnailId = THUMB_PREFIX + mPhotoId;
                     Log.d(TAG, "thumbnail bytes: " + thumbnailFile.length());
                     StorageReference thumbRef = mStorageRef.child(thumbnailId);
-                    Toast.makeText(this, "Uploading picture...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.uploading_picture, Toast.LENGTH_SHORT).show();
                     thumbRef.putFile(thumbnailUri)
                             .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                                 @Override
@@ -483,7 +570,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
         ).start();
     }
 
-    private void setPic() {
+    private void setPic(boolean rotate) {
 
 		/* Get the size of the image */
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
@@ -500,12 +587,15 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         //Use the matrix for rotate the image
         Matrix matrix = new Matrix();
-        matrix.postRotate(getRotation());
-        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
+        if (rotate)
+            matrix.postRotate(getRotation() + rotationDegrees);
+        else
+            matrix.postRotate(getRotation());
+        mRotatedBitmap = Bitmap.createBitmap(bitmap , 0, 0,  photoW, photoH, matrix, true);
 
         //Scale the bitmap without changing the proportions
-        int width = rotatedBitmap.getWidth();
-        int height = rotatedBitmap.getHeight();
+        int width = mRotatedBitmap.getWidth();
+        int height = mRotatedBitmap.getHeight();
         double scale;
         if (width >= height)
             scale = (double) width / height;
@@ -513,27 +603,66 @@ public class UploadPhotoActivity extends AppCompatActivity {
             scale = (double) height / width;
         maxWidth = this.getResources().getDisplayMetrics().widthPixels;
         maxHeight = (width*bitmap.getHeight())/bitmap.getWidth();
-        if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP) {
-            if (width > maxHeight || height > maxWidth) {
-                if (height > maxWidth) {
-                    height = maxWidth;
-                    width = (int) (height / scale);
+        if (!rotate) {
+            if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP) {
+                if (width > maxHeight || height > maxWidth) {
+                    if (height > maxWidth) {
+                        height = maxWidth;
+                        width = (int) (height / scale);
+                    }
                 }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
+            } else {
+                if (width > maxWidth || height > maxHeight) {
+                    if (width > maxWidth) {
+                        width = maxWidth;
+                        height = (int) (width / scale);
+                    }
+                }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
             }
-            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
         }
         else {
-            if (width > maxWidth || height > maxHeight) {
-                if (width > maxWidth) {
-                    width = maxWidth;
-                    height = (int) (width / scale);
+            if (orientation == PIC_VER_BOTTOM || orientation == PIC_VER_TOP ) {
+                if (rotationDegrees == 90 || rotationDegrees == 270) {
+                    if (width > maxWidth || height > maxHeight) {
+                        if (width > maxWidth) {
+                            width = maxWidth;
+                            height = (int) (width / scale);
+                        }
+                    }
                 }
+                else {
+                    if (width > maxHeight || height > maxWidth) {
+                        if (height > maxWidth) {
+                            height = maxWidth;
+                            width = (int) (height / scale);
+                        }
+                    }
+                }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
+            } else {
+                if (rotationDegrees == 90 || rotationDegrees == 270) {
+                    if (width > maxHeight || height > maxWidth) {
+                        if (height > maxWidth) {
+                            height = maxWidth;
+                            width = (int) (height / scale);
+                        }
+                    }
+                }
+                else {
+                    if (width > maxWidth || height > maxHeight) {
+                        if (width > maxWidth) {
+                            width = maxWidth;
+                            height = (int) (width / scale);
+                        }
+                    }
+                }
+                mRotatedBitmap = Bitmap.createScaledBitmap(mRotatedBitmap, width, height, false);
             }
-            rotatedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, width, height, false);
         }
-
         //set image into the imageView
-        mImageView.setImageBitmap(rotatedBitmap);
+        mImageView.setImageBitmap(mRotatedBitmap);
         mImageView.setVisibility(View.VISIBLE);
     }
 
@@ -566,15 +695,34 @@ public class UploadPhotoActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink: " + uri);
+
+                //create the new Place
+                Place toPut = new Place();
+                toPut.setLat(Double.parseDouble(mLatitude));
+                toPut.setLon(Double.parseDouble(mLongitude));
+                DatabaseReference pushReference = mDatabaseRef.child(PLACES).push();
+                mPlaceId = pushReference.getKey();
+                toPut.setId(mPlaceId);
+                Log.d(TAG, "toPut " + toPut);
+
+                //create the Picture object
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
                         mUser.getUid(), mUsername, profilePicture, mPlaceId);
                 picture.setTimestamp(mTimestamp);
-                DatabaseReference pushReference = mDatabaseRef.child(PICTURES).push();
-                String id = pushReference.getKey();
+                DatabaseReference pictureRef = mDatabaseRef.child(PICTURES).push();
+                String id = pictureRef.getKey();
                 picture.setId(id);
-                pushReference.setValue(picture);
 
-                mDatabaseRef.child(PLACES).child(mPlaceId).child(PICTURES).child(id).setValue(picture);
+                //the db stores the popularity as 1 - popularity,
+                //i.e. the minimum popularity is 1
+                picture.setPopularity(1);
+
+                //add the picture to the place and send to db both picture and place
+                toPut.addPicture(picture);
+                pushReference.setValue(toPut);
+                pictureRef.setValue(picture);
+
+                //add the picture to Users
                 mDatabaseRef.child(USERS).child(mUser.getUid()).child(PICTURES).child(id).setValue(picture);
                 Log.i(TAG, "Picture's path sent to db");
                 Toast.makeText(getApplicationContext(),
@@ -595,4 +743,5 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     }
                 });
     }
+
 }

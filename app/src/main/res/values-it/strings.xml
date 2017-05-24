@@ -82,5 +82,6 @@
     <string name="welcome_to_picaround">Benvenuto in PicAround !</string>
     <string name="view">visualizzazione</string>
     <string name="views">visualizzazioni</string>
+    <string name="uploading_picture">Caricamento foto &#8230;</string>
     <string name="address_not_found">Indirizzo sconosciuto</string>
 </resources>
