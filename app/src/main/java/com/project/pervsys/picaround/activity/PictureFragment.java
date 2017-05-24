@@ -2,6 +2,9 @@ package com.project.pervsys.picaround.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
+import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,7 +46,10 @@ import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 import com.squareup.picasso.Picasso;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
 import static com.project.pervsys.picaround.utility.Config.*;
@@ -53,6 +60,7 @@ public class PictureFragment extends Fragment {
 
     private Picture mPicture;
     private String mPictureId;
+    private String mPicturePath;
     private int mViewsNumber;
     private int mLikesNumber;
     private HashMap<String,Boolean> mViewsList;
@@ -60,7 +68,7 @@ public class PictureFragment extends Fragment {
     private ImageButton mLikeButton;
     private TextView mLikesTextView;
     private TextView mViewsTextView;
-    private TextView mPopularityTextView;
+    private TextView mLocationTextView;
     private boolean mLike = false;
     private boolean localLike;
     private boolean increasedViews = false;
@@ -70,6 +78,8 @@ public class PictureFragment extends Fragment {
     private ImageView mUserIconView;
     private RelativeLayout mUserLayout;
     private RelativeLayout mInfoLayout;
+    private RelativeLayout mBackgroundGradientLayout;
+    private LinearLayout mLocationLayout;
     private boolean visible = false;
     private boolean created = false;
     private String mDescription;
@@ -103,13 +113,16 @@ public class PictureFragment extends Fragment {
         final RelativeLayout transitionContainer = (RelativeLayout) rootView.findViewById(R.id.transition_container);
         mUserLayout = (RelativeLayout) rootView.findViewById(R.id.user);
         mInfoLayout = (RelativeLayout) rootView.findViewById(R.id.info);
+        mBackgroundGradientLayout = (RelativeLayout) rootView.findViewById(R.id.background_gradient);
+        mLocationLayout = (LinearLayout) rootView.findViewById(R.id.location_layout);
+
 
         mUserIconView = (ImageView) rootView.findViewById(R.id.user_icon);
         TextView usernameView = (TextView) rootView.findViewById(R.id.username);
         TextView descriptionView = (TextView) rootView.findViewById(R.id.description);
         mViewsTextView = (TextView) rootView.findViewById(R.id.views);
         mLikesTextView = (TextView) rootView.findViewById(R.id.likes);
-        mPopularityTextView = (TextView) rootView.findViewById(R.id.popularity);
+        mLocationTextView = (TextView) rootView.findViewById(R.id.location);
         mLikeButton = (ImageButton) rootView.findViewById(R.id.like_button);
 
         final GestureImageView pictureView = (GestureImageView) rootView.findViewById(R.id.picture);
@@ -135,6 +148,7 @@ public class PictureFragment extends Fragment {
                 mActivity.visible = !mActivity.visible;
                 mUserLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
                 mInfoLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
+                mBackgroundGradientLayout.setVisibility(mActivity.visible ? View.VISIBLE : View.INVISIBLE);
                 return false;
             }
 
@@ -151,12 +165,11 @@ public class PictureFragment extends Fragment {
         pictureView.getController().setLongPressEnabled(true);
         registerForContextMenu(pictureView);
 
-
         Bundle bundle = getArguments();
         final Picture picture = bundle.getParcelable(PICTURE);
 
         mPictureId = picture.getId();
-        String picturePath = picture.getPath();
+        mPicturePath = picture.getPath();
         String username = picture.getUsername();
         mDescription = picture.getDescription();
 
@@ -182,6 +195,23 @@ public class PictureFragment extends Fragment {
                         Picasso.with(getContext())
                                 .load(mPicture.getUserIcon())
                                 .into(mUserIconView);
+
+                        mLocationLayout.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                // Create a Uri from an intent string. Use the result to create an Intent.
+                                Uri gmmIntentUri = Uri.parse("google.streetview:cbll="
+                                        + mPicture.getLat() + "," + mPicture.getLon());
+
+                                // Create an Intent from gmmIntentUri. Set the action to ACTION_VIEW
+                                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                                // Make the Intent explicit by setting the Google Maps package
+                                mapIntent.setPackage("com.google.android.apps.maps");
+
+                                // Attempt to start an activity that can handle the Intent
+                                startActivity(mapIntent);
+                            }
+                        });
 
                         mViewsList = mPicture.getViewsList();
                         mLikesList = mPicture.getLikesList();
@@ -211,7 +241,7 @@ public class PictureFragment extends Fragment {
 
                         setTextView(mLikesNumber, mLikesTextView);
                         setTextView(mViewsNumber, mViewsTextView);
-                        setPopularity();
+                        mLocationTextView.setText(reverseGeocode(picture.getLat(), picture.getLon()));
                     }
 
                     @Override
@@ -223,7 +253,7 @@ public class PictureFragment extends Fragment {
 
 
         Picasso.with(getContext())
-                .load(picturePath)
+                .load(mPicturePath)
                 .resize(getApplicationContext().getResources().getDisplayMetrics().widthPixels,
                         getApplicationContext().getResources().getDisplayMetrics().heightPixels)
                 .centerInside()
@@ -249,7 +279,7 @@ public class PictureFragment extends Fragment {
                         mLikesNumber--;
                     }
                     setTextView(mLikesNumber, mLikesTextView);
-                    setPopularity();
+                    mLocationTextView.setText(reverseGeocode(picture.getLat(), picture.getLon()));
                 }
                 else {
                     // user not logged
@@ -289,6 +319,7 @@ public class PictureFragment extends Fragment {
         if (created && visible && mActivity.visible) {
             mUserLayout.setVisibility(View.VISIBLE);
             mInfoLayout.setVisibility(View.VISIBLE);
+            mBackgroundGradientLayout.setVisibility(View.VISIBLE);
         }
     }
 
@@ -320,16 +351,6 @@ public class PictureFragment extends Fragment {
             Log.i(TAG, "Updated popularity");
         }
         created = false;
-    }
-
-    private void setPopularity() {
-        String popularityString = getString(R.string.popularity);
-        double popularity;
-        if (mViewsNumber != 0)
-            popularity = ((double) mLikesNumber/ (double) mViewsNumber);
-        else
-            popularity = 0;
-        mPopularityTextView.setText((int)(popularity*100) + "% " + popularityString);
     }
 
     private void setTextView(int number, TextView textView){
@@ -466,6 +487,41 @@ public class PictureFragment extends Fragment {
             default:
                 return super.onContextItemSelected(item);
         }
+    }
+
+    private String reverseGeocode(double lat, double lon) {
+        Geocoder geocoder = new Geocoder(mActivity, Locale.getDefault());
+        List<Address> addresses = null;
+
+        String addressFragment = "";
+        try {
+            addresses = geocoder.getFromLocation(
+                    lat,
+                    lon,
+                    // In this sample, get just a single address.
+                    1);
+        } catch (IOException ioException) {
+            // Catch network or other I/O problems.
+            addressFragment = getString(R.string.address_not_found);
+            return addressFragment;
+        } catch (IllegalArgumentException illegalArgumentException) {
+            // Catch invalid latitude or longitude values.
+            addressFragment = getString(R.string.address_not_found);
+            return addressFragment;
+        }
+
+        // Handle case where no address was found.
+        if (addresses == null || addresses.size()  == 0) {
+            Log.e(TAG, "ERROR in reverseGeocode, address not found");
+            addressFragment = getString(R.string.address_not_found);
+        }
+        else {
+            Address address = addresses.get(0);
+            addressFragment = address.getLocality() + ", " + address.getCountryName();
+
+            Log.i(TAG, "Address Found");
+        }
+        return addressFragment;
     }
 
     private void startDeleteDialog() {
