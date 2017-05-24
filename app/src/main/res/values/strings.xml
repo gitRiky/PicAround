@@ -107,5 +107,6 @@
     <string name="camera">Camera</string>
     <string name="uploading_picture">Uploading picture...</string>
     <string name="birthday">Birthday</string>
+    <string name="address_not_found">Address not found</string>
 
 </resources>

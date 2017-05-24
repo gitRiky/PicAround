@@ -257,6 +257,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
         // Take orientation
         orientation = Integer.parseInt(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
+        Log.d(TAG, "orientation: " + orientation);
     }
 
     @Override
@@ -565,7 +566,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
             public void onSuccess(Uri uri) {
                 Log.d(TAG, "MyDownloadLink: " + uri);
                 picture = new Picture(mPhotoId, mDescription, uri.toString(),
-                        mUser.getUid(), mUsername, profilePicture, mPlaceId);
+                        mUser.getUid(), mUsername, profilePicture, mPlaceId,
+                        Double.parseDouble(mLatitude), Double.parseDouble(mLongitude));
                 picture.setTimestamp(mTimestamp);
                 DatabaseReference pushReference = mDatabaseRef.child(PICTURES).push();
                 String id = pushReference.getKey();

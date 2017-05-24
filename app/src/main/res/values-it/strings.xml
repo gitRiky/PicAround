@@ -87,4 +87,5 @@
     <string name="gallery">Galleria</string>
     <string name="no_users_found">Nessun utente trovato</string>
     <string name="uploading_picture">Caricamento foto...</string>
+    <string name="address_not_found">Indirizzo non disponibile</string>
 </resources>
