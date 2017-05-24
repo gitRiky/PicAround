@@ -955,7 +955,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private ArrayList<String> reverseGeocode(double lat, double lon) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         List<Address> addresses = null;
-      
+        ArrayList<String> addressFragments = new ArrayList<String>();
+
         try {
             addresses = geocoder.getFromLocation(
                     lat,
@@ -964,21 +965,23 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     1);
         } catch (IOException ioException) {
             // Catch network or other I/O problems.
-            Log.e(TAG, "ERROR in reverseGeocode", ioException);
+            addressFragments.add(getString(R.string.address_not_found));
+            Log.e(TAG, "ERROR in reverseGeocode, IOException");
+            return addressFragments;
         } catch (IllegalArgumentException illegalArgumentException) {
             // Catch invalid latitude or longitude values.
             Log.e(TAG, "ERROR in reverseGeocode" + ". " +
                     "Latitude = " + lat +
                     ", Longitude = " +
-                    lon, illegalArgumentException);
+                    lon);
+            addressFragments.add(getString(R.string.address_not_found));
+            return addressFragments;
         }
-
-        ArrayList<String> addressFragments = new ArrayList<String>();
 
         // Handle case where no address was found.
         if (addresses == null || addresses.size()  == 0) {
             Log.e(TAG, "ERROR in reverseGeocode, address not found");
-            addressFragments.add("Address not found");
+            addressFragments.add(getString(R.string.address_not_found));
         }
         else {
             Address address = addresses.get(0);
@@ -1036,13 +1039,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                         Picture picture = (Picture) adapterView.getItemAtPosition(position);
 
                         Log.i(TAG, "Picture: " + picture);
-
-                        // Start PictureActivity
-//                            Intent i = new Intent(context, PictureActivity.class);
-//                            i.putExtra(PICTURE_ID, picture.getId());
-//                            i.putExtra(USER_ID, picture.getUserId());
-//                            i.putExtra(POINT_ID, point.getId());
-//                            startActivity(i);
 
                         // Start PictureSliderActivity
                         Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
