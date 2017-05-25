@@ -88,5 +88,15 @@
     <string name="views">visualizzazioni</string>
     <string name="uploading_picture">Caricamento foto &#8230;</string>
     <string name="address_not_found">Indirizzo sconosciuto</string>
+    <string name="action_settings">Impostazioni</string>
+    <string name="app_details">Questa applicazione è stata sviluppata durante il corso di Sistemi Pervasivi dell\'università di Roma Sapienza</string>
+    <string name="app_version">Versione</string>
+    <string name="contact_info">Se hai riscontrato qualche problema o se vuoi comunicarci le tue impressioni sull\'applicazione, puoi utilizzare il form sottostante per comunicare con noi. Per favore indica anche il tuo livello di gradimento dell\'applicazione in una scala da 1 a 5 stelle. Federico, Danilo e Riccardo</string>
+    <string name="contact_us_hint">Scrivi qui il tuo messaggio</string>
+    <string name="default_subject_for_email">Email inviata da PicAround</string>
+    <string name="ok">Ok</string>
+    <string name="send_email">Invia email</string>
+    <string name="info_tab">Info</string>
+    <string name="contact_us_tab">Contattaci</string>
 
 </resources>
