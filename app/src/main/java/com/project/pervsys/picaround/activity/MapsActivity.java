@@ -371,7 +371,25 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mFloatingActionMenu.setOnMenuButtonClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mFloatingActionMenu.isOpened())
+                mUser = mAuth.getCurrentUser();
+                if (mUser == null) {
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this)
+                            .setTitle(R.string.login_required)
+                            .setMessage(R.string.login_for_upload)
+                            .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    startLogin();
+                                }
+                            }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //do nothing
+                                }
+                            });
+                    dialog.show();
+                    if (mFloatingActionMenu.isOpened())
+                        mFloatingActionMenu.close(true);
+                }
+                else if (mFloatingActionMenu.isOpened())
                     mFloatingActionMenu.close(true);
                 else
                     mFloatingActionMenu.open(true);
@@ -1183,9 +1201,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 startLogin();
                 return true;
             case R.id.user:
-                Intent i = new Intent(this, UserActivity.class);
-                i.putExtra(USER_ID, mUser.getUid());
-                startActivity(i);
+                mUser = mAuth.getCurrentUser();
+                if (mUser != null) {
+                    Intent i = new Intent(this, UserActivity.class);
+                    i.putExtra(USER_ID, mUser.getUid());
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
             case R.id.logout:
                 Log.i(TAG, "Logout has been selected");
