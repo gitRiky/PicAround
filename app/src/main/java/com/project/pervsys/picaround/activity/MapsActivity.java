@@ -906,15 +906,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             double popularity = 1 - p.getPopularity();
 
                             if(popularity <= 0.20 )
-                                mci.setIcon(R.drawable.marker_place_blue_popularity);
+                                mci.setIcon(R.drawable.marker_place_blue);
                             else if(popularity > 0.20 && popularity <= 0.40)
-                                mci.setIcon(R.drawable.marker_place_azure_popularity);
+                                mci.setIcon(R.drawable.marker_place_azure);
                             else if(popularity > 0.40 && popularity <= 0.60)
-                                mci.setIcon(R.drawable.marker_place_green_popularity);
+                                mci.setIcon(R.drawable.marker_place_green);
                             else if(popularity > 0.60 && popularity <= 0.80)
-                                mci.setIcon(R.drawable.marker_place_yellow_popularity);
+                                mci.setIcon(R.drawable.marker_place_yellow);
                             else
-                                mci.setIcon(R.drawable.marker_place_red_popularity);
+                                mci.setIcon(R.drawable.marker_place_red);
 
                             if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
