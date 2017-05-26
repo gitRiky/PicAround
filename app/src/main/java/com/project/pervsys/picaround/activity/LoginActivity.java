@@ -84,6 +84,7 @@ public class LoginActivity extends AppCompatActivity {
     private String mDate;
     private DatabaseReference mDatabaseRef;
     private GoogleSignInAccount acct;
+    private boolean googleSignInDone = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,11 +113,17 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
+                // Logged with Facebook
+                if (user != null && Profile.getCurrentProfile() != null) {
                     // User is signed in
                     startMain();
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
-                } else {
+                }
+                else if (user != null){
+                    if (!googleSignInDone)
+                        Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid() + ", performing Silent-signin");
+                }
+                else {
                     // User is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                 }
@@ -137,15 +144,11 @@ public class LoginActivity extends AppCompatActivity {
         }
         else {
             //silent Google sign-in
-            String logged = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
-                    .getString(LOG_PREF_INFO, null);
-            if (logged == null) {
-                OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
-                        .silentSignIn(mGoogleApiClient);
-                if (opr.isDone()) {
-                    GoogleSignInResult result = opr.get();
-                    handleSignInResult(result);
-                }
+            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
+                    .silentSignIn(mGoogleApiClient);
+            if (opr.isDone()) {
+                GoogleSignInResult result = opr.get();
+                handleSignInResult(result);
             }
         }
     }
@@ -507,6 +510,7 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
+                        googleSignInDone = true;
                         Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
 
                         // If sign in fails, display a message to the user. If sign in succeeds
@@ -534,7 +538,9 @@ public class LoginActivity extends AppCompatActivity {
                             }
                             if (progress != null)
                                 progress.dismiss();
+                            startMain();
                         }
+
 
                     }
                 });

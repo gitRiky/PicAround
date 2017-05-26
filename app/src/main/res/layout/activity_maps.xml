@@ -11,8 +11,7 @@
     sothree:umanoShadowHeight="4dp"
     sothree:umanoParallaxOffset="100dp"
     sothree:umanoDragView="@+id/dragView"
-    sothree:umanoOverlay="true"
-    sothree:umanoScrollableView="@+id/pictures_grid">
+    sothree:umanoOverlay="true">
 
     <!-- MAIN CONTENT -->
     <RelativeLayout
@@ -59,7 +58,7 @@
                 fab:menu_buttonSpacing="4dp"
                 fab:menu_colorNormal="@color/colorAccent"
                 fab:menu_colorPressed="@color/colorAccent"
-                fab:menu_fab_label="Add a picture"
+                fab:menu_fab_label="@string/Add_picture"
                 fab:menu_icon="@drawable/ic_add_a_photo_white_24dp"
                 fab:menu_labels_colorNormal="@color/white"
                 fab:menu_labels_colorPressed="@color/secondary_text_white"
@@ -102,7 +101,8 @@
         android:background="#ffffff"
         android:clickable="true"
         android:focusable="false"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        sothree:umanoScrollableView="@+id/pictures_grid">
 
         <RelativeLayout
             android:layout_width="match_parent"

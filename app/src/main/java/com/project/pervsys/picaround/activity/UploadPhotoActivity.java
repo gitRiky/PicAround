@@ -1,11 +1,13 @@
 package com.project.pervsys.picaround.activity;
 
+import android.Manifest;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,10 +19,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.OnProgressListener;
 
+import android.location.Criteria;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -171,23 +175,29 @@ public class UploadPhotoActivity extends AppCompatActivity {
         Intent i = getIntent();
         if (i.getAction() != null) {
             if (i.getAction().equals("android.intent.action.SEND")) {
-                Log.d(TAG, "ACTIVITY STARTED FROM OUTSIDE");
-                Uri photoUri = (Uri) i.getExtras().get(Intent.EXTRA_STREAM);
-                mPhotoPath = getRealPathFromURI(this, photoUri);
-                mUser = mAuth.getCurrentUser();
-                if (mUser != null) {
-                    getProfileInfo();
-                } else {
-                    Log.i(TAG, "The user is not logged in, he cannot share pictures");
-                    AlertDialog.Builder dialog = new AlertDialog.Builder(this)
-                            .setMessage("You are not logged in, you cannot share pictures")
-                            .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    finish();
-                                }
-                            })
-                            .setCancelable(false);
-                    dialog.show();
+                Log.d(TAG, "Activity started from outside");
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, R.string.permission_denied_text, Toast.LENGTH_LONG).show();
+                    finish();
+                }
+                else {
+                    Uri photoUri = (Uri) i.getExtras().get(Intent.EXTRA_STREAM);
+                    mPhotoPath = getRealPathFromURI(this, photoUri);
+                    mUser = mAuth.getCurrentUser();
+                    if (mUser != null) {
+                        getProfileInfo();
+                    } else {
+                        Log.i(TAG, "The user is not logged in, he cannot share pictures");
+                        AlertDialog.Builder dialog = new AlertDialog.Builder(this)
+                                .setMessage("You are not logged in, you cannot share pictures")
+                                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        finish();
+                                    }
+                                })
+                                .setCancelable(false);
+                        dialog.show();
+                    }
                 }
             }
         }
