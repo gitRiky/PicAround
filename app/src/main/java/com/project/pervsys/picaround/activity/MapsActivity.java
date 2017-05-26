@@ -584,7 +584,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             //in this case, if the upload is cancelled, then the image is deleted
             case REQUEST_UPLOAD_PHOTO:
                 if (resultCode == RESULT_OK) {
-                    Log.i(TAG, "Photo in uploading");
+                    Log.i(TAG, "Uploading photo");
                     String[] latLong = data.getStringExtra(LOCATION_EXTRA).split(",");
                     Double lat = Double.parseDouble(latLong[0]);
                     Double lon = Double.parseDouble(latLong[1]);

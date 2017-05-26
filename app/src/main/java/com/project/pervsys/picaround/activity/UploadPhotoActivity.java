@@ -177,8 +177,12 @@ public class UploadPhotoActivity extends AppCompatActivity {
             if (i.getAction().equals("android.intent.action.SEND")) {
                 Log.d(TAG, "Activity started from outside");
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "permission check done");
                     Toast.makeText(this, R.string.permission_denied_text, Toast.LENGTH_LONG).show();
+                    setResult(RESULT_CANCELED, i);
                     finish();
+                    // Force the finish of the execution
+                    return;
                 }
                 else {
                     Uri photoUri = (Uri) i.getExtras().get(Intent.EXTRA_STREAM);
@@ -187,23 +191,25 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     if (mUser != null) {
                         getProfileInfo();
                     } else {
-                        Log.i(TAG, "The user is not logged in, he cannot share pictures");
-                        AlertDialog.Builder dialog = new AlertDialog.Builder(this)
-                                .setMessage("You are not logged in, you cannot share pictures")
-                                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        finish();
-                                    }
-                                })
-                                .setCancelable(false);
-                        dialog.show();
+                        Toast.makeText(this, R.string.login_required, Toast.LENGTH_LONG).show();
+                        setResult(RESULT_CANCELED, i);
+                        finish();
+                        return;
                     }
                 }
             }
         }
         else {
-            if (mAuth.getCurrentUser() != null)
+            if (mAuth.getCurrentUser() != null) {
                 mUser = mAuth.getCurrentUser();
+            }
+            // It means that the user is logged out
+            else{
+                Toast.makeText(this, R.string.login_required, Toast.LENGTH_LONG).show();
+                setResult(RESULT_CANCELED, i);
+                finish();
+                return;
+            }
             mPhotoPath = i.getStringExtra(PHOTO_PATH);
             mUsername = i.getStringExtra(USERNAME);
             profilePicture = i.getStringExtra(PROFILE_PICTURE);
