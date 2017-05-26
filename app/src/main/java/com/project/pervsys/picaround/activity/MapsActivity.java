@@ -1181,7 +1181,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 return true;
             case R.id.info:
                 Log.i(TAG, "Info has been selected");
-                Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(this, InfoActivity.class);
+                startActivity(i);
                 //Info activity
                 return true;
             case R.id.profile:
@@ -1189,8 +1190,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
                         .getString(LOG_PREF_INFO, null);
                 if (logType != null && !logType.equals(NOT_LOGGED)){
-                    Intent i = new Intent(this, ProfileActivity.class);
-                    startActivity(i);
+                    Intent infoIntent = new Intent(this, ProfileActivity.class);
+                    startActivity(infoIntent);
                 }
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
