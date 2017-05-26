@@ -27,7 +27,7 @@ public class Place {
     private double lon;
     private String type;
     private HashMap<String, Picture> pictures;
-    private double popularity;
+    private double popularity = 1.;
 
 
     public Place(){
