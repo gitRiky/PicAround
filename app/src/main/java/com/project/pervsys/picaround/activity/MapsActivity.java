@@ -1204,9 +1204,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             case R.id.user:
                 mUser = mAuth.getCurrentUser();
                 if (mUser != null) {
-                    Intent i = new Intent(this, UserActivity.class);
-                    i.putExtra(USER_ID, mUser.getUid());
-                    startActivity(i);
+                    Intent userIntent = new Intent(this, UserActivity.class);
+                    userIntent.putExtra(USER_ID, mUser.getUid());
+                    startActivity(userIntent);
                 }
                 else
                     Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
