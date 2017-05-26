@@ -11,19 +11,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -84,67 +81,12 @@ public class GetBasicInfoActivity extends AppCompatActivity {
 
         mFullNameView = (TextView) findViewById(R.id.user_fullname);
         mImageView = (ImageView) findViewById(R.id.profile_picture);
-        registerForContextMenu(mImageView);
 
         mFullNameView.setText(fullName);
         Picasso.with(GetBasicInfoActivity.this)
                 .load(profilePicture)
                 .into(mImageView);
-
-
-//        String[] days = createDayArray();
-//        String[] years = createYearArray();
-//        Spinner daySpin = (Spinner) findViewById(R.id.spinner);
-//        ArrayAdapter<CharSequence> adapter = new ArrayAdapter(this,
-//                android.R.layout.simple_spinner_item, days);
-//        // Apply the adapter to the spinner
-//        daySpin.setAdapter(adapter);
-//        Spinner monthSpin = (Spinner) findViewById(R.id.spinner2);
-//        ArrayAdapter<CharSequence> adapter2 = ArrayAdapter.createFromResource(this,
-//                R.array.months,
-//                android.R.layout.simple_spinner_item);
-//        adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//        // Apply the adapter to the spinner
-//        monthSpin.setAdapter(adapter2);
-//        monthSpin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                month = "" + (position + 1);
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parent) {
-//                //do nothing
-//            }
-//        });
-//        Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
-//        ArrayAdapter<CharSequence> adapter3 = new ArrayAdapter(this,
-//                android.R.layout.simple_spinner_item, years);
-//        adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//        // Apply the adapter to the spinner
-//        yearSpin.setAdapter(adapter3);
-
     }
-
-
-//    private String[] createDayArray() {
-//        String[] days = new String[31];
-//        for (int i = 0; i < 31; i++)
-//            days[i] = "" + (i + 1);
-//        return days;
-//    }
-//
-//
-//    private String[] createYearArray() {
-//        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-//        int minYear = currentYear - MAX_AGE;
-//        int maxYear = currentYear - MIN_AGE;
-//        String[] years = new String[maxYear - minYear];
-//        for (int i = maxYear, j = 0; i > minYear; i--, j++) {
-//            years[j] = "" + i;
-//        }
-//        return years;
-//    }
 
     @Override
     public void onBackPressed() {
@@ -169,18 +111,14 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                 return false;
         return true;
     }
-
-
+    
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
             case R.id.confirm:
                 EditText usernameField = (EditText) findViewById(R.id.username);
-                String username = usernameField.getText().toString().toLowerCase();
-//                Spinner daySpin = (Spinner) findViewById(R.id.spinner);
-//                Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
-//                String day = daySpin.getSelectedItem().toString();
+                String username = usernameField.getText().toString();
                 if (mDay.length() == 1)
                     mDay = "0" + mDay;
                 if (mMonth.length() == 1)

@@ -122,4 +122,6 @@
     <string name="send_email">Send email</string>
     <string name="info_tab">Info</string>
     <string name="contact_us_tab">Contact Us</string>
+    <string name="user">User</string>
+    <string name="ok">Ok</string>
 </resources>
