@@ -52,7 +52,7 @@
             android:layout_toEndOf="@id/user_icon"
             android:layout_marginStart="10dp"
             android:layout_centerVertical="true"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:maxLines="1"
             android:ellipsize="end"
             android:textColor="@color/white"/>
@@ -69,16 +69,17 @@
                 android:id="@+id/location"
                 android:layout_width="180dp"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:gravity="end"
                 android:ellipsize="end"
                 android:textColor="@color/white"
-                android:textSize="18sp"/>
+                android:textSize="16sp"/>
 
             <ImageView
                 android:id="@+id/place_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="5dp"
                 android:src="@drawable/ic_place_white_24dp"/>
         </LinearLayout>
 
@@ -116,7 +117,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:textColor="@color/white"
-                android:textSize="16sp"/>
+                android:textSize="14sp"/>
 
             <TextView
                 android:id="@+id/likes"
@@ -125,7 +126,7 @@
                 android:layout_weight="1"
                 android:textColor="@color/white"
                 android:gravity="center"
-                android:textSize="16sp"/>
+                android:textSize="14sp"/>
 
         </LinearLayout>
 
