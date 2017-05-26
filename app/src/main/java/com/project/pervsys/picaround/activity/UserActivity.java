@@ -152,7 +152,7 @@ public class UserActivity extends AppCompatActivity {
                                     .into(userIcon);
 
                             mPictures = mUser.getPictures(); //TODO: retrieve pictures ordered by timestamp
-Log.d(TAG, "Pictures: " + mPictures);
+                            Log.d(TAG, "Pictures: " + mPictures);
 
                             if (mPictures.isEmpty()){
                                 noPictures.setVisibility(View.VISIBLE);
