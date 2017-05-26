@@ -100,4 +100,5 @@
     <string name="contact_us_tab">Contattaci</string>
     <string name="user">Utente</string>
     <string name="Add_picture">Carica foto</string>
+    <string name="permission_denied_text">Accesso al disco negato. Caricare prima una foto attraverso l\'applicazione</string>
 </resources>

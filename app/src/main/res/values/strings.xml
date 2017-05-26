@@ -124,4 +124,5 @@
     <string name="contact_us_tab">Contact Us</string>
     <string name="user">User</string>
     <string name="Add_picture">Add a picture</string>
+    <string name="permission_denied_text">Permission denied. Please upload a photo with the application</string>
 </resources>

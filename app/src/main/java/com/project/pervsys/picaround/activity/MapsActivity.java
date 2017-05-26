@@ -542,12 +542,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     protected void onDestroy() {
         super.onDestroy();
 
-        FirebaseAuth.getInstance().signOut();
+//        FirebaseAuth.getInstance().signOut();
         getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit().
                 putString(LOG_PREF_INFO, null).apply();
-        ApplicationClass.setGoogleApiClient(null);
-        ApplicationClass.setGoogleSignInResult(null);
-        Log.i(TAG, "onDestroy");
+        Log.i(TAG, "onDestroy, intent: " + getIntent().toString());
     }
 
     @Override
@@ -1163,7 +1161,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
         Log.i(TAG, "LOGGED WITH " + logged);
 
-        if(logged != null && !logged.equals(NOT_LOGGED))
+        if(mUser != null)
             menu.findItem(R.id.logout).setVisible(true);
         else
             menu.findItem(R.id.login).setVisible(true);
@@ -1187,9 +1185,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 return true;
             case R.id.profile:
                 Log.i(TAG, "Profile has been selected");
-                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
-                        .getString(LOG_PREF_INFO, null);
-                if (logType != null && !logType.equals(NOT_LOGGED)){
+                if (mUser != null){
                     Intent infoIntent = new Intent(this, ProfileActivity.class);
                     startActivity(infoIntent);
                 }
@@ -1271,29 +1267,28 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             Log.i(TAG, "Logout from Facebook");
             getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
                     .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
+            startLogin();
         }
-        String logged = getSharedPreferences(LOG_PREFERENCES,MODE_PRIVATE)
-                .getString(LOG_PREF_INFO,null);
+//        String logged = getSharedPreferences(LOG_PREFERENCES,MODE_PRIVATE)
+//                .getString(LOG_PREF_INFO,null);
         //logout Google
-        if (logged != null){
-            if (logged.equals(GOOGLE_LOGGED)) {
-                Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
-                        new ResultCallback<Status>() {
-                            @Override
-                            public void onResult(Status status) {
-                                if (status.isSuccess()) {
-                                    Log.i(TAG, "Logout from Google");
-                                    getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                            .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
-                                    ApplicationClass.setGoogleApiClient(null);
-                                    startLogin();
-                                } else
-                                    Log.e(TAG, "Error during the Google logout");
-                            }
-                        });
+        else{
+            Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
+                    new ResultCallback<Status>() {
+                        @Override
+                        public void onResult(Status status) {
+                            if (status.isSuccess()) {
+                                Log.i(TAG, "Logout from Google");
+                                getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                        .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
+                                ApplicationClass.setGoogleApiClient(null);
+                                ApplicationClass.setGoogleSignInResult(null);
+                                startLogin();
+                            } else
+                                Log.e(TAG, "Error during the Google logout");
+                        }
+                    });
             }
-        }
-        startLogin();
     }
 
     private void startLogin(){
