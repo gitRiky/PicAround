@@ -125,7 +125,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private ProgressDialog progress;
     private GoogleMap mMap;
-    private ImageView mImageView;
 
     private SlidingUpPanelLayout mSlidingUpPanel;
     private SuggestionMaterialSearchView mSearchView;
@@ -143,9 +142,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private String mUsername;
     private String mProfilePicture;
-    private List<String> thumbnails;
     private FloatingActionMenu mFloatingActionMenu;
-    private boolean populated = false;
 
     private FirebaseUser mUser;
     private FirebaseAuth mAuth;
@@ -374,7 +371,25 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mFloatingActionMenu.setOnMenuButtonClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mFloatingActionMenu.isOpened())
+                mUser = mAuth.getCurrentUser();
+                if (mUser == null) {
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(MapsActivity.this)
+                            .setTitle(R.string.login_required)
+                            .setMessage(R.string.login_for_upload)
+                            .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    startLogin();
+                                }
+                            }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //do nothing
+                                }
+                            });
+                    dialog.show();
+                    if (mFloatingActionMenu.isOpened())
+                        mFloatingActionMenu.close(true);
+                }
+                else if (mFloatingActionMenu.isOpened())
                     mFloatingActionMenu.close(true);
                 else
                     mFloatingActionMenu.open(true);
@@ -861,15 +876,15 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             double popularity = 1 - p.getPopularity();
 
                             if(popularity <= 0.20 )
-                                mci.setIcon(R.mipmap.marker_blue_popularity);
+                                mci.setIcon(R.drawable.marker_blue_popularity);
                             else if(popularity > 0.20 && popularity <= 0.40)
-                                mci.setIcon(R.mipmap.marker_azure_popularity);
+                                mci.setIcon(R.drawable.marker_azure_popularity);
                             else if(popularity > 0.40 && popularity <= 0.60)
-                                mci.setIcon(R.mipmap.marker_green_popularity);
+                                mci.setIcon(R.drawable.marker_green_popularity);
                             else if(popularity > 0.60 && popularity <= 0.80)
-                                mci.setIcon(R.mipmap.marker_yellow_popularity);
+                                mci.setIcon(R.drawable.marker_yellow_popularity);
                             else
-                                mci.setIcon(R.mipmap.marker_red_popularity);
+                                mci.setIcon(R.drawable.marker_red_popularity);
 
                             if(p.getId() == null){
                                 Log.e(TAG, "ERROR, some point has null ID");
@@ -905,6 +920,20 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                             p.setType(PLACE);
                             MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
                             mci.setmPoint(p);
+
+                            double popularity = 1 - p.getPopularity();
+
+                            if(popularity <= 0.20 )
+                                mci.setIcon(R.drawable.marker_place_blue_popularity);
+                            else if(popularity > 0.20 && popularity <= 0.40)
+                                mci.setIcon(R.drawable.marker_place_azure_popularity);
+                            else if(popularity > 0.40 && popularity <= 0.60)
+                                mci.setIcon(R.drawable.marker_place_green_popularity);
+                            else if(popularity > 0.60 && popularity <= 0.80)
+                                mci.setIcon(R.drawable.marker_place_yellow_popularity);
+                            else
+                                mci.setIcon(R.drawable.marker_place_red_popularity);
+
                             if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
                                 mClusterManager.addItem(mci);
@@ -1170,6 +1199,16 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
                         .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
                 startLogin();
+                return true;
+            case R.id.user:
+                mUser = mAuth.getCurrentUser();
+                if (mUser != null) {
+                    Intent i = new Intent(this, UserActivity.class);
+                    i.putExtra(USER_ID, mUser.getUid());
+                    startActivity(i);
+                }
+                else
+                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
                 return true;
             case R.id.logout:
                 Log.i(TAG, "Logout has been selected");

@@ -76,7 +76,7 @@
                     android:src="@drawable/ic_photo_camera_white_24dp"
                     fab:fab_colorNormal="#616161"
                     fab:fab_colorPressed="#616161"
-                    fab:fab_label="Camera"
+                    fab:fab_label="@string/camera"
                     fab:fab_size="mini" />
 
                 <com.github.clans.fab.FloatingActionButton
@@ -86,7 +86,7 @@
                     android:src="@drawable/ic_image_white_24dp"
                     fab:fab_colorNormal="#616161"
                     fab:fab_colorPressed="#616161"
-                    fab:fab_label="Gallery"
+                    fab:fab_label="@string/gallery"
                     fab:fab_size="mini" />
 
             </com.github.clans.fab.FloatingActionMenu>

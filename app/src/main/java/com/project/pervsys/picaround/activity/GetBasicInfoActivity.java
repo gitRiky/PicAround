@@ -1,23 +1,27 @@
 package com.project.pervsys.picaround.activity;
 
+import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.Spinner;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.facebook.Profile;
@@ -32,6 +36,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.R;
+import com.squareup.picasso.Picasso;
 
 import static com.project.pervsys.picaround.utility.Config.*;
 
@@ -43,16 +48,20 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     private final static String TAG = "GetBasicInfoActivity";
 
     private GoogleApiClient mGoogleApiClient;
-    private String month;
-    private String date;
-
+    private static String mDay;
+    private static String mMonth;
+    private static String mYear;
+    private String mDate;
+    private TextView mFullNameView;
+    private ImageView mImageView;
+    private static EditText mDatePicker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_get_basic_info);
         // Set toolbar
-        Toolbar toolbar  = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(R.string.registration);
 
@@ -64,108 +73,62 @@ public class GetBasicInfoActivity extends AppCompatActivity {
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
         }
 
-        String[] days = createDayArray();
-        String[] years = createYearArray();
-        Spinner daySpin = (Spinner) findViewById(R.id.spinner);
-        ArrayAdapter<CharSequence> adapter = new ArrayAdapter(this,
-                android.R.layout.simple_spinner_item, days);
-        // Apply the adapter to the spinner
-        daySpin.setAdapter(adapter);
-        Spinner monthSpin = (Spinner) findViewById(R.id.spinner2);
-        ArrayAdapter<CharSequence> adapter2 = ArrayAdapter.createFromResource(this,
-                R.array.months,
-                android.R.layout.simple_spinner_item);
-        adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        monthSpin.setAdapter(adapter2);
-        monthSpin.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                month = "" + (position + 1);
-            }
+        Intent intent = getIntent();
+        String fullName = intent.getStringExtra(FULL_NAME);
+        String profilePicture = intent.getStringExtra(PROFILE_PICTURE);
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                //do nothing
-            }
-        });
-        Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
-        ArrayAdapter<CharSequence> adapter3 = new ArrayAdapter(this,
-                android.R.layout.simple_spinner_item, years);
-        adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        yearSpin.setAdapter(adapter3);
+        mDatePicker = (EditText) findViewById(R.id.datePicker);
 
-    }
+        mFullNameView = (TextView) findViewById(R.id.user_fullname);
+        mImageView = (ImageView) findViewById(R.id.profile_picture);
 
-
-    private String[] createDayArray(){
-        String[] days = new String[31];
-        for (int i = 0; i < 31; i++)
-            days[i] = "" + (i + 1);
-        return days;
-    }
-
-
-    private String[] createYearArray(){
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int minYear = currentYear - MAX_AGE;
-        int maxYear = currentYear - MIN_AGE;
-        String[] years = new String[maxYear - minYear];
-        for (int i = maxYear, j = 0; i > minYear; i--, j++){
-            years[j] = "" + i;
-        }
-        return years;
+        mFullNameView.setText(fullName);
+        Picasso.with(GetBasicInfoActivity.this)
+                .load(profilePicture)
+                .into(mImageView);
     }
 
     @Override
-    public void onBackPressed(){
+    public void onBackPressed() {
         prepareLogOut();
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu){
+    public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.registration_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
 
-
-    private boolean checkDate(int d, int m, int y){
+    private boolean checkDate(int d, int m, int y) {
         if (d == 31 && (m == 2 || m == 4 || m == 6 || m == 9 || m == 11))
             return false;
         if (m == 2 && d >= 29)
-            if (d == 29 && ((y%4 == 0 && y%100 != 0) || (y%400 == 0)))
+            if (d == 29 && ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)))
                 return true;
             else
                 return false;
         return true;
     }
-
-
+    
     @Override
-    public boolean onOptionsItemSelected(MenuItem item){
+    public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        switch(id){
+        switch (id) {
             case R.id.confirm:
                 EditText usernameField = (EditText) findViewById(R.id.username);
-                String username = usernameField.getText().toString().toLowerCase();
-                Spinner daySpin = (Spinner) findViewById(R.id.spinner);
-                Spinner yearSpin = (Spinner) findViewById(R.id.spinner3);
-                String day = daySpin.getSelectedItem().toString();
-                if (day.length() == 1)
-                    day = "0" + day;
-                if (month.length() == 1)
-                    month = "0" + month;
-                String year = yearSpin.getSelectedItem().toString();
-                if (checkDate(Integer.parseInt(day), Integer.parseInt(month), Integer.parseInt(year))) {
-                    date = year + "/" + month + "/" + day;
+                String username = usernameField.getText().toString();
+                if (mDay.length() == 1)
+                    mDay = "0" + mDay;
+                if (mMonth.length() == 1)
+                    mMonth = "0" + mMonth;
+                if (checkDate(Integer.parseInt(mDay), Integer.parseInt(mMonth), Integer.parseInt(mYear))) {
+                    mDate = mYear + "/" + mMonth + "/" + mDay;
                     if (!checkUsername(username)) {
                         usernameField.setText("");
                     }
-                }
-                else
+                } else
                     Toast.makeText(this, R.string.invalid_date, Toast.LENGTH_SHORT).show();
                 return true;
         }
@@ -173,13 +136,13 @@ public class GetBasicInfoActivity extends AppCompatActivity {
     }
 
 
-    private boolean checkUsername(final String username){
-        if (username.equals("")){
+    private boolean checkUsername(final String username) {
+        if (username.equals("")) {
             Toast.makeText(this, R.string.username_missing, Toast.LENGTH_SHORT).show();
             return false;
         }
-        if (username.contains(" ")){
-            Toast.makeText(this, R.string.username_with_spaces,Toast.LENGTH_SHORT).show();
+        if (username.contains(" ")) {
+            Toast.makeText(this, R.string.username_with_spaces, Toast.LENGTH_SHORT).show();
             return false;
         }
         String lowUsername = username.toLowerCase();
@@ -201,7 +164,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                             Log.i(TAG, "Username ok");
                             Intent i = getIntent();
                             i.putExtra(USERNAME, username);
-                            i.putExtra(DATE, date);
+                            i.putExtra(DATE, mDate);
                             setResult(RESULT_OK, i);
                             Log.i(TAG, "Data sent to LoginActivity");
                             /*Toast.makeText(getApplicationContext(),
@@ -220,7 +183,7 @@ public class GetBasicInfoActivity extends AppCompatActivity {
         return true;
     }
 
-    private void prepareLogOut(){
+    private void prepareLogOut() {
         mGoogleApiClient = ApplicationClass.getGoogleApiClient();
         if (mGoogleApiClient != null)
             mGoogleApiClient.connect();
@@ -249,23 +212,50 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                     .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
             setResult(RESULT_CANCELED);
             finish();
-        }
-        else{
+        } else {
             Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(
-                new ResultCallback<Status>() {
-                    @Override
-                    public void onResult(Status status) {
-                        if (status.isSuccess()) {
-                            Log.i(TAG, "Logout from Google");
-                            getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
-                                    .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
-                            ApplicationClass.setGoogleApiClient(null);
-                            setResult(RESULT_CANCELED);
-                            finish();
-                        } else
-                            Log.e(TAG, "Error during the Google logout");
-                    }
-                });
+                    new ResultCallback<Status>() {
+                        @Override
+                        public void onResult(Status status) {
+                            if (status.isSuccess()) {
+                                Log.i(TAG, "Logout from Google");
+                                getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE).edit()
+                                        .putString(LOG_PREF_INFO, NOT_LOGGED).apply();
+                                ApplicationClass.setGoogleApiClient(null);
+                                setResult(RESULT_CANCELED);
+                                finish();
+                            } else
+                                Log.e(TAG, "Error during the Google logout");
+                        }
+                    });
+        }
+    }
+
+    public void showDatePickerDialog(View v) {
+        DialogFragment newFragment = new DatePickerFragment();
+        newFragment.show(getSupportFragmentManager(), "datePicker");
+    }
+
+    public static class DatePickerFragment extends DialogFragment
+            implements DatePickerDialog.OnDateSetListener {
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            // Use the current date as the default date in the picker
+            final Calendar c = Calendar.getInstance();
+            int year = c.get(Calendar.YEAR);
+            int month = c.get(Calendar.MONTH);
+            int day = c.get(Calendar.DAY_OF_MONTH);
+
+            // Create a new instance of DatePickerDialog and return it
+            return new DatePickerDialog(getActivity(), this, year, month, day);
+        }
+
+        public void onDateSet(DatePicker view, int year, int month, int day) {
+            mDay = String.valueOf(day);
+            mMonth = String.valueOf(month+1);
+            mYear = String.valueOf(year);
+            mDatePicker.setText(mYear + "/" + mMonth + "/" + mDay);
         }
     }
 }

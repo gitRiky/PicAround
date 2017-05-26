@@ -152,7 +152,7 @@ public class UserActivity extends AppCompatActivity {
                                     .into(userIcon);
 
                             mPictures = mUser.getPictures(); //TODO: retrieve pictures ordered by timestamp
-Log.d(TAG, "Pictures: " + mPictures);
+                            Log.d(TAG, "Pictures: " + mPictures);
 
                             if (mPictures.isEmpty()){
                                 noPictures.setVisibility(View.VISIBLE);
@@ -208,6 +208,9 @@ Log.d(TAG, "Pictures: " + mPictures);
 
         MenuItem item = menu.findItem(R.id.action_search);
         mSearchView.setMenuItem(item);
+
+        MenuItem userItem = menu.findItem(R.id.user);
+        userItem.setVisible(false);
 
         return super.onCreateOptionsMenu(menu);
     }
