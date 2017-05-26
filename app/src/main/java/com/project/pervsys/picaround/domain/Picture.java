@@ -15,7 +15,7 @@ public class Picture implements Parcelable {
     private String path;
     private int views;
     private int likes;
-    private double popularity;
+    private double popularity = 1.;
     private String timestamp;
     private String type;
     private String userId;

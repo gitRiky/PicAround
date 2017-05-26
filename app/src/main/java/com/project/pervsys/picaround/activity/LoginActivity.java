@@ -91,11 +91,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        if (!ApplicationClass.alreadyEnabledPersistence()){
+        /*if (!ApplicationClass.alreadyEnabledPersistence()){
             Log.i(TAG, "Enabling database persistence");
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
             ApplicationClass.setAlreadyEnabledPersistence(true);
-        }
+        }*/
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
