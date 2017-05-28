@@ -203,15 +203,6 @@ public class UserActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-
-        MenuItem item = menu.findItem(R.id.action_search);
-        mSearchView.setMenuItem(item);
-
-        MenuItem userItem = menu.findItem(R.id.user);
-        userItem.setVisible(false);
-
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -219,28 +210,6 @@ public class UserActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.help:
-                Log.i(TAG, "Help has been selected");
-                Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
-                //Help activity
-                return true;
-            case R.id.info:
-                Log.i(TAG, "Info has been selected");
-                Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
-                //Info activity
-                return true;
-            case R.id.profile:
-                Log.i(TAG, "Profile has been selected");
-                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
-                        .getString(LOG_PREF_INFO, null);
-                if (logType != null && !logType.equals(NOT_LOGGED)){
-                    Intent i = new Intent(this, ProfileActivity.class);
-                    startActivity(i);
-                }
-                else
-                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
-                return true;
-
             case android.R.id.home:
                 finish();
                 return true;

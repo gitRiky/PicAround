@@ -93,7 +93,8 @@
             android:theme="@style/AppTheme" />
         <activity
             android:name=".activity.InfoActivity"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/AppTheme"
+            android:parentActivityName=".activity.MapsActivity"/>
         <activity android:name=".activity.SplashActivity"
             android:theme="@style/SplashTheme">
             <intent-filter>

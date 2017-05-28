@@ -10,7 +10,8 @@
         android:visible="false" />
     <item
         android:id="@+id/help"
-        android:title="@string/help" />
+        android:title="@string/help"
+        android:visible="false"/>
     <item
         android:id="@+id/info"
         android:title="@string/info" />
