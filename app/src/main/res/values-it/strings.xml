@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add_picture">Aggiungi foto</string>
-    <string name="age">Età</string>
     <string name="age_field">Età:</string>
-    <string name="age_missing">Per piacere indicare l\'età</string>
-    <string name="age_not_in_range">Per piacere indicare l\'età corretta</string>
-    <string name="auth_error">Errore di autenticazione! Per piacere inserire nuovamente le credenziali</string>
-    <string name="auth_error_link">Errore di autenticazione. Per piacere inserire l\'account di Google corretto.</string>
-    <string name="auth_ok_link">Gli account sono stati uniti</string>
+    <string name="age_missing">Inserisci la data di nascita!</string>
+    <string name="age_not_in_range">Per piacere indica la data di nascita corretta</string>
+    <string name="auth_error">Errore di autenticazione! Per piacere inserisci nuovamente le credenziali</string>
+    <string name="auth_error_link">Errore di autenticazione. Per piacere inserisci l\'account di Google corretto.</string>
+    <string name="auth_ok_link">Gli account sono stati uniti correttamente</string>
     <string name="basic_info_text">Benvenuto in PicAround!</string>
     <string name="confirm">Continua</string>
     <string name="contact">Contattaci</string>
     <string name="continue_mex">Continua</string>
     <string name="delete">Elimina</string>
     <string name="delete_picture">Elimina foto</string>
-    <string name="delete_picture_message">Sicuri di voler cancellare la foto?</string>
+    <string name="delete_picture_message">Sei sicuro di voler cancellare la foto?</string>
     <string name="delete_picture_ok">La foto è stata cancellata correttamente!</string>
     <string name="description">Descrizione</string>
     <string name="dialog_update_profile_image_mex">Vuoi veramente cambiare la tua foto profilo?</string>
@@ -27,22 +26,22 @@
     <string name="invalid_date">Data non valida</string>
     <string name="like">like</string>
     <string name="likes">like</string>
-    <string name="link_account_message">Vuoi veramente unire i due account?</string>
-    <string name="loading">Caricamento...</string>
+    <string name="link_account_message">Vuoi unire l\'account di Facebook con quello di Google?</string>
+    <string name="loading">Caricamento&#8230;</string>
     <string name="login">Login</string>
     <string name="login_for_like">Per mettere un like è necessario effettuare il login. Vuoi effettuare il login?</string>
     <string name="login_for_upload">Per aggiungere una nuova foto è necessario effettuare il login. Vuoi effettuare il login?</string>
     <string name="login_required">Login necessario</string>
     <string name="logout">Logout</string>
-    <string name="logout_message">Vuoi veramente effettuare il Logout?</string>
+    <string name="logout_message">Vuoi veramente effettuare il logout?</string>
     <string name="name">Nome</string>
     <string name="name_field">Nome:</string>
-    <string name="name_missing">Per favore indicare il Nome</string>
+    <string name="name_missing">Per favore indicare il nome</string>
     <string name="name_too_long">Nome troppo lungo</string>
     <string name="no">No</string>
     <string name="no_login_text">NO, GRAZIE</string>
     <string name="no_picture_uploaded">Nessuna foto caricata</string>
-    <string name="not_logged_mex">Non hai effettuato il login ! Per piacere effettuare il login per continuare</string>
+    <string name="not_logged_mex">Non hai effettuato il login! Per piacere effettua il login per continuare</string>
     <string name="open">Apri</string>
     <string name="picture">Foto</string>
     <string name="pictures">Foto</string>
@@ -86,12 +85,12 @@
     <string name="no_users_found">Nessun utente trovato</string>
     <string name="view">visualizzazione</string>
     <string name="views">visualizzazioni</string>
-    <string name="uploading_picture">Caricamento foto &#8230;</string>
+    <string name="uploading_picture">Caricamento foto&#8230;</string>
     <string name="address_not_found">Indirizzo sconosciuto</string>
     <string name="action_settings">Impostazioni</string>
-    <string name="app_details">Questa applicazione è stata sviluppata durante il corso di Sistemi Pervasivi dell\'università di Roma Sapienza</string>
+    <string name="app_details">Questa applicazione è stata sviluppata durante il corso di Sistemi Pervasivi dell\'Università di Roma La Sapienza</string>
     <string name="app_version">Versione</string>
-    <string name="contact_info">Se hai riscontrato qualche problema o se vuoi comunicarci le tue impressioni sull\'applicazione, puoi utilizzare il form sottostante per comunicare con noi. Per favore indica anche il tuo livello di gradimento dell\'applicazione in una scala da 1 a 5 stelle. Federico, Danilo e Riccardo</string>
+    <string name="contact_info">Se hai riscontrato qualche problema o se vuoi comunicarci le tue impressioni sull\'applicazione, puoi utilizzare il form sottostante per comunicare con noi. Per favore indica anche il tuo livello di gradimento dell\'applicazione in una scala da 1 a 5 stelle. \nFederico, Danilo e Riccardo</string>
     <string name="contact_us_hint">Scrivi qui il tuo messaggio</string>
     <string name="default_subject_for_email">Email inviata da PicAround</string>
     <string name="ok">Ok</string>
@@ -100,5 +99,5 @@
     <string name="contact_us_tab">Contattaci</string>
     <string name="user">Utente</string>
     <string name="Add_picture">Carica foto</string>
-    <string name="permission_denied_text">Accesso al disco negato. Caricare prima una foto attraverso l\'applicazione</string>
+    <string name="permission_denied_text">Accesso al disco negato. Carica prima una foto attraverso l\'applicazione</string>
 </resources>

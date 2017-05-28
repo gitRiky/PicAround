@@ -48,6 +48,8 @@ import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.utility.Functions;
 import com.squareup.picasso.Picasso;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
 import java.sql.Timestamp;
@@ -234,7 +236,19 @@ public class ProfileActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     Log.i(TAG, "Photo has been picked");
                     Uri photoUri = data.getData();
-                    String currentPhotoPath = Functions.getRealPathFromURI(this, photoUri);
+
+                    // start cropping activity for pre-acquired image saved on the device
+                    CropImage.activity(photoUri)
+                            .start(this);
+                }
+                break;
+            case CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE :
+                CropImage.ActivityResult result = CropImage.getActivityResult(data);
+                if (resultCode == RESULT_OK) {
+                    Uri resultUri = result.getUri();
+
+//                    String currentPhotoPath = Functions.getRealPathFromURI(this, resultUri);
+                    String currentPhotoPath = resultUri.getPath();
                     mCompressedFile = Compressor.getDefault(this)
                             .compressToFile(new File(currentPhotoPath));
                     Log.d(TAG, "Path: " + currentPhotoPath);
@@ -247,8 +261,14 @@ public class ProfileActivity extends AppCompatActivity {
                             .into(mImageView);
 
                     startConfirmDialog();
+
+                } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                    Exception error = result.getError();
+                    Log.e(TAG, error.toString());
+                    Toast.makeText(this, error.toString(), Toast.LENGTH_LONG).show();
                 }
                 break;
+
         }
     }
 
