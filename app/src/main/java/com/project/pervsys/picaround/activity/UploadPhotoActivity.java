@@ -583,6 +583,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                             mBuilder.setContentText(getString(R.string.upload_prog_bar_ok))
                                     .setProgress(0, 0, false);
                             mNotifyManager.notify(id, mBuilder.build());
+                            // Update the points
+                            MapsActivity.updateContent();
                         }
                     }
                 }
