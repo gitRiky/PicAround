@@ -416,9 +416,10 @@ public class PictureFragment extends Fragment {
                 Log.d(TAG, "POINT/PLACE ID = " + picture.getPointId());
                 if (picture.isInPlace()){
                     DatabaseReference placesRef = mActivity.mDatabaseRef
-                            .child(PLACES).child(picture.getPointId())
-                            .child(PICTURES).child(mPictureId);
-                    placesRef.setValue(picture);
+                            .child(PLACES).child(picture.getPointId());
+                    placesRef.child(PICTURES).child(mPictureId).setValue(picture);
+                    //update place's popularity
+                    placesRef.child(POPULARITY).setValue(1 - popularity);
                 }
                 else {
                     DatabaseReference pointsRef = mActivity.mDatabaseRef
