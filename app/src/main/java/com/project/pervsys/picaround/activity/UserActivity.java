@@ -33,7 +33,14 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import com.claudiodegio.msv.OnSearchViewListener;
 import com.claudiodegio.msv.SuggestionMaterialSearchView;
@@ -151,7 +158,7 @@ public class UserActivity extends AppCompatActivity {
                                     .load(mUser.getProfilePicture())
                                     .into(userIcon);
 
-                            mPictures = mUser.getPictures(); //TODO: retrieve pictures ordered by timestamp
+                            mPictures = mUser.getPictures();
                             Log.d(TAG, "Pictures: " + mPictures);
 
                             if (mPictures.isEmpty()){
@@ -161,16 +168,33 @@ public class UserActivity extends AppCompatActivity {
                             else {
                                 int picturesNumber = mPictures.size();
                                 if (mPictures.size() == 1) {
-                                    fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
-                                            picturesNumber + " " + getString(R.string.picture));
+                                    fullName.setText(mUser.getName() + " " + mUser.getSurname()
+                                            + ", " + picturesNumber + " " + getString(R.string.picture));
 
                                 } else {
-                                    fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
-                                            picturesNumber + " " + getString(R.string.pictures));
+                                    fullName.setText(mUser.getName() + " " + mUser.getSurname()
+                                            + ", " + picturesNumber + " " + getString(R.string.pictures));
                                 }
 
-                                final Picture[] pictures = mPictures.values().toArray(new Picture[picturesNumber]);
 
+                                //sort the hashmap
+                                List<Picture> pictureList = new LinkedList<>(mPictures.values());
+                                Collections.sort(pictureList, new Comparator<Picture>() {
+                                    //sort from the most recent to the oldest photo
+                                    @Override
+                                    public int compare(Picture o1, Picture o2) {
+                                        return - o1.getTimestamp().compareTo(o2.getTimestamp());
+                                    }
+                                });
+                                for (Picture picture : pictureList){
+                                    Log.d(TAG, "PICTURE TS: " + picture.getTimestamp());
+                                }
+                                final Picture[] pictures = pictureList.toArray(new Picture[picturesNumber]);
+                                mPictures = new LinkedHashMap<String, Picture>();
+                                for (Picture pic : pictureList){
+                                    mPictures.put(pic.getId(), pic);
+                                }
+                                Log.d(TAG, "sorted Map: " + mPictures);
                                 ImageAdapter adapter = new ImageAdapter(UserActivity.this, mPictures);
                                 userPictures.setAdapter(adapter);
                                 userPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -182,7 +206,8 @@ public class UserActivity extends AppCompatActivity {
 
                                         // Start PictureSliderActivity
 
-                                        Intent i = new Intent(UserActivity.this, PictureSliderActivity.class);
+                                        Intent i = new Intent(UserActivity.this,
+                                                PictureSliderActivity.class);
                                         i.putExtra(PICTURES, pictures);
                                         i.putExtra(POSITION, position);
                                         startActivity(i);
