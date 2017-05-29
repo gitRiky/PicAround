@@ -51,12 +51,6 @@ exports.aggregatePlaces = functions.https.onRequest((req, res) => {
       aggregatePlaces(places, points);
     });
   });
-  var updatedPoints;
-  var pointsRef = databaseRef.child("points");
-  pointsRef.once("value", function(snapshot){
-	  updatedPoints = snapshot.val();
-	  updatePopularity(updatedPoints);
-  });
   console.log('Function successfully executed');
   res.status(200).end();
 });
@@ -108,6 +102,12 @@ function aggregatePlaces(places, points){
 	}
 	console.log("Created " + newPoints + " points and aggregated " + mergedPlaces + " places");
   }
+  var updatedPoints;
+  var pointsRef = databaseRef.child("points");
+  pointsRef.once("value", function(snapshot){
+	  updatedPoints = snapshot.val();
+	  updatePopularity(updatedPoints);
+  });
 }
 
 function merge(place, point){
