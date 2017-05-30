@@ -33,6 +33,7 @@ import com.google.android.gms.common.api.OptionalPendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
@@ -153,12 +154,14 @@ public class LoginActivity extends AppCompatActivity {
             handleFacebookAccessToken(AccessToken.getCurrentAccessToken());
         }
         else {
-            //silent Google sign-in
-            OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
-                    .silentSignIn(mGoogleApiClient);
-            if (opr.isDone()) {
-                GoogleSignInResult result = opr.get();
-                handleSignInResult(result);
+            if (!firstLog) {
+                //silent Google sign-in
+                OptionalPendingResult<GoogleSignInResult> opr = Auth.GoogleSignInApi
+                        .silentSignIn(mGoogleApiClient);
+                if (opr.isDone()) {
+                    GoogleSignInResult result = opr.get();
+                    handleSignInResult(result);
+                }
             }
         }
     }
@@ -514,13 +517,11 @@ public class LoginActivity extends AppCompatActivity {
     //authenticate the google account with firebase
     private void firebaseAuthWithGoogle(final GoogleSignInAccount acct) {
         Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        googleSignInDone = true;
                         Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
 
                         // If sign in fails, display a message to the user. If sign in succeeds
@@ -553,7 +554,12 @@ public class LoginActivity extends AppCompatActivity {
 
 
                     }
-                });
+                }).addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, "OnFailure " + e.toString());
+            }
+        });
     }
 
     private void firebaseLinkWithGoogle(GoogleSignInAccount acct) {
@@ -628,7 +634,7 @@ public class LoginActivity extends AppCompatActivity {
             i.putExtra(USERNAME, mUsername);
             String log = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
                     .getString(LOG_PREF_INFO, null);
-            if (log.equals(GOOGLE_LOGGED)) {
+            if (Profile.getCurrentProfile() == null) {
                 i.putExtra(PROFILE_PICTURE, acct.getPhotoUrl().toString());
             }
             else {
