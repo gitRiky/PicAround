@@ -17,10 +17,11 @@ public class DBManager {
         mDbHelper = new DBHelper(context);
     }
 
-    public void insert(String username){
+    public void insert(String id, String username){
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
         ContentValues cv = new ContentValues();
+        cv.put(ID, id);
         cv.put(USERNAME, username);
 
         db.insert(USERNAMES, null, cv);
@@ -37,7 +38,7 @@ public class DBManager {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         Cursor cursor = db.query(
                 USERNAMES,
-                new String[] { USERNAME },
+                new String[] { USERNAME, ID },
                 null, null, null, null, null, null);
 
         return cursor;
@@ -50,7 +51,7 @@ public class DBManager {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         Cursor cursor = db.query(
                 USERNAMES,
-                new String[]{USERNAME},
+                new String[]{USERNAME, ID},
                 USERNAME + " LIKE '%" + queryString + "%'",
                 null, null, null, null, null);
 

@@ -3,9 +3,14 @@ package com.project.pervsys.picaround.activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -20,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dgreenhalgh.android.simpleitemdecoration.grid.GridDividerItemDecoration;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -54,12 +60,14 @@ public class UserActivity extends AppCompatActivity {
     private static final String TAG = "UserActivity";
     private DatabaseReference mDatabaseRef = null;
     private String mUserId;
-    private String mUsername;
     private User mUser;
     private HashMap<String,Picture> mPictures;
     private SuggestionMaterialSearchView mSearchView;
     private DBManager mDbManager;
     private ArrayList<String> mUsernames;
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,24 +89,11 @@ public class UserActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         mUserId = intent.getStringExtra(USER_ID);
-        mUsername = intent.getStringExtra(USERNAME);
-
-        String orderByParameter = null;
-        String equalToParameter = null;
-        if (mUserId != null){
-            orderByParameter = ID;
-            equalToParameter = mUserId;
-        }
-        else if (mUsername != null){
-            orderByParameter = USERNAME;
-            equalToParameter = mUsername.toLowerCase();
-        }
 
         final ImageView userIcon = (ImageView) findViewById(R.id.user_icon);
         final TextView username = (TextView) findViewById(R.id.username);
         final TextView fullName = (TextView) findViewById(R.id.user_fullname);
         final TextView noPictures = (TextView) findViewById(R.id.no_pictures);
-        final GridView userPictures = (GridView) findViewById(R.id.user_pictures);
 
         mDbManager = new DBManager(UserActivity.this);
 
@@ -141,7 +136,7 @@ public class UserActivity extends AppCompatActivity {
 
         mDatabaseRef = FirebaseDatabase.getInstance().getReference();
         mDatabaseRef.child(USERS).keepSynced(true);
-        mDatabaseRef.child(USERS).orderByChild(orderByParameter).equalTo(equalToParameter)
+        mDatabaseRef.child(USERS).orderByChild(ID).equalTo(mUserId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
@@ -176,7 +171,33 @@ public class UserActivity extends AppCompatActivity {
                                             + ", " + picturesNumber + " " + getString(R.string.pictures));
                                 }
 
+                                mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
+                                // use this setting to improve performance if you know that changes
+                                // in content do not change the layout size of the RecyclerView
+                                mRecyclerView.setHasFixedSize(true);
+
+                                mRecyclerView.setItemViewCacheSize(20);
+                                mRecyclerView.setDrawingCacheEnabled(true);
+                                mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+                                mLayoutManager = new GridLayoutManager(UserActivity.this, NUM_COLUMNS);
+                                mRecyclerView.setLayoutManager(mLayoutManager);
+//                                int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.spacing);
+//                                mRecyclerView.addItemDecoration(new SpacesItemDecoration(8));
+                                mAdapter = new GridAdapter(UserActivity.this, mRecyclerView, pictures);
+                                mRecyclerView.setAdapter(mAdapter);
+
+//                                Drawable horizontalDivider = ContextCompat.getDrawable(UserActivity.this, R.drawable.divider);
+//                                Drawable verticalDivider = ContextCompat.getDrawable(UserActivity.this, R.drawable.divider);
+//
+//                                mRecyclerView.setLayoutManager(new GridLayoutManager(UserActivity.this, NUM_COLUMNS));
+//
+//                                mRecyclerView.addItemDecoration(new GridDividerItemDecoration
+//                                        (horizontalDivider, verticalDivider, NUM_COLUMNS));
+//
+//                                mAdapter = new GridAdapter(UserActivity.this, mRecyclerView, pictures);
+//                                mRecyclerView.setAdapter(mAdapter);
                                 //sort the hashmap
                                 List<Picture> pictureList = new LinkedList<>(mPictures.values());
                                 Collections.sort(pictureList, new Comparator<Picture>() {
@@ -251,8 +272,9 @@ public class UserActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            String id = child.getKey();
                             String username = (String)child.getValue();
-                            mDbManager.insert(username);
+                            mDbManager.insert(id,username);
                         }
                         Cursor result = mDbManager.query();
                         result.moveToFirst();
@@ -271,5 +293,27 @@ public class UserActivity extends AppCompatActivity {
                         Log.e(TAG, databaseError.toString());
                     }
                 });
+    }
+
+    class SpacesItemDecoration extends RecyclerView.ItemDecoration {
+        private int space;
+
+        public SpacesItemDecoration(int space) {
+            this.space = space;
+        }
+
+        @Override
+        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+
+            outRect.top = space;
+
+            int i = parent.getChildLayoutPosition(view);
+            Log.d(TAG, "i = " + i);
+            if ((i%3 != 0) && ((i-1)%3 == 0)) {
+                outRect.left = space;
+                outRect.right = space;
+                Log.d(TAG, "SPACE");
+            }
+        }
     }
 }
