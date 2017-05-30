@@ -14,6 +14,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Camera;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -31,6 +32,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -50,6 +53,7 @@ import android.widget.Toast;
 import com.claudiodegio.msv.OnSearchViewListener;
 import com.claudiodegio.msv.SuggestionMaterialSearchView;
 import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
+import com.dgreenhalgh.android.simpleitemdecoration.grid.GridDividerItemDecoration;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
@@ -103,6 +107,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -136,6 +141,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private String mCurrentPhotoPath;
     private Bitmap mImageBitmap;
     private AlbumStorageDirFactory mAlbumStorageDirFactory = null;
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mPhotoAdapter;
 
     private LocationManager mLocationManager = null;
     private String mProvider;
@@ -341,10 +348,21 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             @Override
             public boolean onQueryTextSubmit(String s) {
                 if (mUsernames.contains(s)) {
-                    Intent intent = new Intent(MapsActivity.this, UserActivity.class);
-                    intent.putExtra(USERNAME, s);
-                    startActivity(intent);
-                    mSearchView.closeSearch();
+                    Cursor result = mDbManager.query();
+                    result.moveToFirst();
+                    String id;
+                    for (int i = 0; i < result.getCount(); i++) {
+                        id = result.getString(result.getColumnIndex(ID));
+                        String username = result.getString(result.getColumnIndex(USERNAME));
+                        if (username.equals(s)) {
+                            Intent intent = new Intent(MapsActivity.this, UserActivity.class);
+                            intent.putExtra(USER_ID, id);
+                            startActivity(intent);
+                            mSearchView.closeSearch();
+                            break;
+                        }
+                        result.moveToNext();
+                    }
                 }
                 else {
                     Toast.makeText(MapsActivity.this, R.string.no_users_found, Toast.LENGTH_SHORT).show();
@@ -1041,8 +1059,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
     private void populateSlidingPanel(final Point point, final Context context) {
 
-        final GridView pointPictures = (GridView) findViewById(R.id.pictures_grid);
-        final LinkedHashMap<String, Picture> pictures = new LinkedHashMap<>();
+
+
+
+
+
+        final HashMap<String, Picture> pictures = new LinkedHashMap<>();
 
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
         Query photos;
@@ -1073,22 +1095,52 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                 else
                     pictureNumberTextView.setText(pictureNumber + " " + getString(R.string.picture));
 
-                ImageAdapter adapter = new ImageAdapter(context, pictures);
-                pointPictures.setAdapter(adapter);
-                pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                        Picture picture = (Picture) adapterView.getItemAtPosition(position);
+                Picture[] picturesArray = pictures.values().toArray(new Picture[pictureNumber]);
 
-                        Log.i(TAG, "Picture: " + picture);
 
-                        // Start PictureSliderActivity
-                        Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
-                        i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
-                        i.putExtra(POSITION, position);
-                        startActivity(i);
-                    }
-                });
+                mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+
+                // use this setting to improve performance if you know that changes
+                // in content do not change the layout size of the RecyclerView
+                mRecyclerView.setHasFixedSize(true);
+
+                mRecyclerView.setItemViewCacheSize(20);
+                mRecyclerView.setDrawingCacheEnabled(true);
+                mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+//        mLayoutManager = new GridLayoutManager(UserActivity.this, NUM_COLUMNS);
+//        mRecyclerView.setLayoutManager(mLayoutManager);
+//        int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.spacing);
+//        mRecyclerView.addItemDecoration(new SpacesItemDecoration(8));
+
+                Drawable horizontalDivider = ContextCompat.getDrawable(MapsActivity.this, R.drawable.divider);
+                Drawable verticalDivider = ContextCompat.getDrawable(MapsActivity.this, R.drawable.divider);
+
+                mRecyclerView.setLayoutManager(new GridLayoutManager(MapsActivity.this, NUM_COLUMNS));
+
+//                mRecyclerView.addItemDecoration(new GridDividerItemDecoration(horizontalDivider, verticalDivider, NUM_COLUMNS));
+
+
+                mPhotoAdapter = new GridAdapter(MapsActivity.this, mRecyclerView, picturesArray);
+                mRecyclerView.setAdapter(mPhotoAdapter);
+
+
+//                ImageAdapter adapter = new ImageAdapter(context, pictures);
+//                pointPictures.setAdapter(adapter);
+//                pointPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                    @Override
+//                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+//                        Picture picture = (Picture) adapterView.getItemAtPosition(position);
+//
+//                        Log.i(TAG, "Picture: " + picture);
+//
+//                        // Start PictureSliderActivity
+//                        Intent i = new Intent(MapsActivity.this, PictureSliderActivity.class);
+//                        i.putExtra(PICTURES, pictures.values().toArray(new Picture[pictures.size()]));
+//                        i.putExtra(POSITION, position);
+//                        startActivity(i);
+//                    }
+//                });
             }
 
             @Override
@@ -1324,12 +1376,14 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            String id = child.getKey();
                             String username = (String)child.getValue();
-                            mDbManager.insert(username);
+                            mDbManager.insert(id, username);
                         }
                         Cursor result = mDbManager.query();
                         result.moveToFirst();
                         for (int i = 0; i < result.getCount(); i++) {
+                            String id = result.getString(result.getColumnIndex(ID));
                             String username = result.getString(result.getColumnIndex(USERNAME));
                             Log.d(TAG, username);
                             result.moveToNext();
