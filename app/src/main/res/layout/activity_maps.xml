@@ -11,7 +11,8 @@
     sothree:umanoShadowHeight="4dp"
     sothree:umanoParallaxOffset="100dp"
     sothree:umanoDragView="@+id/dragView"
-    sothree:umanoOverlay="true">
+    sothree:umanoOverlay="true"
+    sothree:umanoScrollableView="@+id/recycler_view">
 
     <!-- MAIN CONTENT -->
     <RelativeLayout
@@ -102,7 +103,7 @@
         android:clickable="true"
         android:focusable="false"
         android:orientation="vertical"
-        sothree:umanoScrollableView="@+id/pictures_grid">
+        sothree:umanoScrollableView="@+id/recycler_view">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -143,13 +144,11 @@
 
         </RelativeLayout>
 
-        <GridView
-            android:id="@+id/pictures_grid"
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:scrollbars="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:numColumns="3"
-            android:verticalSpacing="3dp"
-            android:horizontalSpacing="3dp"/>
+            android:layout_height="match_parent"/>
             
     </LinearLayout>
 

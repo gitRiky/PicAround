@@ -534,14 +534,14 @@ public class UploadPhotoActivity extends AppCompatActivity {
         mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(this);
         mBuilder.setContentTitle(getString(R.string.upload_prog_bar_title))
-                .setContentText(getString(R.string.upload_prog_bar_text))           //TODO: change the icon
-                .setSmallIcon(R.drawable.btn_google_signin_light_normal_xxxhdpi)
+                .setContentText(getString(R.string.upload_prog_bar_text))
+                .setSmallIcon(R.drawable.icon_notification)
                 .setAutoCancel(true);
 
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        stackBuilder.addNextIntent(new Intent(this, MapsActivity.class));
-        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT);
-        mBuilder.setContentIntent(resultPendingIntent);
+//        stackBuilder.addNextIntent(new Intent(this, MapsActivity.class));
+//        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT);
+//        mBuilder.setContentIntent(resultPendingIntent);
 
         new Thread(
                 new Runnable() {
