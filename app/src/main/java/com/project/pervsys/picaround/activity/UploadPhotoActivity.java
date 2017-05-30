@@ -2,33 +2,22 @@ package com.project.pervsys.picaround.activity;
 
 import android.Manifest;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-
-import com.alexvasilkov.gestures.views.GestureImageView;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.OnProgressListener;
-
-import android.location.Criteria;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -38,21 +27,28 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.alexvasilkov.gestures.views.GestureImageView;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.project.pervsys.picaround.R;
+import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Place;
+import com.project.pervsys.picaround.domain.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,19 +56,22 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
-import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
-import static com.project.pervsys.picaround.utility.Config.PHOTO_PATH;
-import static com.project.pervsys.picaround.utility.Config.POINTS;
-
 import id.zelory.compressor.Compressor;
 
-import com.project.pervsys.picaround.R;
-import com.project.pervsys.picaround.domain.Picture;
-import com.project.pervsys.picaround.domain.Place;
-import com.project.pervsys.picaround.domain.Point;
-import com.project.pervsys.picaround.domain.User;
-
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.DEFAULT_LAT;
+import static com.project.pervsys.picaround.utility.Config.DEFAULT_LNG;
+import static com.project.pervsys.picaround.utility.Config.INTERM_PREFIX;
+import static com.project.pervsys.picaround.utility.Config.LATITUDE;
+import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
+import static com.project.pervsys.picaround.utility.Config.LONGITUDE;
+import static com.project.pervsys.picaround.utility.Config.PHOTO_PATH;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.PLACES;
+import static com.project.pervsys.picaround.utility.Config.PROFILE_PICTURE;
+import static com.project.pervsys.picaround.utility.Config.REQUEST_PICK_LOCATION;
+import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERS;
 
 public class UploadPhotoActivity extends AppCompatActivity {
     private final static String TAG = "UploadPhotoActivity";

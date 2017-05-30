@@ -7,10 +7,10 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -53,7 +53,15 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.facebook.FacebookSdk.getApplicationContext;
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.INTERM_PREFIX;
+import static com.project.pervsys.picaround.utility.Config.PICTURE;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.PLACES;
+import static com.project.pervsys.picaround.utility.Config.POINTS;
+import static com.project.pervsys.picaround.utility.Config.POPULARITY;
+import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
+import static com.project.pervsys.picaround.utility.Config.USERS;
+import static com.project.pervsys.picaround.utility.Config.USER_ID;
 
 public class PictureFragment extends Fragment {
 
