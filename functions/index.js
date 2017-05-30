@@ -65,8 +65,11 @@ function updatePopularity(points){
 			popularity += pictures[picKey].popularity;
 			counter++;
 		}
-		points[key].popularity = parseFloat(popularity) / parseFloat(counter);
-    console.log("popularity: " + popularity + ", counter: " + counter);
+		if (counter == 0)
+			points[key].popularity = 1;
+		else
+			points[key].popularity = parseFloat(popularity) / parseFloat(counter);
+		console.log("popularity: " + popularity + ", counter: " + counter);
 		pointsRef.child(key).child("popularity").set(points[key].popularity);
 	}
 }
