@@ -26,7 +26,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.speech.RecognizerIntent;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -46,13 +45,13 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.claudiodegio.msv.OnSearchViewListener;
 import com.claudiodegio.msv.SuggestionMaterialSearchView;
 import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
+
 import com.dgreenhalgh.android.simpleitemdecoration.grid.GridDividerItemDecoration;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -109,7 +108,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -127,6 +125,9 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final String FIRST_TIME_INFOWINDOW = "FirstTime";
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
+    private static final long UPDATER_THREAD_SLEEP = 5000; //in millisecs
+
+    private static boolean sToUpdateContent = false;
 
     private ProgressDialog progress;
     private GoogleMap mMap;
@@ -160,6 +161,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private InfoWindowView mInfoWindow = null;
     private Point mLastPoint;
     private ClusterManager<MarkerClusterItem> mClusterManager;
+    private Thread mUpdaterThread;
+    private StoppableRunnable mUpdaterRunnable;
 
     private String getAlbumName() {
         return getString(R.string.album_name);
@@ -474,7 +477,7 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mSlidingUpPanel = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
         mSlidingUpPanel.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
     }
-  
+
     private void getProfileInfo() {
         mDatabaseRef.child(USERS).orderByKey().equalTo(mUser.getUid())
                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -507,15 +510,44 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     protected void onStart() {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
+
+        mUpdaterRunnable = new StoppableRunnable(){
+
+            private boolean execution = true;
+
+            public void stopExecution(){
+                execution = false;
+            }
+
+            @Override
+            public void run() {
+                Log.i(TAG,"StoppableRunnable started");
+                while(execution){
+                    if(MapsActivity.sToUpdateContent) {
+                        Log.i(TAG,"StoppableRunnable execution");
+                        populatePoints();
+                    }
+                    else {
+                        try {
+                            Thread.sleep(UPDATER_THREAD_SLEEP);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                Log.i(TAG,"StoppableRunnable stopped");
+            }
+        };
+
+        mUpdaterThread = new Thread(mUpdaterRunnable);
+        mUpdaterThread.start();
     }
 
     /* Request updates at startup */
     @Override
     protected void onResume() {
         super.onResume();
-        // TODO: The app executes populatePoints() in onResume() also !
-        if (mMap != null)
-            populatePoints();
+        updateContent();
 
         String newProfilePicturePath = ApplicationClass.getNewProfilePicturePath();
         if (newProfilePicturePath != null){
@@ -550,6 +582,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         editor.putString("zoom", zoom);
 
         editor.apply();
+
+        if(mUpdaterThread != null) {
+            mUpdaterRunnable.stopExecution();
+        }
 
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
@@ -644,6 +680,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                     Log.i(TAG, "Photo upload cancelled");
                 break;
         }
+    }
+
+    public static void updateContent(){
+        sToUpdateContent = true;
     }
 
     public String getRealPathFromURI(Context context, Uri contentUri) {
@@ -808,7 +848,6 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             mMap.animateCamera(cameraUpdate);
         }
 
-        //TODO: maybe it's a good idea to start an AsyncTask to pull data from firebase
         setUpClusterer();
         // Set InfoWindowAdapter
 //        mMap.setInfoWindowAdapter(this);
@@ -872,102 +911,104 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mMap.setOnCameraIdleListener(mClusterManager);
         mMap.setOnMarkerClickListener(mClusterManager);
 
-        populatePoints();
+        updateContent();
     }
 
     private void populatePoints() {
         // get all the points
-        mDatabaseRef.child(POINTS).keepSynced(true);
-        mDatabaseRef.child(POINTS)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
+        if(mClusterManager != null && sToUpdateContent) {
+            sToUpdateContent = false;
+            mDatabaseRef.child(POINTS).keepSynced(true);
+            mDatabaseRef.child(POINTS)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
 
-                        // each child is a single point
-                        for(DataSnapshot child : dataSnapshot.getChildren()){
-                            Point p = child.getValue(Point.class);
-                            p.setType(POINT);
-                            MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
-                            mci.setmPoint(p);
-                            double popularity = 1 - p.getPopularity();
+                            // each child is a single point
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                Point p = child.getValue(Point.class);
+                                p.setType(POINT);
+                                MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
+                                mci.setmPoint(p);
+                                double popularity = 1 - p.getPopularity();
 
-                            if(popularity <= 0.20 )
-                                mci.setIcon(R.drawable.marker_blue_popularity);
-                            else if(popularity > 0.20 && popularity <= 0.40)
-                                mci.setIcon(R.drawable.marker_azure_popularity);
-                            else if(popularity > 0.40 && popularity <= 0.60)
-                                mci.setIcon(R.drawable.marker_green_popularity);
-                            else if(popularity > 0.60 && popularity <= 0.80)
-                                mci.setIcon(R.drawable.marker_yellow_popularity);
-                            else
-                                mci.setIcon(R.drawable.marker_red_popularity);
+                                if (popularity <= 0.20)
+                                    mci.setIcon(R.drawable.marker_blue_popularity);
+                                else if (popularity > 0.20 && popularity <= 0.40)
+                                    mci.setIcon(R.drawable.marker_azure_popularity);
+                                else if (popularity > 0.40 && popularity <= 0.60)
+                                    mci.setIcon(R.drawable.marker_green_popularity);
+                                else if (popularity > 0.60 && popularity <= 0.80)
+                                    mci.setIcon(R.drawable.marker_yellow_popularity);
+                                else
+                                    mci.setIcon(R.drawable.marker_red_popularity);
 
-                            if(p.getId() == null){
-                                Log.e(TAG, "ERROR, some point has null ID");
-                            }
-                            else if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+                                if (p.getId() == null) {
+                                    Log.e(TAG, "ERROR, some point has null ID");
+                                } else if (!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
-                                mClusterManager.addItem(mci);
-                            }
+                                    mClusterManager.addItem(mci);
+                                }
 //                            mMap.addMarker(new MarkerOptions()
 //                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
 //                                    .position(new LatLng(p.getLat(), p.getLon())))
 //                                    .setTag(p);
+                            }
+
                         }
 
-                    }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //database error, e.g. permission denied (not logged with Firebase)
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
+            // get all the places
+            mDatabaseRef.child(PLACES).keepSynced(true);
+            mDatabaseRef.child(PLACES)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            // each child is a single point
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                Point p = child.getValue(Point.class);
+                                p.setType(PLACE);
+                                MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
+                                mci.setmPoint(p);
 
-        // get all the places
-        mDatabaseRef.child(PLACES).keepSynced(true);
-        mDatabaseRef.child(PLACES)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        // each child is a single point
-                        for(DataSnapshot child : dataSnapshot.getChildren()){
-                            Point p = child.getValue(Point.class);
-                            p.setType(PLACE);
-                            MarkerClusterItem mci = new MarkerClusterItem(p.getLat(), p.getLon());
-                            mci.setmPoint(p);
+                                double popularity = 1 - p.getPopularity();
 
-                            double popularity = 1 - p.getPopularity();
+                                if (popularity <= 0.20)
+                                    mci.setIcon(R.drawable.marker_place_blue);
+                                else if (popularity > 0.20 && popularity <= 0.40)
+                                    mci.setIcon(R.drawable.marker_place_azure);
+                                else if (popularity > 0.40 && popularity <= 0.60)
+                                    mci.setIcon(R.drawable.marker_place_green);
+                                else if (popularity > 0.60 && popularity <= 0.80)
+                                    mci.setIcon(R.drawable.marker_place_yellow);
+                                else
+                                    mci.setIcon(R.drawable.marker_place_red);
 
-                            if(popularity <= 0.20 )
-                                mci.setIcon(R.drawable.marker_place_blue);
-                            else if(popularity > 0.20 && popularity <= 0.40)
-                                mci.setIcon(R.drawable.marker_place_azure);
-                            else if(popularity > 0.40 && popularity <= 0.60)
-                                mci.setIcon(R.drawable.marker_place_green);
-                            else if(popularity > 0.60 && popularity <= 0.80)
-                                mci.setIcon(R.drawable.marker_place_yellow);
-                            else
-                                mci.setIcon(R.drawable.marker_place_red);
-
-                            if(!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
+                                if (!mClusterManager.getMarkerCollection().getMarkers().contains(mci)) {
 //                                Log.i(TAG, "The point " + mci + "has been added");
-                                mClusterManager.addItem(mci);
-                            }
+                                    mClusterManager.addItem(mci);
+                                }
 //                            mMap.addMarker(new MarkerOptions()
 //                                    .snippet(FIRST_TIME_INFOWINDOW) // Value is not relevant, it is used only for distinguishing from null
 //                                    .position(new LatLng(p.getLat(), p.getLon())))
 //                                    .setTag(p);
+                            }
+
                         }
 
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        //database error, e.g. permission denied (not logged with Firebase)
-                        Log.e(TAG, databaseError.toString());
-                    }
-                });
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            //database error, e.g. permission denied (not logged with Firebase)
+                            Log.e(TAG, databaseError.toString());
+                        }
+                    });
+        }
     }
 
     private void setupGPS(Context context) {
@@ -1426,4 +1467,10 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         mAdapter.updateList(mUsernames, false);
     }
 
+    private abstract class StoppableRunnable implements Runnable {
+        public abstract void stopExecution();
+
+        @Override
+        public abstract void run();
+    }
 }

@@ -39,7 +39,14 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import com.claudiodegio.msv.OnSearchViewListener;
 import com.claudiodegio.msv.SuggestionMaterialSearchView;
@@ -146,7 +153,7 @@ public class UserActivity extends AppCompatActivity {
                                     .load(mUser.getProfilePicture())
                                     .into(userIcon);
 
-                            mPictures = mUser.getPictures(); //TODO: retrieve pictures ordered by timestamp
+                            mPictures = mUser.getPictures();
                             Log.d(TAG, "Pictures: " + mPictures);
 
                             if (mPictures.isEmpty()){
@@ -156,15 +163,13 @@ public class UserActivity extends AppCompatActivity {
                             else {
                                 int picturesNumber = mPictures.size();
                                 if (mPictures.size() == 1) {
-                                    fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
-                                            picturesNumber + " " + getString(R.string.picture));
+                                    fullName.setText(mUser.getName() + " " + mUser.getSurname()
+                                            + ", " + picturesNumber + " " + getString(R.string.picture));
 
                                 } else {
-                                    fullName.setText(mUser.getName() + " " + mUser.getSurname() + ", " +
-                                            picturesNumber + " " + getString(R.string.pictures));
+                                    fullName.setText(mUser.getName() + " " + mUser.getSurname()
+                                            + ", " + picturesNumber + " " + getString(R.string.pictures));
                                 }
-
-                                final Picture[] pictures = mPictures.values().toArray(new Picture[picturesNumber]);
 
                                 mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
@@ -193,6 +198,42 @@ public class UserActivity extends AppCompatActivity {
 //
 //                                mAdapter = new GridAdapter(UserActivity.this, mRecyclerView, pictures);
 //                                mRecyclerView.setAdapter(mAdapter);
+                                //sort the hashmap
+                                List<Picture> pictureList = new LinkedList<>(mPictures.values());
+                                Collections.sort(pictureList, new Comparator<Picture>() {
+                                    //sort from the most recent to the oldest photo
+                                    @Override
+                                    public int compare(Picture o1, Picture o2) {
+                                        return - o1.getTimestamp().compareTo(o2.getTimestamp());
+                                    }
+                                });
+                                for (Picture picture : pictureList){
+                                    Log.d(TAG, "PICTURE TS: " + picture.getTimestamp());
+                                }
+                                final Picture[] pictures = pictureList.toArray(new Picture[picturesNumber]);
+                                mPictures = new LinkedHashMap<String, Picture>();
+                                for (Picture pic : pictureList){
+                                    mPictures.put(pic.getId(), pic);
+                                }
+                                Log.d(TAG, "sorted Map: " + mPictures);
+                                ImageAdapter adapter = new ImageAdapter(UserActivity.this, mPictures);
+                                userPictures.setAdapter(adapter);
+                                userPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                    @Override
+                                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                                        Picture picture = (Picture) adapterView.getItemAtPosition(position);
+
+                                        Log.i(TAG, "Picture: " + picture);
+
+                                        // Start PictureSliderActivity
+
+                                        Intent i = new Intent(UserActivity.this,
+                                                PictureSliderActivity.class);
+                                        i.putExtra(PICTURES, pictures);
+                                        i.putExtra(POSITION, position);
+                                        startActivity(i);
+                                    }
+                                });
                             }
                         }
 
@@ -208,15 +249,6 @@ public class UserActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-
-        MenuItem item = menu.findItem(R.id.action_search);
-        mSearchView.setMenuItem(item);
-
-        MenuItem userItem = menu.findItem(R.id.user);
-        userItem.setVisible(false);
-
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -224,28 +256,6 @@ public class UserActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.help:
-                Log.i(TAG, "Help has been selected");
-                Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
-                //Help activity
-                return true;
-            case R.id.info:
-                Log.i(TAG, "Info has been selected");
-                Toast.makeText(this, "Selected info", Toast.LENGTH_SHORT).show();
-                //Info activity
-                return true;
-            case R.id.profile:
-                Log.i(TAG, "Profile has been selected");
-                String logType = getSharedPreferences(LOG_PREFERENCES, MODE_PRIVATE)
-                        .getString(LOG_PREF_INFO, null);
-                if (logType != null && !logType.equals(NOT_LOGGED)){
-                    Intent i = new Intent(this, ProfileActivity.class);
-                    startActivity(i);
-                }
-                else
-                    Toast.makeText(this, R.string.not_logged_mex, Toast.LENGTH_LONG).show();
-                return true;
-
             case android.R.id.home:
                 finish();
                 return true;

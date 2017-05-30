@@ -412,7 +412,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
 
                     //save the image as username_timestamp
                     mPhotoId = mUsername + SEPARATOR + mTimestamp;
-
+                    showProgressBar();
                     // Generate and upload thumbnail
                     File thumbnailFile = Compressor.getDefault(UploadPhotoActivity.this)
                             .compressToFile(new File(mPhotoPath));
@@ -496,10 +496,9 @@ public class UploadPhotoActivity extends AppCompatActivity {
                 .compressToFile(new File(mPhotoPath));
         final Uri file = Uri.fromFile(compressedFile);
         totalBytes = compressedFile.length();
+        inUpload = true;
         Log.d(TAG, "Picture bytes: " + totalBytes);
         final StorageReference riversRef = mStorageRef.child(mPhotoId);
-        inUpload = true;
-        showProgressBar();
         riversRef.putFile(file)
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
@@ -550,6 +549,11 @@ public class UploadPhotoActivity extends AppCompatActivity {
                     public void run() {
                         int percentage;
                         int id = 0;
+                        mBuilder.setProgress(100, 0, false);
+                        mNotifyManager.notify(id, mBuilder.build());
+                        while(!inUpload){
+                            //waiting for the upload (we have not already the totalBytes
+                        }
                         while(inUpload) {
                             // Sets the progress indicator to a max value, the
                             // current completion percentage, and "determinate"
@@ -560,9 +564,7 @@ public class UploadPhotoActivity extends AppCompatActivity {
                             mNotifyManager.notify(id, mBuilder.build());
                             if(percentage == 100)
                                 inUpload = false;
-
                             try {
-                                // Sleep for 5 seconds
                                 Thread.sleep(NOT_BAR_SLEEP);
                             } catch (InterruptedException e) {
                                 Log.d(TAG, "sleep failure");
@@ -581,6 +583,8 @@ public class UploadPhotoActivity extends AppCompatActivity {
                             mBuilder.setContentText(getString(R.string.upload_prog_bar_ok))
                                     .setProgress(0, 0, false);
                             mNotifyManager.notify(id, mBuilder.build());
+                            // Update the points
+                            MapsActivity.updateContent();
                         }
                     }
                 }
