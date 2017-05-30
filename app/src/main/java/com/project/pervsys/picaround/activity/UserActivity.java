@@ -4,28 +4,25 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.dgreenhalgh.android.simpleitemdecoration.grid.GridDividerItemDecoration;
+import com.claudiodegio.msv.OnSearchViewListener;
+import com.claudiodegio.msv.SuggestionMaterialSearchView;
+import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -38,22 +35,18 @@ import com.project.pervsys.picaround.localDatabase.DBManager;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
-import com.claudiodegio.msv.OnSearchViewListener;
-import com.claudiodegio.msv.SuggestionMaterialSearchView;
-import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
-
-
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.ID;
+import static com.project.pervsys.picaround.utility.Config.NUM_COLUMNS;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERNAMES;
+import static com.project.pervsys.picaround.utility.Config.USERS;
+import static com.project.pervsys.picaround.utility.Config.USER_ID;
 
 public class UserActivity extends AppCompatActivity {
 
@@ -170,7 +163,17 @@ public class UserActivity extends AppCompatActivity {
                                     fullName.setText(mUser.getName() + " " + mUser.getSurname()
                                             + ", " + picturesNumber + " " + getString(R.string.pictures));
                                 }
+                                //sort the hashmap
+                                List<Picture> pictureList = new LinkedList<>(mPictures.values());
+                                Collections.sort(pictureList, new Comparator<Picture>() {
+                                    //sort from the most recent to the oldest photo
+                                    @Override
+                                    public int compare(Picture o1, Picture o2) {
+                                        return -o1.getTimestamp().compareTo(o2.getTimestamp());
+                                    }
+                                });
 
+                                final Picture[] pictures = pictureList.toArray(new Picture[picturesNumber]);
                                 mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
                                 // use this setting to improve performance if you know that changes
@@ -198,42 +201,6 @@ public class UserActivity extends AppCompatActivity {
 //
 //                                mAdapter = new GridAdapter(UserActivity.this, mRecyclerView, pictures);
 //                                mRecyclerView.setAdapter(mAdapter);
-                                //sort the hashmap
-                                List<Picture> pictureList = new LinkedList<>(mPictures.values());
-                                Collections.sort(pictureList, new Comparator<Picture>() {
-                                    //sort from the most recent to the oldest photo
-                                    @Override
-                                    public int compare(Picture o1, Picture o2) {
-                                        return - o1.getTimestamp().compareTo(o2.getTimestamp());
-                                    }
-                                });
-                                for (Picture picture : pictureList){
-                                    Log.d(TAG, "PICTURE TS: " + picture.getTimestamp());
-                                }
-                                final Picture[] pictures = pictureList.toArray(new Picture[picturesNumber]);
-                                mPictures = new LinkedHashMap<String, Picture>();
-                                for (Picture pic : pictureList){
-                                    mPictures.put(pic.getId(), pic);
-                                }
-                                Log.d(TAG, "sorted Map: " + mPictures);
-                                ImageAdapter adapter = new ImageAdapter(UserActivity.this, mPictures);
-                                userPictures.setAdapter(adapter);
-                                userPictures.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                    @Override
-                                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                                        Picture picture = (Picture) adapterView.getItemAtPosition(position);
-
-                                        Log.i(TAG, "Picture: " + picture);
-
-                                        // Start PictureSliderActivity
-
-                                        Intent i = new Intent(UserActivity.this,
-                                                PictureSliderActivity.class);
-                                        i.putExtra(PICTURES, pictures);
-                                        i.putExtra(POSITION, position);
-                                        startActivity(i);
-                                    }
-                                });
                             }
                         }
 

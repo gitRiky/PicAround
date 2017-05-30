@@ -4,14 +4,13 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -38,9 +37,16 @@ import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.R;
 import com.squareup.picasso.Picasso;
 
-import static com.project.pervsys.picaround.utility.Config.*;
-
 import java.util.Calendar;
+
+import static com.project.pervsys.picaround.utility.Config.DATE;
+import static com.project.pervsys.picaround.utility.Config.FULL_NAME;
+import static com.project.pervsys.picaround.utility.Config.LOG_PREFERENCES;
+import static com.project.pervsys.picaround.utility.Config.LOG_PREF_INFO;
+import static com.project.pervsys.picaround.utility.Config.NOT_LOGGED;
+import static com.project.pervsys.picaround.utility.Config.PROFILE_PICTURE;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERNAMES;
 
 public class GetBasicInfoActivity extends AppCompatActivity {
     private static final int MIN_AGE = 6;

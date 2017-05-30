@@ -1,8 +1,6 @@
 package com.project.pervsys.picaround.domain;
 
 
-import android.util.Log;
-
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.HashMap;

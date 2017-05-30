@@ -4,11 +4,10 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -49,15 +48,26 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.User;
-import com.project.pervsys.picaround.utility.Config;
-
-import static com.project.pervsys.picaround.utility.Config.*;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.URI;
-import java.net.URL;
+import static com.project.pervsys.picaround.utility.Config.DATE;
+import static com.project.pervsys.picaround.utility.Config.EMAIL;
+import static com.project.pervsys.picaround.utility.Config.FB_LOGGED;
+import static com.project.pervsys.picaround.utility.Config.FULL_NAME;
+import static com.project.pervsys.picaround.utility.Config.GOOGLE_LOGGED;
+import static com.project.pervsys.picaround.utility.Config.LOG_PREFERENCES;
+import static com.project.pervsys.picaround.utility.Config.LOG_PREF_INFO;
+import static com.project.pervsys.picaround.utility.Config.NOT_LOGGED;
+import static com.project.pervsys.picaround.utility.Config.PROFILE_PICTURE;
+import static com.project.pervsys.picaround.utility.Config.RC_GET_INFO_FB;
+import static com.project.pervsys.picaround.utility.Config.RC_GET_INFO_GOOGLE;
+import static com.project.pervsys.picaround.utility.Config.RC_LINK;
+import static com.project.pervsys.picaround.utility.Config.RC_SIGN_IN;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERNAMES;
+import static com.project.pervsys.picaround.utility.Config.USERS;
 
 public class LoginActivity extends AppCompatActivity {
 

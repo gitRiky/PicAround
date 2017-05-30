@@ -4,8 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 
 public class Picture implements Parcelable {
 

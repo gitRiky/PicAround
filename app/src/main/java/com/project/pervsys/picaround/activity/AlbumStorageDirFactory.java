@@ -4,8 +4,6 @@ import android.os.Environment;
 
 import java.io.File;
 
-import static android.os.Environment.getExternalStorageDirectory;
-
 
 class AlbumStorageDirFactory {
 

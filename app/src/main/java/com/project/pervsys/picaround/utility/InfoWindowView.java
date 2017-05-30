@@ -25,7 +25,12 @@ import com.project.pervsys.picaround.domain.Point;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.NUM_COLUMN_INFOWINDOW;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.POINTS;
+import static com.project.pervsys.picaround.utility.Config.POPULARITY;
+import static com.project.pervsys.picaround.utility.Config.THUMBNAILS_NUMBER;
+import static com.project.pervsys.picaround.utility.Config.THUMB_PREFIX;
 
 
 public class InfoWindowView extends GridLayout {

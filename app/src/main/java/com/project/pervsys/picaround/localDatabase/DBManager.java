@@ -4,9 +4,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.ID;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERNAMES;
 
 public class DBManager {
 

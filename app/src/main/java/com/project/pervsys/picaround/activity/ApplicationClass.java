@@ -3,9 +3,7 @@ package com.project.pervsys.picaround.activity;
 import android.app.Application;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.widget.ProgressBar;
 
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.project.pervsys.picaround.R;
