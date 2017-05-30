@@ -95,15 +95,10 @@
             android:name=".activity.InfoActivity"
             android:parentActivityName=".activity.MapsActivity"
             android:screenOrientation="portrait" />
-        <activity
-            android:name=".activity.SplashActivity"
-            android:theme="@style/AppTheme"
-            android:parentActivityName=".activity.MapsActivity"/>
         <activity android:name=".activity.SplashActivity"
             android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

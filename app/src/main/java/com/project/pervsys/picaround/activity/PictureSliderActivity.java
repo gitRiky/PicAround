@@ -22,7 +22,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.project.pervsys.picaround.R;
 import com.project.pervsys.picaround.domain.Picture;
 
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.POSITION;
 
 public class PictureSliderActivity extends FragmentActivity {
 

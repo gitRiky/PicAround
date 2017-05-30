@@ -12,8 +12,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Camera;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Criteria;
@@ -42,24 +40,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.claudiodegio.msv.OnSearchViewListener;
 import com.claudiodegio.msv.SuggestionMaterialSearchView;
 import com.claudiodegio.msv.adapter.SearchSuggestRvAdapter;
-
-import com.dgreenhalgh.android.simpleitemdecoration.grid.GridDividerItemDecoration;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-
-import com.google.firebase.database.Query;
-import com.google.maps.android.clustering.Cluster;
-import com.google.maps.android.clustering.ClusterManager;
-import com.project.pervsys.picaround.R;
 import com.facebook.Profile;
 import com.facebook.login.LoginManager;
 import com.github.clans.fab.FloatingActionButton;
@@ -84,22 +71,23 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-
-import com.project.pervsys.picaround.domain.Picture;
-import com.project.pervsys.picaround.domain.Point;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterManager;
+import com.project.pervsys.picaround.R;
+import com.project.pervsys.picaround.domain.Picture;
+import com.project.pervsys.picaround.domain.Point;
 import com.project.pervsys.picaround.domain.User;
 import com.project.pervsys.picaround.localDatabase.DBManager;
 import com.project.pervsys.picaround.utility.InfoWindowView;
 import com.project.pervsys.picaround.utility.MarkerClusterItem;
 import com.project.pervsys.picaround.utility.MarkerIconRenderer;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-
-import static com.project.pervsys.picaround.utility.Config.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +99,34 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
+import static com.project.pervsys.picaround.utility.Config.ID;
+import static com.project.pervsys.picaround.utility.Config.LATITUDE;
+import static com.project.pervsys.picaround.utility.Config.LOCATION_EXTRA;
+import static com.project.pervsys.picaround.utility.Config.LOG_PREFERENCES;
+import static com.project.pervsys.picaround.utility.Config.LOG_PREF_INFO;
+import static com.project.pervsys.picaround.utility.Config.LONGITUDE;
+import static com.project.pervsys.picaround.utility.Config.NOT_LOGGED;
+import static com.project.pervsys.picaround.utility.Config.NUM_COLUMNS;
+import static com.project.pervsys.picaround.utility.Config.PERMISSIONS_REQUEST_FINE_LOCATION;
+import static com.project.pervsys.picaround.utility.Config.PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE;
+import static com.project.pervsys.picaround.utility.Config.PHOTO_PATH;
+import static com.project.pervsys.picaround.utility.Config.PICTURES;
+import static com.project.pervsys.picaround.utility.Config.PLACE;
+import static com.project.pervsys.picaround.utility.Config.PLACES;
+import static com.project.pervsys.picaround.utility.Config.POINT;
+import static com.project.pervsys.picaround.utility.Config.POINTS;
+import static com.project.pervsys.picaround.utility.Config.POPULARITY;
+import static com.project.pervsys.picaround.utility.Config.PROFILE_PICTURE;
+import static com.project.pervsys.picaround.utility.Config.REQUEST_CHECK_SETTINGS;
+import static com.project.pervsys.picaround.utility.Config.REQUEST_PICK_IMAGE;
+import static com.project.pervsys.picaround.utility.Config.REQUEST_TAKE_PHOTO;
+import static com.project.pervsys.picaround.utility.Config.REQUEST_UPLOAD_PHOTO;
+import static com.project.pervsys.picaround.utility.Config.REQUEST_UPLOAD_PHOTO_FROM_GALLERY;
 import static com.project.pervsys.picaround.utility.Config.SHARED_MAP_POSITION;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERNAMES;
+import static com.project.pervsys.picaround.utility.Config.USERS;
+import static com.project.pervsys.picaround.utility.Config.USER_ID;
 
 public class MapsActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, GoogleMap.InfoWindowAdapter {
 

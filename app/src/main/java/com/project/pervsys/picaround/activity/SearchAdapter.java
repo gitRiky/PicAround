@@ -1,10 +1,6 @@
 package com.project.pervsys.picaround.activity;
 
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,14 +15,13 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.project.pervsys.picaround.R;
-import com.project.pervsys.picaround.domain.Picture;
 import com.project.pervsys.picaround.domain.User;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
-import static com.project.pervsys.picaround.utility.Config.*;
+import static com.project.pervsys.picaround.utility.Config.USERNAME;
+import static com.project.pervsys.picaround.utility.Config.USERS;
 
 public class SearchAdapter extends BaseAdapter {
 
