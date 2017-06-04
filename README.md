@@ -13,12 +13,12 @@ Android:
 - Minimum API 18
 - Target API 25
 - Compiled with API 25
-<img src="http://www.sasken.com/sites/default/files/android-logo_0.jpg" height="200" width="300"/>
+<img src="http://www.sasken.com/sites/default/files/android-logo_0.jpg" width="360" height="263"/>
 
 Firebase:
 - JSON live database and storage
 - Backend functions
-<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4XEmg4faelQ8pgK26YF8XLb2b-UQfaiJq_HlSPFEAtimI7JM_" height="200" width="300"/>
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4XEmg4faelQ8pgK26YF8XLb2b-UQfaiJq_HlSPFEAtimI7JM_" width="360" heigth="263"/>
 
 # Screenshots
 <div id="screenshots">
