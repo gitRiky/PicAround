@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -141,6 +142,12 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
     private static final int MIN_TIME_LOCATION_UPDATE = 400;
     private static final int MIN_DISTANCE_LOCATION_UPDATE = 1000;
     private static final long UPDATER_THREAD_SLEEP = 5000; //in millisecs
+    private static final String FIRST_START = "firstStart";
+    private static final double COLD_BOUND = 0.05;
+    private static final double COOL_BOUND = 0.15;
+    private static final double NEUTRAL_BOUND = 0.35;
+    private static final double WARM_BOUND = 0.60;
+    private static final double HOT_BOUND = 1.00;
 
     private static boolean sToUpdateContent = false;
 
@@ -320,6 +327,39 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimaryDark));
         }
+
+        //  Declare a new thread to do a preference check for the TutorialActivity
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //  Initialize SharedPreferences
+                SharedPreferences getPrefs = PreferenceManager
+                        .getDefaultSharedPreferences(getBaseContext());
+
+                //  Create a new boolean and preference and set it to true
+                boolean isFirstStart = getPrefs.getBoolean(FIRST_START, true);
+                //  If the activity has never started before...
+                if (isFirstStart) {
+
+                    //  Launch tutorial
+                    Intent i = new Intent(MapsActivity.this, TutorialActivity.class);
+                    startActivity(i);
+
+                    //  Make a new preferences editor
+                    SharedPreferences.Editor e = getPrefs.edit();
+
+                    //  Edit preference to make it false because we don't want this to run again
+                    e.putBoolean(FIRST_START, false);
+
+                    //  Apply changes
+                    e.apply();
+                }
+            }
+        });
+
+        // Start the thread
+        t.start();
+
 
         // Firebase authentication
         final String logged = getSharedPreferences(LOG_PREFERENCES, 0)
@@ -947,13 +987,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
                                 mci.setmPoint(p);
                                 double popularity = 1 - p.getPopularity();
 
-                                if (popularity <= 0.20)
+                                if (popularity <= COLD_BOUND)
                                     mci.setIcon(R.drawable.marker_blue_popularity);
-                                else if (popularity > 0.20 && popularity <= 0.40)
+                                else if (popularity > COLD_BOUND && popularity <= COOL_BOUND)
                                     mci.setIcon(R.drawable.marker_azure_popularity);
-                                else if (popularity > 0.40 && popularity <= 0.60)
+                                else if (popularity > COOL_BOUND && popularity <= NEUTRAL_BOUND)
                                     mci.setIcon(R.drawable.marker_green_popularity);
-                                else if (popularity > 0.60 && popularity <= 0.80)
+                                else if (popularity > NEUTRAL_BOUND && popularity <= WARM_BOUND)
                                     mci.setIcon(R.drawable.marker_yellow_popularity);
                                 else
                                     mci.setIcon(R.drawable.marker_red_popularity);
@@ -994,13 +1034,13 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
 
                                 double popularity = 1 - p.getPopularity();
 
-                                if (popularity <= 0.20)
+                                if (popularity <= COLD_BOUND)
                                     mci.setIcon(R.drawable.marker_place_blue);
-                                else if (popularity > 0.20 && popularity <= 0.40)
+                                else if (popularity > COLD_BOUND && popularity <= COOL_BOUND)
                                     mci.setIcon(R.drawable.marker_place_azure);
-                                else if (popularity > 0.40 && popularity <= 0.60)
+                                else if (popularity > COOL_BOUND && popularity <= NEUTRAL_BOUND)
                                     mci.setIcon(R.drawable.marker_place_green);
-                                else if (popularity > 0.60 && popularity <= 0.80)
+                                else if (popularity > NEUTRAL_BOUND && popularity <= WARM_BOUND)
                                     mci.setIcon(R.drawable.marker_place_yellow);
                                 else
                                     mci.setIcon(R.drawable.marker_place_red);
@@ -1282,8 +1322,8 @@ public class MapsActivity extends AppCompatActivity implements LocationListener,
         switch (id) {
             case R.id.help:
                 Log.i(TAG, "Help has been selected");
-                Toast.makeText(this, "Selected help", Toast.LENGTH_SHORT).show();
-                //Help activity
+                Intent intent = new Intent(MapsActivity.this, TutorialActivity.class);
+                startActivity(intent);
                 return true;
             case R.id.info:
                 Log.i(TAG, "Info has been selected");
