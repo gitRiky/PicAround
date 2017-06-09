@@ -11,14 +11,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="com.project.pervsys.picaround.activity.PickLocationActivity"
-        android:layout_below="@id/toolbar_container" />
+        android:layout_below="@+id/pick_location_text" />
 
     <ImageView
         android:id="@+id/marker_centered"
-        android:layout_width="40dp"
-        android:layout_height="50dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:src="@drawable/map_marker_bubble_green"
+        android:src="@mipmap/pick_location"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 
@@ -44,8 +44,19 @@
             android:id="@+id/sv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:elevation="5dp"></com.claudiodegio.msv.SuggestionMaterialSearchView>
+            android:elevation="5dp">
+        </com.claudiodegio.msv.SuggestionMaterialSearchView>
 
     </FrameLayout>
+
+    <TextView
+        android:id="@+id/pick_location_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar_container"
+        android:background="@color/white"
+        android:padding="10dp"
+        android:textSize="16sp"
+        android:text="@string/pick_location_text"/>
 
 </RelativeLayout>

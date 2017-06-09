@@ -84,6 +84,7 @@
             android:parentActivityName=".activity.MapsActivity" />
         <activity
             android:name=".activity.UserActivity"
+            android:parentActivityName=".activity.MapsActivity"
             android:screenOrientation="portrait" />
         <activity
             android:name=".activity.ProfileActivity"
@@ -95,16 +96,19 @@
             android:name=".activity.InfoActivity"
             android:parentActivityName=".activity.MapsActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".activity.SplashActivity"
+        <activity
+            android:name=".activity.SplashActivity"
             android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" /> <!-- optional (needed if default theme has no action bar) -->
+        <activity android:name=".activity.TutorialActivity"></activity>
     </application>
 
 </manifest>

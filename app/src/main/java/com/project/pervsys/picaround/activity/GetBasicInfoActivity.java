@@ -168,15 +168,8 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                         } else {
                             //username not used
                             Log.i(TAG, "Username ok");
-                            Intent i = getIntent();
-                            i.putExtra(USERNAME, username);
-                            i.putExtra(DATE, mDate);
-                            setResult(RESULT_OK, i);
-                            Log.i(TAG, "Data sent to LoginActivity");
-                            /*Toast.makeText(getApplicationContext(),
-                                    R.string.registration_ok,
-                                    Toast.LENGTH_SHORT).show();*/
-                            finish();
+                            startConfirmationDialog(username);
+
                         }
                     }
 
@@ -187,6 +180,31 @@ public class GetBasicInfoActivity extends AppCompatActivity {
                     }
                 });
         return true;
+    }
+
+
+    private void startConfirmationDialog(final String username){
+        AlertDialog.Builder dialog = new AlertDialog.Builder(GetBasicInfoActivity.this)
+                .setTitle(R.string.confirm_info_title)
+                .setMessage(R.string.confirm_info_text)
+                .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent i = getIntent();
+                        i.putExtra(USERNAME, username);
+                        i.putExtra(DATE, mDate);
+                        setResult(RESULT_OK, i);
+                        Log.i(TAG, "Data sent to LoginActivity");
+                            /*Toast.makeText(getApplicationContext(),
+                                    R.string.registration_ok,
+                                    Toast.LENGTH_SHORT).show();*/
+                        finish();
+                    }
+                }).setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        //do nothing
+                    }
+                });
+        dialog.show();
     }
 
     private void prepareLogOut() {

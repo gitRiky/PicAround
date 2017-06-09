@@ -2,12 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/download"
-        android:title="@string/download" />
+        android:title="@string/download"
+        android:visible="false"/>
     <item
         android:id="@+id/delete_picture"
         android:title="@string/delete_picture"
         android:visible="false"/>
     <item
         android:id="@+id/share"
-        android:title="@string/share" />
+        android:title="@string/share"
+        android:visible="false"/>
 </menu>

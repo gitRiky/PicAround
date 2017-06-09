@@ -180,6 +180,11 @@ public class LoginActivity extends AppCompatActivity {
             case R.id.no_login:
                 setLogged(NOT_LOGGED);
                 Log.i(TAG, "Not Logged");
+                FirebaseAuth user = FirebaseAuth.getInstance();
+                if (user != null){
+                    user.signOut();
+                    Log.d(TAG, "Sign out from Firebase");
+                }
                 Intent i = new Intent(getApplicationContext(), MapsActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);

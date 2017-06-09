@@ -50,6 +50,7 @@ dependencies {
     compile 'com.github.claudiodegio:MsvSearch:1.0.0'
     compile 'com.theartofdev.edmodo:android-image-cropper:2.4.+'
     compile 'com.bignerdranch.android:simple-item-decoration:1.0.0'
+    compile 'com.github.paolorotolo:appintro:4.0.0'
     testCompile 'junit:junit:4.12'
 }
 

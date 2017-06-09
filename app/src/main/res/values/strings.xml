@@ -52,7 +52,7 @@
     <string name="name_missing">Name is missing</string>
     <string name="name_too_long">Name is too long</string>
     <string name="upload_failed">Error during the upload of the photo</string>
-    <string name="upload_ok">The photo has been uploaded!</string>
+    <string name="upload_ok">The photo has been uploaded! The map will be refreshed in a few minutes</string>
     <string name="title_activity_pick_location">PickLocation</string>
     <string name="upload_prog_bar_title">Picture Upload</string>
     <string name="upload_prog_bar_text">Upload in progress</string>
@@ -124,4 +124,22 @@
     <string name="user">User</string>
     <string name="Add_picture">Add a picture</string>
     <string name="permission_denied_text">Permission denied. Please upload a photo with the application</string>
+    <string name="done">Done</string>
+    <string name="skip">Skip</string>
+    <string name="pick_location_text">Pick the location in which you took the photo</string>
+    <string name="confirm_info_text">Are you sure you want to continue? The username cannot be changed in the future</string>
+    <string name="confirm_info_title">Are you sure?</string>
+    <string name="tutorial1_text">The markers on the map represent the points where photos have been taken</string>
+    <string name="tutorial2_text">Get a point info by clicking on it</string>
+    <string name="tutorial3_text">Take a look at a point\'s photos by scrolling the bottom panel</string>
+    <string name="tutorial4_text">Upload a photo through the camera or selecting it from the gallery</string>
+    <string name="tutorial5_text">Pick the exact location where the photo has been taken. You can search for the address in the search bar</string>
+    <string name="tutorial6_text">Nearby photos are aggregated into a single point</string>
+    <string name="tutorial7_text">Tap on the username to see the user\'s photos or on the location to open Google StreetView</string>
+    <string name="tutorial7_title">User and location details</string>
+    <string name="tutorial6_title">Aggregation of photos</string>
+    <string name="tutorial5_title">Pick the location</string>
+    <string name="tutorial4_title">Upload your photos</string>
+    <string name="tutorial3_title">Photos took in a place</string>
+    <string name="tutorial2_title">Info on points</string>
 </resources>

@@ -67,7 +67,7 @@
     <string name="update_profile_image">Cambia immagine del profilo</string>
     <string name="upload">CARICA</string>
     <string name="upload_failed">Errore durante il caricamento della foto</string>
-    <string name="upload_ok">La foto è stata caricata con successo!</string>
+    <string name="upload_ok">La foto è stata caricata con successo! La mappa sarà aggiornata tra pochi minuti</string>
     <string name="upload_prog_bar_fail">Caricamento non riuscito</string>
     <string name="upload_prog_bar_ok">Caricamento completato</string>
     <string name="upload_prog_bar_text">Caricamento in corso</string>
@@ -100,4 +100,22 @@
     <string name="user">Utente</string>
     <string name="Add_picture">Carica foto</string>
     <string name="permission_denied_text">Accesso al disco negato. Carica prima una foto attraverso l\'applicazione</string>
+    <string name="done">Fatto</string>
+    <string name="skip">Salta</string>
+    <string name="pick_location_text">Seleziona la posizione in cui hai scattato la foto</string>
+    <string name="confirm_info_text">Sei sicuro di voler continuare? Lo username non potrà essere cambiato in futuro</string>
+    <string name="confirm_info_title">Conferma</string>
+    <string name="tutorial1_text">I segnaposto sulla mappa rappresentano i punti in cui sono state scattate delle foto</string>
+    <string name="tutorial2_text">Ottieni informazioni su un punto cliccando su di esso</string>
+    <string name="tutorial3_text">Vedi le foto scattate in un punto scrollando il pannello in basso</string>
+    <string name="tutorial4_text">Carica una foto tramite fotocamera o selezionandola dalla galleria</string>
+    <string name="tutorial5_text">Seleziona il punto esatto in cui è stata scattata la foto. Puoi cercare l\'indirizzo tramite la barra di ricerca</string>
+    <string name="tutorial6_text">Le foto vicine vengono aggregate in un unico punto</string>
+    <string name="tutorial7_text">Clicca sul nome dell\'utente per vedere le sue foto o sul luogo per aprire Google StreetView</string>
+    <string name="tutorial7_title">Dettagli utente e luogo</string>
+    <string name="tutorial6_title">Aggregazione di foto</string>
+    <string name="tutorial5_title">Seleziona il punto</string>
+    <string name="tutorial4_title">Carica le tue foto</string>
+    <string name="tutorial3_title">Foto scattate in un punto</string>
+    <string name="tutorial2_title">Info sui punti</string>
 </resources>
